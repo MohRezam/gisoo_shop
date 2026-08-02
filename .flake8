@@ -1,0 +1,16 @@
+[flake8]
+exclude =
+    .git,
+    */migrations,
+    ./strings/*,
+    *test*,
+    ./venv/*
+    backend.py
+    override_check_fields.py
+max-line-length = 120
+extend-ignore = E203
+max-complexity = 10
+strict = true
+select = C,E,F,W,N,DJ,DJ10
+per-file-ignores =
+    */__init__.py:F401,F403

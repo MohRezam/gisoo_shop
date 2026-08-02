@@ -1,0 +1,13 @@
+from django.contrib import admin
+from django.urls import include, path
+from django.utils.translation import gettext_lazy as _
+
+admin.site.site_title = _("core_gisoo_backend")
+admin.site.index_title = _("core_gisoo_backend Platform")
+admin.site.site_header = _("core_gisoo_backend")
+admin.site.site_url = "https://myregal.ir"
+
+admin_urlpatterns = [
+    path("admin/", admin.site.urls, name="admin"),
+    path("silk/", include("silk.urls", namespace="silk")),
+]

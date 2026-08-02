@@ -1,0 +1,4 @@
+SILKY_MAX_RECORDED_REQUESTS = 10**4
+SILKY_AUTHENTICATION = True  # User must login
+SILKY_AUTHORISATION = True  # User must have permissions
+SILKY_PYTHON_PROFILER = True
