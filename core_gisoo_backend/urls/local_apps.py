@@ -6,4 +6,29 @@ local_apps_urlpatterns = [
         "notifications/",
         include("apps.notifications.urls", namespace="apps.notifications"),
     ),
+    path(
+        "products/",
+        include("apps.products.urls", namespace="apps.products"),
+    ),
+    path(
+        "addresses/",
+        include("apps.addresses.urls", namespace="apps.addresses"),
+    ),
+    path(
+        "orders/",
+        include("apps.orders.urls", namespace="apps.orders"),
+    ),
+    path(
+        "payments/",
+        include("apps.payments.urls", namespace="apps.payments"),
+    ),
+    path(
+        "shipping/",
+        include("apps.shipping.urls", namespace="apps.shipping"),
+    ),
+    path(
+        "cart/",
+        include("apps.cart.urls", namespace="apps.cart"),
+    ),
+
 ]
