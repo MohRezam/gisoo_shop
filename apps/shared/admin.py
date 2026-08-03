@@ -48,7 +48,7 @@ class CacheAwareModelAdmin:
 
 
 class BaseModelAdmin(
-    ModelAdminJalaliMixin,
+    # ModelAdminJalaliMixin,
     DjangoObjectActions,
     AvatarAdmin,
     CacheAwareModelAdmin,
@@ -80,7 +80,7 @@ class BaseModelAdmin(
 
 
 class BaseTabularInlineAdmin(
-    TabularInlineJalaliMixin,
+    # TabularInlineJalaliMixin,
     AvatarAdmin,
     EditLinkAdmin,
     BaseAdmin,
