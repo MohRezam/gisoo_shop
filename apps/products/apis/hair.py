@@ -5,6 +5,7 @@ from rest_framework.generics import ListAPIView
 
 from apps.products.models import HairProblem
 from apps.products.serializers import HairProblemSerializer
+from utils.paginators import StandardResultPagination
 
 
 @extend_schema(
@@ -15,4 +16,4 @@ class HairProblemAPIView(ListAPIView):
     serializer_class = HairProblemSerializer
     queryset = HairProblem.objects.filter(is_active=True)
     filter_backends = []
-    pagination_class = None
+    pagination_class = StandardResultPagination

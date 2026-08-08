@@ -16,3 +16,6 @@ def hair_type_image_path():
 
 def product_image_path():
     return f"{BASE_MEDIA_LOCATION}/products/images"
+
+def category_image_path():
+    return f"{BASE_MEDIA_LOCATION}/products/categories"

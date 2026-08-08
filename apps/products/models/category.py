@@ -2,6 +2,8 @@ from apps.shared.models.base import BaseModel
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from core_gisoo_backend.storage_backends.locations import category_image_path
+
 
 class Category(BaseModel):
     title = models.CharField(
@@ -12,6 +14,12 @@ class Category(BaseModel):
     slug = models.SlugField(
         unique=True,
         verbose_name=_("slug"),
+    )
+    image = models.ImageField(
+        upload_to=category_image_path(),
+        verbose_name=_("image"),
+        null=True,
+        blank=True
     )
 
     parent = models.ForeignKey(

@@ -24,6 +24,7 @@ from apps.products.serializers import (
     ProductDetailSerializer,
     ProductListSerializer,
 )
+from utils.paginators import StandardResultPagination
 
 
 @extend_schema(
@@ -69,6 +70,7 @@ from apps.products.serializers import (
 )
 class ProductListAPIView(ListAPIView):
     serializer_class = ProductListSerializer
+    pagination_class = StandardResultPagination
 
     queryset = (
         Product.objects
