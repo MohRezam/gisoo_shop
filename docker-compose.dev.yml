@@ -49,7 +49,7 @@ services:
 
     restart: always
 
-    command: celery -A config worker -l info
+    command: celery -A core_gisoo_backend worker -l info
 
     env_file:
       - .env

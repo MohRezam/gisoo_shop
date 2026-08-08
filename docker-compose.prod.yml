@@ -1,5 +1,4 @@
 services:
-
   db:
     image: postgres:17
     container_name: gisoo_center_db
@@ -17,11 +16,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+    networks:
+      - gisoo_network
 
   redis:
     image: redis:7-alpine
@@ -34,12 +35,12 @@ services:
       timeout: 5s
       retries: 5
 
+    networks:
+      - gisoo_network
 
   web:
     build: .
-
     container_name: gisoo_center_web
-
     restart: always
 
     command:
@@ -53,7 +54,6 @@ services:
     env_file:
       - .env
 
-
     volumes:
       - staticfiles:/app/staticfiles
       - media:/app/media
@@ -61,22 +61,21 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
       redis:
         condition: service_healthy
 
+    networks:
+      - gisoo_network
 
   celery:
     build: .
-
     container_name: gisoo_center_celery
-
     restart: always
 
     command:
       - celery
       - -A
-      - config
+      - core_gisoo_backend
       - worker
       - -l
       - info
@@ -84,20 +83,18 @@ services:
     env_file:
       - .env
 
-
     depends_on:
       db:
         condition: service_healthy
-
       redis:
         condition: service_healthy
 
+    networks:
+      - gisoo_network
 
   nginx:
     image: nginx:alpine
-
     container_name: gisoo_center_nginx
-
     restart: always
 
     depends_on:
@@ -111,6 +108,12 @@ services:
       - staticfiles:/app/staticfiles:ro
       - media:/app/media:ro
 
+    networks:
+      - gisoo_network
+
+networks:
+  gisoo_network:
+    driver: bridge
 
 volumes:
   postgres_data:
