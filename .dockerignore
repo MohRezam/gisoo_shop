@@ -23,7 +23,7 @@ media/
 
 # Dockerfile and Compose files
 Dockerfile*
-docker-compose.yml
+docker-compose.prod.yml
 *.swp
 .dockerignore
 
