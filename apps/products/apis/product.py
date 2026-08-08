@@ -16,39 +16,14 @@ from rest_framework.generics import (
 
 from apps.products.filters import ProductFilter
 from apps.products.models import (
-    Brand,
-    Category,
     Product,
     ProductImage,
-    ProductVariant, Bundle, HairProblem,
+    ProductVariant, Bundle,
 )
 from apps.products.serializers import (
-    BrandSerializer,
-    CategorySerializer,
     ProductDetailSerializer,
-    ProductListSerializer, HairProblemSerializer,
+    ProductListSerializer,
 )
-
-
-@extend_schema(
-    tags=["Products"],
-    summary="List Categories",
-)
-class CategoryListAPIView(ListAPIView):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    filter_backends = []
-
-
-
-@extend_schema(
-    tags=["Products"],
-    summary="List Brands",
-)
-class BrandListAPIView(ListAPIView):
-    queryset = Brand.objects.all()
-    serializer_class = BrandSerializer
-    filter_backends = []
 
 
 @extend_schema(
@@ -188,14 +163,3 @@ class ProductDetailAPIView(RetrieveAPIView):
     )
 
     lookup_field = "slug"
-
-
-@extend_schema(
-    tags=["Hair Problems"],
-    summary="List Hair Problems",
-)
-class HairProblemAPIView(ListAPIView):
-    serializer_class = HairProblemSerializer
-    queryset = HairProblem.objects.filter(is_active=True)
-    filter_backends = []
-    pagination_class = None
