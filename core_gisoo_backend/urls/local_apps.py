@@ -30,5 +30,9 @@ local_apps_urlpatterns = [
         "cart/",
         include("apps.cart.urls", namespace="apps.cart"),
     ),
+    path(
+        "home/",
+        include("apps.home.urls", namespace="apps.home")
+    )
 
 ]

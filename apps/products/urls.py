@@ -2,7 +2,7 @@ from django.urls import path
 
 from apps.products.apis import (
     BrandListAPIView,
-    CategoryListAPIView, ProductListAPIView, ProductDetailAPIView, HairProblemAPIView, BannerAPIView,
+    CategoryListAPIView, ProductListAPIView, ProductDetailAPIView, HairProblemAPIView,
 )
 
 app_name = "apps.products"
@@ -33,10 +33,5 @@ urlpatterns = [
         "v1/hair/problems/",
         HairProblemAPIView.as_view(),
         name="hair-problem",
-    ),
-    path(
-        "v1/banner/slides/",
-        BannerAPIView.as_view(),
-        name="banner",
     )
 ]
