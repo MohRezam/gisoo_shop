@@ -9,6 +9,7 @@ LOCAL_APPS = [
     "apps.payments",
     "apps.products",
     "apps.shipping",
+    "apps.home"
 ]
 
 THIRD_PARTY_APPS = [

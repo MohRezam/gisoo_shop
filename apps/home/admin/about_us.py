@@ -1,36 +1,30 @@
 from django.contrib import admin
 
-from apps.products.models import Banner
+from apps.home.models import HomeAbout
 from apps.shared.admin import BaseModelAdmin
 
 
-@admin.register(Banner)
-class BannerAdmin(BaseModelAdmin):
+@admin.register(HomeAbout)
+class HomeAboutAdmin(BaseModelAdmin):
     list_display = (
         "title",
-        "link_type",
         "display_order",
         "is_active",
         "created_at",
     )
 
     list_filter = (
-        "link_type",
         "is_active",
     )
 
     search_fields = (
         "title",
+        "description",
     )
 
     list_editable = (
         "display_order",
         "is_active",
-    )
-
-    autocomplete_fields = (
-        "product",
-        "category",
     )
 
     ordering = (
