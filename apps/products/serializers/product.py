@@ -2,37 +2,11 @@ from rest_framework import serializers
 
 from apps.products.models import (
     AttributeValue,
-    Brand,
-    Category,
     Product,
     ProductImage,
     ProductVariant,
-    VariantAttribute, BundleItem, Bundle, HairProblem,
+    VariantAttribute, BundleItem, Bundle
 )
-
-
-class CategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Category
-
-        fields = (
-            "id",
-            "title",
-            "slug",
-            # "parent",
-        )
-
-
-class BrandSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Brand
-
-        fields = (
-            "id",
-            "title",
-            "slug",
-            "logo",
-        )
 
 
 class AttributeValueSerializer(
@@ -305,15 +279,4 @@ class ProductDetailSerializer(
             "images",
             "variants",
             "bundles"
-        )
-
-class HairProblemSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = HairProblem
-        fields = (
-            "id",
-            "title",
-            "slug",
-            "image",
-            "is_active"
         )
