@@ -1,10 +1,11 @@
 from django.contrib import admin
 
 from apps.products.models import Banner
+from apps.shared.admin import BaseModelAdmin
 
 
 @admin.register(Banner)
-class BannerAdmin(admin.ModelAdmin):
+class BannerAdmin(BaseModelAdmin):
     list_display = (
         "title",
         "link_type",
