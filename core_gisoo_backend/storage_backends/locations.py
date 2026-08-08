@@ -29,8 +29,4 @@ def category_image_path():
 
 
 def banner_image_path():
-    def path(instance, filename):
-        extension = Path(filename).suffix
-        return f"banners/{uuid4()}{extension}"
-
-    return path
+    return f"{BASE_MEDIA_LOCATION}/banner/images"
