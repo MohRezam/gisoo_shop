@@ -19,7 +19,7 @@ class CategorySerializer(serializers.ModelSerializer):
             "id",
             "title",
             "slug",
-            "parent",
+            # "parent",
         )
 
 
@@ -314,5 +314,6 @@ class HairProblemSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "slug",
+            "image",
             "is_active"
         )
