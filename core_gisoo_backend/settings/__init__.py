@@ -25,6 +25,4 @@ from .components.silk import *
 from .components.storages import *
 from .components.templates import *
 
-from decouple import config
 
-PROJECT_NAME = config("APP_BASE_NAME", None)
