@@ -21,7 +21,12 @@ class Category(BaseModel):
         null=True,
         blank=True
     )
-
+    short_description = models.CharField(
+        max_length=500,
+        null=True,
+        blank=True,
+        verbose_name=_("short_description"),
+    )
     parent = models.ForeignKey(
         "self",
         on_delete=models.CASCADE,

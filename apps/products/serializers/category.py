@@ -11,5 +11,6 @@ class CategorySerializer(serializers.ModelSerializer):
             "title",
             "slug",
             "image",
+            "short_description",
             # "parent",
         )
