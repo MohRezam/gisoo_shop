@@ -1,63 +1,121 @@
-name: Tests
+services:
+  db:
+    image: postgres:17
+    container_name: gisoo_center_db
+    restart: always
 
-on:
-  pull_request:
-    branches:
-      - main
+    env_file:
+      - .env
 
-jobs:
-  tests:
-    runs-on: ubuntu-latest
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
 
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: test_db
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U test_user -d test_db"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - gisoo_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: gisoo_center_redis
+    restart: always
+
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - gisoo_network
+
+  web:
+    build: .
+    container_name: gisoo_center_web
+    restart: always
+
+    command:
+      - gunicorn
+      - core_gisoo_backend.wsgi:application
+      - --bind
+      - 0.0.0.0:8000
+      - --workers
+      - "3"
+
+    env_file:
+      - .env
+
+    volumes:
+      - staticfiles:/usr/src/app/static
+      - media:/usr/src/app/media
+
+    depends_on:
+      db:
+        condition: service_healthy
       redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+        condition: service_healthy
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    networks:
+      - gisoo_network
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+  celery:
+    build: .
+    container_name: gisoo_center_celery
+    restart: always
 
-      - name: Install Poetry
-        run: pip install poetry
+    command:
+      - celery
+      - -A
+      - core_gisoo_backend
+      - worker
+      - -l
+      - info
 
-      - name: Install dependencies
-        run: poetry install --no-interaction
+    env_file:
+      - .env
 
-      - name: Run tests
-        env:
-          DEBUG: "False"
-          DB_NAME: test_db
-          DB_USER: test_user
-          DB_PASSWORD: test_password
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          REDIS_HOST: 127.0.0.1
-          REDIS_PORT: 6379
-        run: |
-          poetry run python manage.py test
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - gisoo_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: gisoo_center_nginx
+    restart: always
+
+    depends_on:
+      - web
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - staticfiles:/usr/src/app/static:ro
+      - media:/usr/src/app/media:ro
+
+    networks:
+      - gisoo_network
+
+networks:
+  gisoo_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  staticfiles:
+  media:
