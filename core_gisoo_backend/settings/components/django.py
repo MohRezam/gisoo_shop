@@ -3,7 +3,6 @@ import os
 from .common import BASE_DIR, DEBUG
 from .constants import PROJECT_NAME
 
-
 SECRET_KEY = os.getenv(
     "SECRET_KEY",
     "django-insecure-development-only-key",
@@ -14,21 +13,17 @@ ENCRYPTION_KEY = os.getenv(
     "viyLb459xpvqo3aUVB5WFXnZr1hsUDgVhoRsAa7wEt0=",
 ).encode()
 
-
 ALLOWED_HOSTS = ["*"] if DEBUG else [
-    "your-production-domain.com",
+    os.getenv("ALLOWED_HOSTS"),
 ]
-
 
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-
 ROOT_URLCONF = f"{PROJECT_NAME}.urls"
 
 WSGI_APPLICATION = f"{PROJECT_NAME}.wsgi.application"
-
 
 # Proxy / HTTPS
 USE_X_FORWARDED_HOST = True
@@ -37,9 +32,7 @@ SECURE_PROXY_SSL_HEADER = (
     "https",
 )
 
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
 
 if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
