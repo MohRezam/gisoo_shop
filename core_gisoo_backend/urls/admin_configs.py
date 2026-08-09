@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 from django.utils.translation import gettext_lazy as _
+from django.conf import settings
 
 admin.site.site_title = _("core_gisoo_backend")
 admin.site.index_title = _("core_gisoo_backend Platform")
@@ -9,5 +10,10 @@ admin.site.site_url = "https://myregal.ir"
 
 admin_urlpatterns = [
     path("admin/", admin.site.urls, name="admin"),
-    path("silk/", include("silk.urls", namespace="silk")),
 ]
+
+if settings.DEBUG:
+    admin_urlpatterns += [
+        path("silk/", include("silk.urls", namespace="silk")),
+        path("__debug__/", include("debug_toolbar.urls")),
+    ]
