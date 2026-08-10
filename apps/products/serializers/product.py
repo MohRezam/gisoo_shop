@@ -204,6 +204,149 @@ class ProductListSerializer(
         return variant.stock
 
 
+class SpecialOfferProductListSerializer(
+    serializers.ModelSerializer,
+):
+    brand = serializers.StringRelatedField()
+
+    category = serializers.StringRelatedField()
+
+    thumbnail = serializers.SerializerMethodField()
+
+    price = serializers.SerializerMethodField()
+
+    discounted_price = (
+        serializers.SerializerMethodField()
+    )
+
+    has_discount = (
+        serializers.SerializerMethodField()
+    )
+
+    stock = serializers.SerializerMethodField()
+    discount_percentage = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+
+        fields = (
+            "id",
+            "title",
+            "slug",
+            "brand",
+            "category",
+            "thumbnail",
+            "price",
+            "discounted_price",
+            "has_discount",
+            "discount_percentage",
+            "stock",
+            "is_available",
+        )
+
+    def _first_variant(
+            self,
+            obj,
+    ):
+        variants = getattr(
+            obj,
+            "active_variants",
+            [],
+        )
+
+        if variants:
+            return variants[0]
+
+        return None
+
+    def get_thumbnail(
+            self,
+            obj,
+    ):
+        images = getattr(
+            obj,
+            "primary_images",
+            [],
+        )
+
+        if images:
+            return images[0].image.url
+
+        return None
+
+    def get_price(
+            self,
+            obj,
+    ):
+        variant = self._first_variant(
+            obj,
+        )
+
+        if variant is None:
+            return None
+
+        return variant.price
+
+    def get_discounted_price(
+            self,
+            obj,
+    ):
+        variant = self._first_variant(
+            obj,
+        )
+
+        if variant is None:
+            return None
+
+        return variant.discounted_price
+
+    def get_has_discount(
+            self,
+            obj,
+    ):
+        variant = self._first_variant(
+            obj,
+        )
+
+        if variant is None:
+            return False
+
+        return (
+                variant.discounted_price
+                is not None
+        )
+
+    def get_stock(
+            self,
+            obj,
+    ):
+        variant = self._first_variant(
+            obj,
+        )
+
+        if variant is None:
+            return 0
+
+        return variant.stock
+
+    def get_discount_percentage(self, obj):
+        variant = self._first_variant(obj)
+
+        if (
+                variant is None
+                or variant.discounted_price is None
+                or variant.price <= 0
+        ):
+            return 0
+
+        return round(
+            (
+                    (variant.price - variant.discounted_price)
+                    / variant.price
+            ) * 100
+        )
+
+
 class BundleItemSerializer(serializers.ModelSerializer):
     variant_id = serializers.IntegerField(
         source="variant.id",
