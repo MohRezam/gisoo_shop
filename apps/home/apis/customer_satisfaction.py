@@ -3,6 +3,7 @@ from rest_framework import generics
 
 from apps.home.models import CustomerSatisfaction
 from apps.home.serializers import CustomerSatisfactionSerializer
+from utils.paginators import StandardResultPagination
 
 
 @extend_schema(
@@ -12,6 +13,7 @@ from apps.home.serializers import CustomerSatisfactionSerializer
 )
 class CustomerSatisfactionListAPIView(generics.ListAPIView):
     serializer_class = CustomerSatisfactionSerializer
+    pagination_class = StandardResultPagination
 
     def get_queryset(self):
         return CustomerSatisfaction.objects.filter(
