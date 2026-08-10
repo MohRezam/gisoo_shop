@@ -6,6 +6,7 @@ from django.db.models import Q
 
 from apps.shared.models.base import BaseModel
 from core_gisoo_backend.storage_backends.locations import product_image_path
+from django.db.models import F
 
 
 class Product(BaseModel):
@@ -189,12 +190,18 @@ class ProductVariant(BaseModel):
         verbose_name = _("product_variant")
         verbose_name_plural = _("product_variants")
         ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                        Q(discounted_price__isnull=True)
+                        | Q(discounted_price__lt=F("price"))
+                ),
+                name="discounted_price_less_than_price",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.product.title} - {self.sku}"
-
-
-
 
 
 class Attribute(BaseModel):
@@ -283,4 +290,3 @@ class VariantAttribute(BaseModel):
         verbose_name = _("variant_attribute")
         verbose_name_plural = _("variant_attributes")
         ordering = ["-created_at"]
-
