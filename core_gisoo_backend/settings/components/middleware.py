@@ -1,5 +1,4 @@
-from core_gisoo_backend import settings
-
+from .common import DEBUG
 from .constants import PROJECT_NAME
 
 MIDDLEWARE = [
@@ -16,8 +15,9 @@ MIDDLEWARE = [
     f"{PROJECT_NAME}.middleware.logging_middleware.ResponseLoggingMiddleware",
 ]
 
-if settings.DEBUG:
+if DEBUG:
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+    MIDDLEWARE.insert(0, "silk.middleware.SilkyMiddleware")
 
 # DEBUG_TOOLBAR_CONFIG = {
 #     "DISABLE_PANELS": ["debug_toolbar.panels.history.HistoryPanel"],
