@@ -1,8 +1,4 @@
-from core_gisoo_backend.storage_backends import MediaStorage
 from core_gisoo_backend.storage_backends.media_storage import BASE_MEDIA_LOCATION
-from pathlib import Path
-from uuid import uuid4
-
 
 def avatar_path():
     return f"{BASE_MEDIA_LOCATION}/users/avatars"
@@ -33,3 +29,6 @@ def banner_image_path():
 
 def home_about_image_path():
     return f"{BASE_MEDIA_LOCATION}/home/about-us"
+
+def customer_satisfaction_path():
+    return f"{BASE_MEDIA_LOCATION}/customer/satisfaction"
