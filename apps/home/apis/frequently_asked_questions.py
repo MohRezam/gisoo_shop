@@ -3,6 +3,7 @@ from rest_framework import generics
 
 from apps.home.models import FAQCategory, FAQ
 from apps.home.serializers.frequently_asked_questions import FAQCategorySerializer, FAQSerializer
+from utils.paginators import StandardResultPagination
 
 
 @extend_schema(
@@ -12,6 +13,7 @@ from apps.home.serializers.frequently_asked_questions import FAQCategorySerializ
 )
 class FAQCategoryListAPIView(generics.ListAPIView):
     serializer_class = FAQCategorySerializer
+    pagination_class = StandardResultPagination
 
     def get_queryset(self):
         return FAQCategory.objects.filter(
@@ -33,6 +35,7 @@ class FAQCategoryListAPIView(generics.ListAPIView):
 )
 class FAQListAPIView(generics.ListAPIView):
     serializer_class = FAQSerializer
+    pagination_class = StandardResultPagination
 
     def get_queryset(self):
         queryset = FAQ.objects.filter(
