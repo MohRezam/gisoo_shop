@@ -35,7 +35,7 @@ urlpatterns = [
         name="hair-problem",
     ),
     path(
-        "v1/special-offers",
+        "v1/special/offers/",
         SpecialOfferProductListAPIView.as_view(),
         name="special-offers",
     ),
