@@ -27,6 +27,9 @@ def category_image_path():
 def banner_image_path():
     return f"{BASE_MEDIA_LOCATION}/home/banner"
 
+def slider_image_path():
+    return f"{BASE_MEDIA_LOCATION}/home/slider"
+
 def home_about_image_path():
     return f"{BASE_MEDIA_LOCATION}/home/about-us"
 
