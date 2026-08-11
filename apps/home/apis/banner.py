@@ -1,4 +1,4 @@
-from apps.home.models import Banner
+from apps.home.models import Banner, Slider
 from apps.home.serializers import SliderSerializer
 from apps.home.serializers.banner import BannerSerializer
 
@@ -35,7 +35,7 @@ class SliderAPIView(ListAPIView):
     pagination_class = StandardResultPagination
 
     queryset = (
-        Banner.objects
+        Slider.objects
         .filter(is_active=True)
         .select_related("product", "category")
         .order_by("display_order", "-created_at")
