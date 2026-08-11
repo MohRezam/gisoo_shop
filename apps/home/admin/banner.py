@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.home.models import Banner
+from apps.home.models import Banner, Slider
 from apps.shared.admin import BaseModelAdmin
 
 
@@ -21,6 +21,36 @@ class BannerAdmin(BaseModelAdmin):
 
     search_fields = (
         "title",
+    )
+
+    list_editable = (
+        "display_order",
+        "is_active",
+    )
+
+    autocomplete_fields = (
+        "product",
+        "category",
+    )
+
+    ordering = (
+        "display_order",
+        "-created_at",
+    )
+
+
+@admin.register(Slider)
+class SliderAdmin(BaseModelAdmin):
+    list_display = (
+        "link_type",
+        "display_order",
+        "is_active",
+        "created_at",
+    )
+
+    list_filter = (
+        "link_type",
+        "is_active",
     )
 
     list_editable = (
