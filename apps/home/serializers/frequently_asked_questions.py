@@ -3,16 +3,6 @@ from rest_framework import serializers
 from apps.home.models import FAQCategory, FAQ
 
 
-class FAQCategorySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = FAQCategory
-        fields = [
-            "id",
-            "title",
-            "slug",
-        ]
-
-
 class FAQSerializer(serializers.ModelSerializer):
     class Meta:
         model = FAQ
@@ -20,4 +10,21 @@ class FAQSerializer(serializers.ModelSerializer):
             "id",
             "question",
             "answer",
+        ]
+
+
+class FAQCategorySerializer(serializers.ModelSerializer):
+    questions = FAQSerializer(
+        source="faqs",
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+        model = FAQCategory
+        fields = [
+            "id",
+            "title",
+            "slug",
+            "questions",
         ]

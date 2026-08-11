@@ -20,53 +20,93 @@ class CustomerSatisfactionListAPIViewTests(APITestCase):
         )
 
     def test_customer_satisfaction_list_returns_only_active_items(self):
-        url = reverse("apps.home:customer-satisfaction-list")
+        url = reverse(
+            "apps.home:customer-satisfaction-list"
+        )
 
         response = self.client.get(url)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        results = response.data["results"]
 
         self.assertEqual(
-            response.data[0]["id"],
+            len(results),
+            1,
+        )
+
+        self.assertEqual(
+            results[0]["id"],
             self.active_satisfaction.id,
         )
 
     def test_customer_satisfaction_list_does_not_return_inactive_items(self):
-        url = reverse("apps.home:customer-satisfaction-list")
+        url = reverse(
+            "apps.home:customer-satisfaction-list"
+        )
 
         response = self.client.get(url)
 
+        results = response.data["results"]
+
         returned_ids = [
             item["id"]
-            for item in response.data
+            for item in results
         ]
 
         self.assertIn(
             self.active_satisfaction.id,
             returned_ids,
         )
+
         self.assertNotIn(
             self.inactive_satisfaction.id,
             returned_ids,
         )
 
     def test_customer_satisfaction_list_returns_image(self):
-        url = reverse("apps.home:customer-satisfaction-list")
+        url = reverse(
+            "apps.home:customer-satisfaction-list"
+        )
 
         response = self.client.get(url)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("image", response.data[0])
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
 
-    def test_customer_satisfaction_list_returns_empty_list_when_no_active_items(self):
+        results = response.data["results"]
+
+        self.assertIn(
+            "image",
+            results[0],
+        )
+
+    def test_customer_satisfaction_list_returns_empty_list_when_no_active_items(
+        self,
+    ):
         CustomerSatisfaction.objects.filter(
             is_active=True
-        ).update(is_active=False)
+        ).update(
+            is_active=False
+        )
 
-        url = reverse("apps.home:customer-satisfaction-list")
+        url = reverse(
+            "apps.home:customer-satisfaction-list"
+        )
 
         response = self.client.get(url)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, [])
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+
+        self.assertEqual(
+            response.data["results"],
+            [],
+        )
