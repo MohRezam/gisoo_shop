@@ -35,3 +35,6 @@ def home_about_image_path():
 
 def customer_satisfaction_path():
     return f"{BASE_MEDIA_LOCATION}/customer/satisfaction"
+
+def magazine_thumbnail_path():
+    return f"{BASE_MEDIA_LOCATION}/magazines/thumbnails"
