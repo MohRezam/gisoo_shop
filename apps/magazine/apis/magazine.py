@@ -1,6 +1,5 @@
 from django.db.models import Prefetch, Q
 
-from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -8,6 +7,11 @@ from rest_framework.response import Response
 from apps.magazine.models import (
     Magazine,
     MagazineCategory,
+)
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiTypes,
 )
 from apps.magazine.serializers import (
     MagazineArchiveResponseSerializer,
@@ -166,6 +170,32 @@ class MagazineViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
     @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="page",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="شماره صفحه",
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                description="تعداد مقالات در هر صفحه",
+            ),
+            OpenApiParameter(
+                name="category",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="فیلتر بر اساس slug دسته‌بندی",
+            ),
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="جستجو در مقالات",
+            ),
+        ],
         responses=MagazineAllResponseSerializer,
     )
     @action(
