@@ -13,7 +13,8 @@ LOCAL_APPS = [
     "apps.products",
     "apps.shipping",
     "apps.home",
-    "apps.magazine"
+    "apps.magazine",
+    "apps.marketing"
 ]
 
 THIRD_PARTY_APPS = [
