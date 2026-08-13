@@ -60,7 +60,7 @@ class RelatedProductSerializer(serializers.ModelSerializer):
         if not obj.brand:
             return None
 
-        return obj.brand.name
+        return obj.brand.title
 
     def get_price(self, obj):
         variants = getattr(
@@ -126,6 +126,21 @@ class MagazineListSerializer(serializers.ModelSerializer):
             "category",
             "thumbnail",
             "reading_time",
+            "published_at",
+        )
+
+class MagazineHomePageSerializer(serializers.ModelSerializer):
+    category = MagazineCategorySimpleSerializer(read_only=True)
+    class Meta:
+        model = Magazine
+        fields = (
+            "id",
+            "title",
+            "slug",
+            "category",
+            "thumbnail",
+            "reading_time",
+            "short_description",
             "published_at",
         )
 

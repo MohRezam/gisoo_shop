@@ -19,7 +19,7 @@ from apps.magazine.serializers import (
     MagazineDetailSerializer,
     MagazineFeaturedSerializer,
     MagazineHomeResponseSerializer,
-    MagazineListSerializer, MagazineAllResponseSerializer,
+    MagazineListSerializer, MagazineAllResponseSerializer, MagazineHomePageSerializer,
 )
 from apps.products.models import (
     Product,
@@ -111,7 +111,7 @@ class MagazineViewSet(viewsets.ReadOnlyModelViewSet):
         articles = queryset[:5]
 
         return Response({
-            "articles": MagazineListSerializer(
+            "articles": MagazineHomePageSerializer(
                 articles,
                 many=True,
                 context={
