@@ -220,7 +220,6 @@ class Attribute(BaseModel):
         default=True,
         verbose_name=_("is_variant"),
     )
-    ordering = ["-created_at"]
 
     class Meta:
         verbose_name = _("attribute")
@@ -274,19 +273,70 @@ class VariantAttribute(BaseModel):
     )
 
     def clean(self):
+        super().clean()
+
+        if not self.variant_id or not self.value_id:
+            return
+
         attribute = self.value.attribute
 
-        exists = VariantAttribute.objects.filter(
-            variant=self.variant,
-            value__attribute=attribute,
-        ).exclude(pk=self.pk)
+        exists = (
+            VariantAttribute.objects
+            .filter(
+                variant_id=self.variant_id,
+                value__attribute=attribute,
+            )
+            .exclude(pk=self.pk)
+            .exists()
+        )
 
-        if exists.exists():
+        if exists:
             raise ValidationError(
-                "This variant already has a value for this attribute."
+                _("This variant already has a value for this attribute.")
             )
 
     class Meta:
         verbose_name = _("variant_attribute")
         verbose_name_plural = _("variant_attributes")
         ordering = ["-created_at"]
+
+
+class ProductAttribute(BaseModel):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="product_attributes",
+        verbose_name=_("product"),
+    )
+
+    attribute = models.ForeignKey(
+        Attribute,
+        on_delete=models.CASCADE,
+        related_name="product_attributes",
+        verbose_name=_("attribute"),
+    )
+
+    value = models.CharField(
+        max_length=500,
+        verbose_name=_("value"),
+    )
+
+    display_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("display_order"),
+    )
+
+    class Meta:
+        verbose_name = _("product attribute")
+        verbose_name_plural = _("product attributes")
+        ordering = ["display_order", "-created_at"]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "attribute"],
+                name="unique_product_attribute",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.product.title} - {self.attribute.name}"

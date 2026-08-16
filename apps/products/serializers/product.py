@@ -5,7 +5,7 @@ from apps.products.models import (
     Product,
     ProductImage,
     ProductVariant,
-    VariantAttribute, BundleItem, Bundle
+    VariantAttribute, BundleItem, Bundle, ProductAttribute
 )
 
 
@@ -25,37 +25,32 @@ class AttributeValueSerializer(
         )
 
 
-class VariantAttributeSerializer(
-    serializers.ModelSerializer,
-):
+class VariantAttributeSerializer(serializers.ModelSerializer):
     attribute = serializers.CharField(
-        source="value.attribute.name",
+        source="value.attribute.name"
     )
 
     value = serializers.CharField(
-        source="value.value",
+        source="value.value"
     )
 
     class Meta:
         model = VariantAttribute
-
-        fields = (
+        fields = [
             "attribute",
             "value",
-        )
+        ]
 
 
-class ProductImageSerializer(
-    serializers.ModelSerializer,
-):
+class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
-
-        fields = (
+        fields = [
             "id",
             "image",
             "alt_text",
-        )
+            "is_primary",
+        ]
 
 
 class ProductVariantSerializer(
@@ -348,78 +343,312 @@ class SpecialOfferProductListSerializer(
 
 
 class BundleItemSerializer(serializers.ModelSerializer):
-    variant_id = serializers.IntegerField(
-        source="variant.id",
+    product_title = serializers.CharField(
+        source="variant.product.title",
         read_only=True,
     )
 
-    sku = serializers.CharField(
+    variant_sku = serializers.CharField(
         source="variant.sku",
         read_only=True,
     )
 
+    variant_price = serializers.SerializerMethodField()
+
     class Meta:
         model = BundleItem
-
         fields = [
-            "variant_id",
-            "sku",
+            "id",
+            "variant",
+            "variant_sku",
+            "product_title",
             "quantity",
+            "variant_price",
         ]
+
+    def get_variant_price(self, obj):
+        variant = obj.variant
+
+        return (
+            variant.discounted_price
+            if variant.discounted_price is not None
+            else variant.price
+        )
 
 
 class BundleSerializer(serializers.ModelSerializer):
-    items = BundleItemSerializer(
-        many=True,
-        read_only=True,
-    )
+    items = BundleItemSerializer(many=True)
+
+    original_price = serializers.SerializerMethodField()
+    discount_percent = serializers.SerializerMethodField()
 
     class Meta:
         model = Bundle
-
         fields = [
             "id",
             "title",
             "description",
             "price",
+            "original_price",
+            "discount_percent",
+            "display_order",
             "items",
         ]
 
+    def get_original_price(self, obj):
+        total = 0
 
-class ProductDetailSerializer(
-    serializers.ModelSerializer,
-):
-    brand = serializers.StringRelatedField()
+        for item in obj.items.all():
+            variant = item.variant
 
-    category = serializers.StringRelatedField()
+            price = (
+                variant.discounted_price
+                if variant.discounted_price is not None
+                else variant.price
+            )
 
-    images = ProductImageSerializer(
-        many=True,
-        read_only=True,
+            total += price * item.quantity
+
+        return total
+
+    def get_discount_percent(self, obj):
+        original_price = self.get_original_price(obj)
+
+        if original_price <= 0:
+            return 0
+
+        if obj.price >= original_price:
+            return 0
+
+        return round(
+            ((original_price - obj.price) / original_price) * 100
+        )
+
+class RelatedProductSerializer(serializers.ModelSerializer):
+    thumbnail = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = [
+            "id",
+            "title",
+            "slug",
+            "thumbnail",
+            "price",
+        ]
+
+    def get_thumbnail(self, obj):
+        image = next(
+            (
+                image
+                for image in obj.images.all()
+                if image.is_primary
+            ),
+            None,
+        )
+
+        if image is None:
+            image = obj.images.first()
+
+        if image is None:
+            return None
+
+        request = self.context.get("request")
+
+        if request:
+            return request.build_absolute_uri(
+                image.image.url
+            )
+
+        return image.image.url
+
+    def get_price(self, obj):
+        variant = next(
+            (
+                variant
+                for variant in obj.variants.all()
+                if variant.is_active
+            ),
+            None,
+        )
+
+        if variant is None:
+            return None
+
+        return (
+            variant.discounted_price
+            if variant.discounted_price is not None
+            else variant.price
+        )
+
+
+
+class ProductVariantDetailSerializer(serializers.ModelSerializer):
+    final_price = serializers.SerializerMethodField()
+    discount_percent = serializers.SerializerMethodField()
+    is_in_stock = serializers.SerializerMethodField()
+    attributes = VariantAttributeSerializer(many=True)
+
+    class Meta:
+        model = ProductVariant
+        fields = [
+            "id",
+            "sku",
+            "price",
+            "discounted_price",
+            "final_price",
+            "discount_percent",
+            "stock",
+            "is_in_stock",
+            "weight",
+            "expiration_date",
+            "attributes",
+        ]
+
+    def get_final_price(self, obj):
+        return (
+            obj.discounted_price
+            if obj.discounted_price is not None
+            else obj.price
+        )
+
+    def get_discount_percent(self, obj):
+        if not obj.discounted_price or obj.price <= 0:
+            return 0
+
+        return round(
+            ((obj.price - obj.discounted_price) / obj.price) * 100
+        )
+
+    def get_is_in_stock(self, obj):
+        return obj.stock > 0
+
+
+class ProductAttributeSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(
+        source="attribute.name"
     )
 
-    variants = ProductVariantSerializer(
-        many=True,
-        read_only=True,
+    class Meta:
+        model = ProductAttribute
+        fields = [
+            "name",
+            "value",
+        ]
+
+
+
+class ProductDetailSerializer(serializers.ModelSerializer):
+    images = ProductImageSerializer(many=True)
+
+    variants = ProductVariantDetailSerializer(
+        many=True
+    )
+
+    product_attributes = ProductAttributeSerializer(
+        many=True
     )
 
     bundles = BundleSerializer(
-        many=True,
-        read_only=True,
+        many=True
     )
+
+    related_products = serializers.SerializerMethodField()
+
+    min_price = serializers.SerializerMethodField()
+    max_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
 
-        fields = (
+        fields = [
             "id",
             "title",
             "slug",
             "short_description",
             "description",
-            "brand",
-            "category",
+            "is_available",
+
             "images",
+
+            "min_price",
+            "max_price",
+
             "variants",
-            "bundles"
+
+            "product_attributes",
+
+            "bundles",
+
+            "related_products",
+        ]
+
+    def get_min_price(self, obj):
+        variants = [
+            variant
+            for variant in obj.variants.all()
+            if variant.is_active
+        ]
+
+        if not variants:
+            return None
+
+        prices = [
+            (
+                variant.discounted_price
+                if variant.discounted_price is not None
+                else variant.price
+            )
+            for variant in variants
+        ]
+
+        return min(prices)
+
+    def get_max_price(self, obj):
+        variants = [
+            variant
+            for variant in obj.variants.all()
+            if variant.is_active
+        ]
+
+        if not variants:
+            return None
+
+        prices = [
+            (
+                variant.discounted_price
+                if variant.discounted_price is not None
+                else variant.price
+            )
+            for variant in variants
+        ]
+
+        return max(prices)
+
+    def get_related_products(self, obj):
+        products = (
+            Product.objects
+            .filter(
+                category=obj.category,
+                is_available=True,
+            )
+            .exclude(
+                pk=obj.pk,
+            )
+            .select_related(
+                "brand",
+                "category",
+            )
+            .prefetch_related(
+                "images",
+                "variants",
+            )
+            .order_by("-created_at")[:4]
         )
+
+        return RelatedProductSerializer(
+            products,
+            many=True,
+            context=self.context,
+        ).data

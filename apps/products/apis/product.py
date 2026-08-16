@@ -141,14 +141,30 @@ class ProductDetailAPIView(RetrieveAPIView):
 
     queryset = (
         Product.objects
-        .filter(is_available=True)
+        .filter(
+            is_available=True,
+        )
         .select_related(
             "brand",
             "category",
         )
         .prefetch_related(
             "images",
-            "variants__attributes__value__attribute",
+
+            Prefetch(
+                "variants",
+                queryset=(
+                    ProductVariant.objects
+                    .filter(is_active=True)
+                    .prefetch_related(
+                        "attributes__value__attribute",
+                    )
+                    .order_by("created_at")
+                ),
+            ),
+
+            "product_attributes__attribute",
+
             Prefetch(
                 "bundles",
                 queryset=(
@@ -156,9 +172,11 @@ class ProductDetailAPIView(RetrieveAPIView):
                     .filter(is_active=True)
                     .prefetch_related(
                         "items__variant__product",
+                        "items__variant__attributes__value__attribute",
                     )
                     .order_by(
                         "display_order",
+                        "created_at",
                     )
                 ),
             ),
