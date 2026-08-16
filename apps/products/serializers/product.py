@@ -424,6 +424,7 @@ class BundleSerializer(serializers.ModelSerializer):
             ((original_price - obj.price) / original_price) * 100
         )
 
+
 class RelatedProductSerializer(serializers.ModelSerializer):
     thumbnail = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
@@ -483,7 +484,6 @@ class RelatedProductSerializer(serializers.ModelSerializer):
         )
 
 
-
 class ProductVariantDetailSerializer(serializers.ModelSerializer):
     final_price = serializers.SerializerMethodField()
     discount_percent = serializers.SerializerMethodField()
@@ -538,7 +538,6 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
         ]
 
 
-
 class ProductDetailSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True)
 
@@ -558,6 +557,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     min_price = serializers.SerializerMethodField()
     max_price = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -583,6 +583,28 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
             "related_products",
         ]
+
+    def get_is_favorited(self, obj):
+        request = self.context.get("request")
+
+        if not request:
+            return False
+
+        if request.user.is_authenticated:
+            return obj.wishlist_items.filter(
+                wishlist__user=request.user
+            ).exists()
+
+        token = request.COOKIES.get(
+            "wishlist_token"
+        )
+
+        if not token:
+            return False
+
+        return obj.wishlist_items.filter(
+            wishlist__guest_token=token
+        ).exists()
 
     def get_min_price(self, obj):
         variants = [

@@ -5,6 +5,7 @@ from apps.products.models import (
     Attribute,
     AttributeValue,
     Product,
+    ProductAttribute,
     ProductImage,
     ProductVariant,
     VariantAttribute,
@@ -14,6 +15,11 @@ from apps.shared.admin import BaseModelAdmin
 
 class ProductImageInline(admin.TabularInline):
     model = ProductImage
+    extra = 1
+
+
+class ProductAttributeInline(admin.TabularInline):
+    model = ProductAttribute
     extra = 1
 
 
@@ -61,6 +67,7 @@ class ProductAdmin(BaseModelAdmin):
 
     inlines = [
         ProductImageInline,
+        ProductAttributeInline,
         ProductVariantInline,
         BundleInline,
     ]
@@ -72,6 +79,7 @@ class ProductVariantAdmin(BaseModelAdmin):
         "sku",
         "product",
         "price",
+        "discounted_price",
         "stock",
         "weight",
         "expiration_date",
@@ -82,9 +90,11 @@ class ProductVariantAdmin(BaseModelAdmin):
         "is_active",
         "expiration_date",
     )
+
     list_editable = (
         "weight",
     )
+
     search_fields = (
         "sku",
         "product__title",
@@ -117,11 +127,47 @@ class ProductImageAdmin(BaseModelAdmin):
     )
 
 
+@admin.register(ProductAttribute)
+class ProductAttributeAdmin(BaseModelAdmin):
+    list_display = (
+        "product",
+        "attribute",
+        "value",
+        "display_order",
+        "created_at",
+    )
+
+    list_filter = (
+        "attribute",
+    )
+
+    search_fields = (
+        "product__title",
+        "attribute__name",
+        "value",
+    )
+
+    list_select_related = (
+        "product",
+        "attribute",
+    )
+
+    ordering = (
+        "product",
+        "display_order",
+    )
+
+
 @admin.register(Attribute)
 class AttributeAdmin(BaseModelAdmin):
     list_display = (
         "name",
+        "is_variant",
         "created_at",
+    )
+
+    list_filter = (
+        "is_variant",
     )
 
     search_fields = (
