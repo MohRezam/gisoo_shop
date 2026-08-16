@@ -582,6 +582,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "bundles",
 
             "related_products",
+            "is_favorited"
         ]
 
     def get_is_favorited(self, obj):
