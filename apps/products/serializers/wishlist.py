@@ -80,4 +80,50 @@ class WishlistItemSerializer(serializers.ModelSerializer):
 
 class WishlistSerializer(serializers.Serializer):
     count = serializers.IntegerField()
-    items = WishlistItemSerializer(many=True)
+    items = WishlistItemSerializer(
+        many=True
+    )
+
+
+class WishlistToggleSerializer(serializers.Serializer):
+    product = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.filter(
+            is_available=True,
+        ),
+        help_text=(
+            "ID of the product to add to or "
+            "remove from the wishlist."
+        ),
+    )
+
+
+class WishlistToggleResponseSerializer(serializers.Serializer):
+    is_favorited = serializers.BooleanField(
+        help_text=(
+            "Whether the product is currently "
+            "in the wishlist."
+        ),
+    )
+
+    action = serializers.ChoiceField(
+        choices=[
+            ("added", "Added"),
+            ("removed", "Removed"),
+        ],
+        help_text=(
+            "Action performed on the wishlist."
+        ),
+    )
+
+class WishlistDeleteResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField(
+        help_text="Confirmation message.",
+    )
+
+    product_id = serializers.IntegerField(
+        help_text="ID of the removed product.",
+    )
+
+    is_favorited = serializers.BooleanField(
+        help_text="Always false after successful removal.",
+    )
