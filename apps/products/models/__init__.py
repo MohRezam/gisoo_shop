@@ -3,3 +3,4 @@ from .hair import *
 from .brand import *
 from .bundle import *
 from .category import *
+from .wishlist import *

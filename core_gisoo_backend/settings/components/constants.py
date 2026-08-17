@@ -42,3 +42,7 @@ SINCH_BODY_MESSAGE = config("SINCH_BODY_MESSAGE", default="")
 
 MANUAL_OTP_METHOD = "manual"
 SERVICE_OTP_METHOD = "service"
+
+
+WISHLIST_COOKIE_NAME = "wishlist_token"
+WISHLIST_COOKIE_MAX_AGE = 60 * 60 * 24 * 365

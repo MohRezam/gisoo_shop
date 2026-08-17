@@ -4,6 +4,7 @@ from apps.products.apis import (
     BrandListAPIView,
     CategoryListAPIView, ProductListAPIView, ProductDetailAPIView, HairProblemAPIView, SpecialOfferProductListAPIView,
 )
+from apps.products.apis.wishlist import WishlistListAPIView, WishlistToggleAPIView, WishlistItemDeleteAPIView
 
 app_name = "apps.products"
 
@@ -38,5 +39,22 @@ urlpatterns = [
         "v1/special/offers/",
         SpecialOfferProductListAPIView.as_view(),
         name="special-offers",
+    ),
+    path(
+        "wishlist/",
+        WishlistListAPIView.as_view(),
+        name="wishlist-list",
+    ),
+
+    path(
+        "wishlist/toggle/",
+        WishlistToggleAPIView.as_view(),
+        name="wishlist-toggle",
+    ),
+
+    path(
+        "wishlist/items/<int:product_id>/",
+        WishlistItemDeleteAPIView.as_view(),
+        name="wishlist-item-delete",
     ),
 ]
