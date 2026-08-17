@@ -49,7 +49,7 @@ class WishlistBaseAPIView(APIView):
             value=str(wishlist.guest_token),
             max_age=WISHLIST_COOKIE_MAX_AGE,
             httponly=True,
-            secure=True,
+            secure=False,
             samesite="Lax",
         )
 
