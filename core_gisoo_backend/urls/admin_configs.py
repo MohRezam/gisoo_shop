@@ -6,7 +6,7 @@ from django.conf import settings
 admin.site.site_title = _("core_gisoo_backend")
 admin.site.index_title = _("core_gisoo_backend Platform")
 admin.site.site_header = _("core_gisoo_backend")
-admin.site.site_url = "https://myregal.ir"
+admin.site.site_url = "https://gisoo_center.ir"
 
 admin_urlpatterns = [
     path("admin/", admin.site.urls, name="admin"),
