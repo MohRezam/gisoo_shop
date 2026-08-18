@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils.translation import gettext as _
 
 from apps.products.services.wishlist import (
     WishlistService,
@@ -18,6 +19,7 @@ from apps.users.serializers.login import (
     RequestOTPSerializer,
     VerifyOTPSerializer,
 )
+from core_gisoo_backend.settings.components.constants import WISHLIST_COOKIE_NAME
 
 from utils.general.throttles import (
     OTPThrottle,
@@ -180,7 +182,7 @@ class VerifyOTPAPIView(APIView):
             f"otp_{phone_number}"
         )
 
-        return Response(
+        response = Response(
             {
                 "access_token": access_token,
                 "refresh_token": str(refresh),
@@ -188,3 +190,7 @@ class VerifyOTPAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+        response.delete_cookie(WISHLIST_COOKIE_NAME)
+
+        return response
