@@ -12,7 +12,6 @@ urlpatterns = [
     path("v1/otp/request/resend/", ResendOTPAPIView.as_view(), name="otp-resend"),
     path("v1/otp/verify/", VerifyOTPAPIView.as_view(), name="otp-verify"),
     path("v1/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
-    path("v1/token/", TokenObtainPairView.as_view(), name="token-obtain-pair"),
     # logout
     path("v1/logout/", BlacklistRefreshAPIView.as_view(), name="user-logout"),
 ]
