@@ -86,8 +86,8 @@ class CalculateCartTests(TestCase):
         )
 
         self.assertEqual(
-            result["total_weight"],
-            self.variant.weight * 2,
+            result["total_volume"],
+            self.variant.volume * 2,
         )
 
         self.assertEqual(

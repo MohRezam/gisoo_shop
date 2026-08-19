@@ -14,7 +14,7 @@ def process_bundle(
     variants,
 ):
     products_total = 0
-    total_weight = 0
+    total_volume = 0
 
     for bundle_item in cart_item.bundle.items.select_related(
         "variant__product",
@@ -58,8 +58,8 @@ def process_bundle(
 
         products_total += item_total
 
-        total_weight += (
-            variant.weight *
+        total_volume += (
+            variant.volume *
             quantity
         )
 
@@ -72,5 +72,5 @@ def process_bundle(
 
     return {
         "products_total": products_total,
-        "total_weight": total_weight,
+        "total_volume": total_volume,
     }

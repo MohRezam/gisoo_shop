@@ -381,9 +381,12 @@ class BundleSerializer(serializers.ModelSerializer):
 
     original_price = serializers.SerializerMethodField()
     discount_percent = serializers.SerializerMethodField()
+    is_available = serializers.SerializerMethodField()
+    max_quantity = serializers.SerializerMethodField()
 
     class Meta:
         model = Bundle
+
         fields = [
             "id",
             "title",
@@ -392,24 +395,16 @@ class BundleSerializer(serializers.ModelSerializer):
             "original_price",
             "discount_percent",
             "display_order",
+            "is_available",
+            "max_quantity",
             "items",
         ]
 
     def get_original_price(self, obj):
-        total = 0
-
-        for item in obj.items.all():
-            variant = item.variant
-
-            price = (
-                variant.discounted_price
-                if variant.discounted_price is not None
-                else variant.price
-            )
-
-            total += price * item.quantity
-
-        return total
+        return sum(
+            item.variant.price * item.quantity
+            for item in obj.items.all()
+        )
 
     def get_discount_percent(self, obj):
         original_price = self.get_original_price(obj)
@@ -424,6 +419,30 @@ class BundleSerializer(serializers.ModelSerializer):
             ((original_price - obj.price) / original_price) * 100
         )
 
+    def get_is_available(self, obj):
+        return self.get_max_quantity(obj) > 0
+
+    def get_max_quantity(self, obj):
+        quantities = []
+
+        for item in obj.items.all():
+            variant = item.variant
+
+            if not variant.is_active:
+                return 0
+
+            if item.quantity <= 0:
+                return 0
+
+            quantities.append(
+                variant.stock // item.quantity
+            )
+
+        if not quantities:
+            return 0
+
+        return min(quantities)
+
 
 class RelatedProductSerializer(serializers.ModelSerializer):
     thumbnail = serializers.SerializerMethodField()
@@ -435,6 +454,7 @@ class RelatedProductSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "slug",
+            "brand",
             "thumbnail",
             "price",
         ]
@@ -469,7 +489,7 @@ class RelatedProductSerializer(serializers.ModelSerializer):
             (
                 variant
                 for variant in obj.variants.all()
-                if variant.is_active
+                if variant.is_active and variant.stock > 0
             ),
             None,
         )
@@ -485,7 +505,6 @@ class RelatedProductSerializer(serializers.ModelSerializer):
 
 
 class ProductVariantDetailSerializer(serializers.ModelSerializer):
-    final_price = serializers.SerializerMethodField()
     discount_percent = serializers.SerializerMethodField()
     is_in_stock = serializers.SerializerMethodField()
     attributes = VariantAttributeSerializer(many=True)
@@ -497,21 +516,13 @@ class ProductVariantDetailSerializer(serializers.ModelSerializer):
             "sku",
             "price",
             "discounted_price",
-            "final_price",
             "discount_percent",
             "stock",
             "is_in_stock",
-            "weight",
+            "volume",
             "expiration_date",
             "attributes",
         ]
-
-    def get_final_price(self, obj):
-        return (
-            obj.discounted_price
-            if obj.discounted_price is not None
-            else obj.price
-        )
 
     def get_discount_percent(self, obj):
         if not obj.discounted_price or obj.price <= 0:
@@ -539,24 +550,32 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
+    brand = serializers.StringRelatedField()
+    category = serializers.StringRelatedField()
+
     images = ProductImageSerializer(many=True)
 
     variants = ProductVariantDetailSerializer(
-        many=True
+        many=True,
+        read_only=True,
     )
 
     product_attributes = ProductAttributeSerializer(
-        many=True
+        many=True,
+        read_only=True,
     )
 
     bundles = BundleSerializer(
-        many=True
+        many=True,
+        read_only=True,
     )
 
     related_products = serializers.SerializerMethodField()
 
     min_price = serializers.SerializerMethodField()
     max_price = serializers.SerializerMethodField()
+    has_multiple_variants = serializers.SerializerMethodField()
+
     is_favorited = serializers.SerializerMethodField()
 
     class Meta:
@@ -566,6 +585,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "slug",
+            "brand",
+            "category",
             "short_description",
             "description",
             "is_available",
@@ -582,8 +603,14 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "bundles",
 
             "related_products",
-            "is_favorited"
+
+            "has_multiple_variants",
+
+            "is_favorited",
         ]
+
+    def get_has_multiple_variants(self, obj):
+        return len(obj.variants.all()) > 1
 
     def get_is_favorited(self, obj):
         request = self.context.get("request")
@@ -650,6 +677,22 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         return max(prices)
 
     def get_related_products(self, obj):
+        manual_products = getattr(
+            obj,
+            "manual_related_products",
+            None,
+        )
+
+        # Admin has manually selected related products.
+        if manual_products:
+            return RelatedProductSerializer(
+                manual_products[:4],
+                many=True,
+                context=self.context,
+            ).data
+
+        # Fallback: automatically select products
+        # from the same category.
         products = (
             Product.objects
             .filter(
@@ -658,10 +701,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             )
             .exclude(
                 pk=obj.pk,
-            )
-            .select_related(
-                "brand",
-                "category",
             )
             .prefetch_related(
                 "images",
