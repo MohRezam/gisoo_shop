@@ -26,6 +26,15 @@ class Product(BaseModel):
         verbose_name=_("brand"),
     )
 
+    related_products = models.ManyToManyField(
+        "self",
+        through="ProductRelatedProduct",
+        symmetrical=False,
+        related_name="related_from_products",
+        blank=True,
+        verbose_name=_("related products"),
+    )
+
     title = models.CharField(
         max_length=255,
         verbose_name=_("title"),
@@ -71,6 +80,58 @@ class Product(BaseModel):
 
     def __str__(self):
         return self.title
+
+
+class ProductRelatedProduct(BaseModel):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="related_product_relations",
+        verbose_name=_("product"),
+    )
+
+    related_product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="related_to_relations",
+        verbose_name=_("related product"),
+    )
+
+    display_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("display order"),
+    )
+
+    class Meta:
+        verbose_name = _("product related product")
+        verbose_name_plural = _("product related products")
+
+        ordering = [
+            "display_order",
+            "-created_at",
+        ]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "product",
+                    "related_product",
+                ],
+                name="unique_product_related_product",
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(
+                    product=models.F("related_product")
+                ),
+                name="product_cannot_be_related_to_itself",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.product.title} → "
+            f"{self.related_product.title}"
+        )
 
 
 class ProductImage(BaseModel):
@@ -169,16 +230,19 @@ class ProductVariant(BaseModel):
         verbose_name=_("stock"),
     )
 
-    weight = models.PositiveIntegerField(
-        verbose_name=_("Weight (g)"),
+    volume = models.PositiveIntegerField(
+        verbose_name=_("Volume (ml)"),
         default=0,
-        help_text=_("Weight in grams."),
+        help_text=_("Volume in milliliter."),
     )
 
     expiration_date = models.DateField(
         blank=True,
         null=True,
         verbose_name=_("expiration_date"),
+    )
+    display_order = models.PositiveIntegerField(
+        default=0,
     )
 
     is_active = models.BooleanField(

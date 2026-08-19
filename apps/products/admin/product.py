@@ -8,7 +8,7 @@ from apps.products.models import (
     ProductAttribute,
     ProductImage,
     ProductVariant,
-    VariantAttribute,
+    VariantAttribute, ProductRelatedProduct,
 )
 from apps.shared.admin import BaseModelAdmin
 
@@ -33,6 +33,26 @@ class VariantAttributeInline(admin.TabularInline):
     extra = 1
 
 
+class ProductRelatedProductInline(admin.TabularInline):
+    model = ProductRelatedProduct
+    fk_name = "product"
+
+    extra = 1
+
+    autocomplete_fields = [
+        "related_product",
+    ]
+
+    ordering = [
+        "display_order",
+    ]
+
+    fields = [
+        "related_product",
+        "display_order",
+    ]
+
+
 @admin.register(Product)
 class ProductAdmin(BaseModelAdmin):
     list_display = (
@@ -53,7 +73,6 @@ class ProductAdmin(BaseModelAdmin):
     search_fields = (
         "title",
         "slug",
-        "description",
     )
 
     list_select_related = (
@@ -65,11 +84,17 @@ class ProductAdmin(BaseModelAdmin):
         "slug": ("title",)
     }
 
+    autocomplete_fields = [
+        "category",
+        "brand",
+    ]
+
     inlines = [
         ProductImageInline,
         ProductAttributeInline,
         ProductVariantInline,
         BundleInline,
+        ProductRelatedProductInline
     ]
 
 
@@ -81,7 +106,7 @@ class ProductVariantAdmin(BaseModelAdmin):
         "price",
         "discounted_price",
         "stock",
-        "weight",
+        "volume",
         "expiration_date",
         "is_active",
     )
@@ -92,7 +117,7 @@ class ProductVariantAdmin(BaseModelAdmin):
     )
 
     list_editable = (
-        "weight",
+        "volume",
     )
 
     search_fields = (

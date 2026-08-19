@@ -21,13 +21,13 @@ def calculate_cart(
             "order_items": list[OrderItem],
             "order_bundles": list[OrderBundle],
             "products_total": int,
-            "total_weight": int,
+            "total_volume": int,
             "variants": list[(variant, quantity)],
         }
     """
 
     products_total = 0
-    total_weight = 0
+    total_volume = 0
 
     order_items = []
     order_bundles = []
@@ -87,8 +87,8 @@ def calculate_cart(
 
             products_total += item_total
 
-            total_weight += (
-                variant.weight *
+            total_volume += (
+                variant.volume *
                 cart_item.quantity
             )
 
@@ -150,8 +150,8 @@ def calculate_cart(
                     }
                 )
 
-            total_weight += (
-                variant.weight *
+            total_volume += (
+                variant.volume *
                 quantity
             )
 
@@ -186,6 +186,6 @@ def calculate_cart(
         "order_items": order_items,
         "order_bundles": order_bundles,
         "products_total": products_total,
-        "total_weight": total_weight,
+        "total_volume": total_volume,
         "variants": variants,
     }

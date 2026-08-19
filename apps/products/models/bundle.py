@@ -50,6 +50,8 @@ class Bundle(BaseModel):
         return f"{self.product.title} - {self.title}"
 
     def clean(self):
+        super().clean()
+
         if self.price <= 0:
             raise ValidationError(
                 _("Bundle price must be greater than zero.")
@@ -101,10 +103,15 @@ class BundleItem(BaseModel):
         )
 
     def clean(self):
+        super().clean()
+
         if self.quantity < 1:
             raise ValidationError(
                 _("Quantity must be greater than zero.")
             )
+
+        if not self.variant_id or not self.bundle_id:
+            return
 
         if self.variant.product_id != self.bundle.product_id:
             raise ValidationError(
