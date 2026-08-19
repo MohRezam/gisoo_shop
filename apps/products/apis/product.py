@@ -18,7 +18,7 @@ from apps.products.filters import ProductFilter
 from apps.products.models import (
     Product,
     ProductImage,
-    ProductVariant, Bundle,
+    ProductVariant, Bundle, ProductAttribute,
 )
 from apps.products.serializers import (
     ProductDetailSerializer,
@@ -149,29 +149,51 @@ class ProductDetailAPIView(RetrieveAPIView):
             "category",
         )
         .prefetch_related(
-            "images",
+
+            Prefetch(
+                "images",
+                queryset=ProductImage.objects.order_by(
+                    "-is_primary",
+                    "created_at",
+                ),
+            ),
 
             Prefetch(
                 "variants",
                 queryset=(
                     ProductVariant.objects
-                    .filter(is_active=True)
+                    .filter(
+                        is_active=True,
+                    )
                     .prefetch_related(
                         "attributes__value__attribute",
                     )
-                    .order_by("created_at")
+                    .order_by(
+                        "created_at",
+                    )
                 ),
             ),
 
-            "product_attributes__attribute",
+            Prefetch(
+                "product_attributes",
+                queryset=(
+                    ProductAttribute.objects
+                    .select_related("attribute")
+                    .order_by(
+                        "display_order",
+                        "created_at",
+                    )
+                ),
+            ),
 
             Prefetch(
                 "bundles",
                 queryset=(
                     Bundle.objects
-                    .filter(is_active=True)
+                    .filter(
+                        is_active=True,
+                    )
                     .prefetch_related(
-                        "items__variant__product",
                         "items__variant__attributes__value__attribute",
                     )
                     .order_by(
@@ -179,6 +201,26 @@ class ProductDetailAPIView(RetrieveAPIView):
                         "created_at",
                     )
                 ),
+            ),
+
+            # Manual related products selected by admin
+            Prefetch(
+                "related_products",
+                queryset=(
+                    Product.objects
+                    .filter(
+                        is_available=True,
+                    )
+                    .prefetch_related(
+                        "images",
+                        "variants",
+                    )
+                    .order_by(
+                        "related_product_relations__display_order",
+                        "-created_at",
+                    )
+                ),
+                to_attr="manual_related_products",
             ),
         )
     )
