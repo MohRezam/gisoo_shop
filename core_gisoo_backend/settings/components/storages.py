@@ -6,7 +6,7 @@ from .constants import PROJECT_NAME
 # Static
 STATIC_URL = os.getenv("STATIC_URL", "/static/")
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "templates/admin/static")]
+STATICFILES_DIRS = []
 if not DEBUG or os.getenv("STAGING", False):
     STATIC_ROOT = "/usr/src/app/static"
     STATICFILES_STORAGE = f"{PROJECT_NAME}.storage_backends.StaticStorage"
