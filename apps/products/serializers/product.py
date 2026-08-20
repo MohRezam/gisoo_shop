@@ -463,10 +463,20 @@ class RelatedProductSerializer(serializers.ModelSerializer):
 class ProductVariantDetailSerializer(serializers.ModelSerializer):
     discount_percent = serializers.SerializerMethodField()
     is_in_stock = serializers.SerializerMethodField()
-    attributes = VariantAttributeSerializer(many=True)
+
+    attributes = VariantAttributeSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    bundles = BundleSerializer(
+        many=True,
+        read_only=True,
+    )
 
     class Meta:
         model = ProductVariant
+
         fields = [
             "id",
             "sku",
@@ -478,6 +488,7 @@ class ProductVariantDetailSerializer(serializers.ModelSerializer):
             "volume",
             "expiration_date",
             "attributes",
+            "bundles",
         ]
 
     def get_discount_percent(self, obj):
@@ -521,10 +532,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
-    bundles = BundleSerializer(
-        many=True,
-        read_only=True,
-    )
 
     related_products = serializers.SerializerMethodField()
 
@@ -555,8 +562,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "variants",
 
             "product_attributes",
-
-            "bundles",
 
             "related_products",
 

@@ -167,6 +167,20 @@ class ProductDetailAPIView(RetrieveAPIView):
                     )
                     .prefetch_related(
                         "attributes__value__attribute",
+
+                        Prefetch(
+                            "bundles",
+                            queryset=(
+                                Bundle.objects
+                                .filter(
+                                    is_active=True,
+                                )
+                                .order_by(
+                                    "display_order",
+                                    "created_at",
+                                )
+                            ),
+                        ),
                     )
                     .order_by(
                         "created_at",
@@ -186,24 +200,6 @@ class ProductDetailAPIView(RetrieveAPIView):
                 ),
             ),
 
-            Prefetch(
-                "bundles",
-                queryset=(
-                    Bundle.objects
-                    .filter(
-                        is_active=True,
-                    )
-                    .prefetch_related(
-                        "items__variant__attributes__value__attribute",
-                    )
-                    .order_by(
-                        "display_order",
-                        "created_at",
-                    )
-                ),
-            ),
-
-            # Manual related products selected by admin
             Prefetch(
                 "related_products",
                 queryset=(
