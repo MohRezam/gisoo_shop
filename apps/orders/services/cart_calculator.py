@@ -1,10 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
-from apps.orders.models import (
-    OrderBundle,
-    OrderItem,
-)
+from apps.orders.models import OrderBundle, OrderItem
 from apps.products.models import ProductVariant
 
 
@@ -33,15 +30,9 @@ def calculate_cart(
     order_bundles = []
     variants = []
 
-    cart_items = (
-        cart.items
-        .select_related(
-            "variant__product",
-            "bundle",
-        )
-        .prefetch_related(
-            "bundle__items__variant__product",
-        )
+    cart_items = cart.items.select_related(
+        "variant__product",
+        "bundle",
     )
 
     for cart_item in cart_items:
@@ -107,80 +98,23 @@ def calculate_cart(
 
         bundle = cart_item.bundle
 
+        bundle_total = (
+            bundle.price *
+            cart_item.quantity
+        )
+
         order_bundle = OrderBundle(
             order=order,
             bundle=bundle,
             title=bundle.title,
             unit_price=bundle.price,
             quantity=cart_item.quantity,
-            total_price=(
-                bundle.price *
-                cart_item.quantity
-            ),
+            total_price=bundle_total,
         )
 
-        order_bundles.append(
-            order_bundle
-        )
+        order_bundles.append(order_bundle)
 
-        products_total += (
-            bundle.price *
-            cart_item.quantity
-        )
-
-        for bundle_item in bundle.items.select_related(
-            "variant__product",
-        ):
-
-            variant = ProductVariant.objects.select_for_update().get(
-                pk=bundle_item.variant_id,
-            )
-
-            quantity = (
-                bundle_item.quantity *
-                cart_item.quantity
-            )
-
-            if quantity > variant.stock:
-                raise ValidationError(
-                    _(
-                        "Not enough stock for '%(product)s'."
-                    ) % {
-                        "product": variant.product.title,
-                    }
-                )
-
-            total_volume += (
-                variant.volume *
-                quantity
-            )
-
-            variants.append(
-                (
-                    variant,
-                    quantity,
-                )
-            )
-
-            order_items.append(
-                OrderItem(
-                    order=order,
-                    order_bundle=order_bundle,
-                    variant=variant,
-                    product_title=variant.product.title,
-                    variant_sku=variant.sku,
-                    quantity=quantity,
-                    unit_price=variant.price,
-                    total_price=(
-                        variant.price *
-                        quantity
-                    ),
-                    province=order.province,
-                    city=order.city,
-                    postal_code=order.postal_code,
-                    full_address=order.address,
-                )
-            )
+        products_total += bundle_total
 
     return {
         "order_items": order_items,

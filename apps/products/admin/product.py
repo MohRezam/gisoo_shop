@@ -93,7 +93,6 @@ class ProductAdmin(BaseModelAdmin):
         ProductImageInline,
         ProductAttributeInline,
         ProductVariantInline,
-        BundleInline,
         ProductRelatedProductInline
     ]
 
@@ -131,6 +130,7 @@ class ProductVariantAdmin(BaseModelAdmin):
 
     inlines = [
         VariantAttributeInline,
+        BundleInline,
     ]
 
 

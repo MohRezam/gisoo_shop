@@ -7,11 +7,11 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Bundle(BaseModel):
-    product = models.ForeignKey(
-        Product,
+    variant = models.ForeignKey(
+        ProductVariant,
         on_delete=models.CASCADE,
         related_name="bundles",
-        verbose_name=_("product"),
+        verbose_name=_("variant"),
     )
 
     title = models.CharField(
@@ -22,6 +22,11 @@ class Bundle(BaseModel):
     description = models.TextField(
         blank=True,
         verbose_name=_("description"),
+    )
+
+    quantity = models.PositiveIntegerField(
+        default=1,
+        verbose_name=_("quantity"),
     )
 
     price = models.PositiveBigIntegerField(
@@ -47,80 +52,19 @@ class Bundle(BaseModel):
         ]
 
     def __str__(self):
-        return f"{self.product.title} - {self.title}"
-
-    def clean(self):
-        super().clean()
-
-        if self.price <= 0:
-            raise ValidationError(
-                _("Bundle price must be greater than zero.")
-            )
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
-
-
-class BundleItem(BaseModel):
-    bundle = models.ForeignKey(
-        Bundle,
-        on_delete=models.CASCADE,
-        related_name="items",
-        verbose_name=_("bundle"),
-    )
-
-    variant = models.ForeignKey(
-        ProductVariant,
-        on_delete=models.PROTECT,
-        related_name="bundle_items",
-        verbose_name=_("variant"),
-    )
-
-    quantity = models.PositiveIntegerField(
-        default=1,
-        verbose_name=_("quantity"),
-    )
-
-    class Meta:
-        verbose_name = _("bundle item")
-        verbose_name_plural = _("bundle items")
-
-        constraints = [
-            models.UniqueConstraint(
-                fields=[
-                    "bundle",
-                    "variant",
-                ],
-                name="unique_bundle_variant",
-            )
-        ]
-
-    def __str__(self):
-        return (
-            f"{self.bundle.title} - "
-            f"{self.variant.sku} × {self.quantity}"
-        )
+        return f"{self.variant.product.title} - {self.title}"
 
     def clean(self):
         super().clean()
 
         if self.quantity < 1:
             raise ValidationError(
-                _("Quantity must be greater than zero.")
+                _("Bundle quantity must be greater than zero.")
             )
 
-        if not self.variant_id or not self.bundle_id:
-            return
-
-        if self.variant.product_id != self.bundle.product_id:
+        if self.price <= 0:
             raise ValidationError(
-                _("Variant must belong to the selected product.")
-            )
-
-        if not self.variant.is_active:
-            raise ValidationError(
-                _("Variant must be active.")
+                _("Bundle price must be greater than zero.")
             )
 
     def save(self, *args, **kwargs):

@@ -5,7 +5,7 @@ from apps.products.models import (
     Product,
     ProductImage,
     ProductVariant,
-    VariantAttribute, BundleItem, Bundle, ProductAttribute
+    VariantAttribute, ProductAttribute
 )
 
 
@@ -342,43 +342,12 @@ class SpecialOfferProductListSerializer(
         )
 
 
-class BundleItemSerializer(serializers.ModelSerializer):
-    product_title = serializers.CharField(
-        source="variant.product.title",
-        read_only=True,
-    )
+from rest_framework import serializers
 
-    variant_sku = serializers.CharField(
-        source="variant.sku",
-        read_only=True,
-    )
-
-    variant_price = serializers.SerializerMethodField()
-
-    class Meta:
-        model = BundleItem
-        fields = [
-            "id",
-            "variant",
-            "variant_sku",
-            "product_title",
-            "quantity",
-            "variant_price",
-        ]
-
-    def get_variant_price(self, obj):
-        variant = obj.variant
-
-        return (
-            variant.discounted_price
-            if variant.discounted_price is not None
-            else variant.price
-        )
+from apps.products.models import Bundle
 
 
 class BundleSerializer(serializers.ModelSerializer):
-    items = BundleItemSerializer(many=True)
-
     original_price = serializers.SerializerMethodField()
     discount_percent = serializers.SerializerMethodField()
     is_available = serializers.SerializerMethodField()
@@ -391,20 +360,17 @@ class BundleSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "description",
+            "quantity",
             "price",
             "original_price",
             "discount_percent",
             "display_order",
             "is_available",
             "max_quantity",
-            "items",
         ]
 
     def get_original_price(self, obj):
-        return sum(
-            item.variant.price * item.quantity
-            for item in obj.items.all()
-        )
+        return obj.variant.price * obj.quantity
 
     def get_discount_percent(self, obj):
         original_price = self.get_original_price(obj)
@@ -419,29 +385,19 @@ class BundleSerializer(serializers.ModelSerializer):
             ((original_price - obj.price) / original_price) * 100
         )
 
-    def get_is_available(self, obj):
-        return self.get_max_quantity(obj) > 0
-
     def get_max_quantity(self, obj):
-        quantities = []
+        variant = obj.variant
 
-        for item in obj.items.all():
-            variant = item.variant
-
-            if not variant.is_active:
-                return 0
-
-            if item.quantity <= 0:
-                return 0
-
-            quantities.append(
-                variant.stock // item.quantity
-            )
-
-        if not quantities:
+        if not variant.is_active:
             return 0
 
-        return min(quantities)
+        if obj.quantity <= 0:
+            return 0
+
+        return variant.stock // obj.quantity
+
+    def get_is_available(self, obj):
+        return self.get_max_quantity(obj) > 0
 
 
 class RelatedProductSerializer(serializers.ModelSerializer):
