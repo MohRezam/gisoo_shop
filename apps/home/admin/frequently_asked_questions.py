@@ -25,6 +25,7 @@ class FAQCategoryAdmin(admin.ModelAdmin):
         "ordering",
         "id",
     )
+    exclude = ("creator",)
 
 
 @admin.register(FAQ)
@@ -55,3 +56,4 @@ class FAQAdmin(admin.ModelAdmin):
         "ordering",
         "id",
     )
+    exclude = ("creator",)

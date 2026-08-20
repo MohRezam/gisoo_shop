@@ -1,11 +1,10 @@
 from django.contrib import admin
 
 from apps.magazine.models import MagazineCategory, Magazine
-from apps.shared.admin import BaseModelAdmin
 
 
 @admin.register(MagazineCategory)
-class MagazineCategoryAdmin(BaseModelAdmin):
+class MagazineCategoryAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "slug",
@@ -16,10 +15,11 @@ class MagazineCategoryAdmin(BaseModelAdmin):
     prepopulated_fields = {
         "slug": ("name",),
     }
+    exclude = ("creator", )
 
 
 @admin.register(Magazine)
-class MagazineAdmin(BaseModelAdmin):
+class MagazineAdmin(admin.ModelAdmin):
     list_display = (
         "title",
         "category",
@@ -52,6 +52,7 @@ class MagazineAdmin(BaseModelAdmin):
         "category",
     )
 
+    exclude = ("creator", )
     def save_model(self, request, obj, form, change):
         if obj.is_featured:
             Magazine.objects.exclude(

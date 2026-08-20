@@ -42,6 +42,7 @@ THIRD_PARTY_APPS = [
     "colorfield",
     "django_cleanup",
     "django_celery_beat",
+    "nested_admin"
 ]
 
 DEFAULT_APPS = [

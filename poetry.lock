@@ -895,6 +895,25 @@ files = [
 django = ">=3.2"
 
 [[package]]
+name = "django-nested-admin"
+version = "4.1.6"
+description = "Django admin classes that allow for nested inlines"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "django_nested_admin-4.1.6-py3-none-any.whl", hash = "sha256:ae3e1d910631e6cc3b5815d80129f18c6c081b7dd7f775bf392d9bb1ac88ef93"},
+    {file = "django_nested_admin-4.1.6.tar.gz", hash = "sha256:0222475cc343e7b8813d7a5db583cddef15f5c0f44dbe17b91b4d682db7bd73a"},
+]
+
+[package.dependencies]
+python-monkey-business = ">=1.0.0"
+
+[package.extras]
+dev = ["Pillow", "black", "dj-database-url", "django-selenosis", "flake8", "pytest", "pytest-cov", "pytest-django", "pytest-xdist", "selenium"]
+test = ["Pillow", "dj-database-url", "django-selenosis", "pytest", "pytest-cov", "pytest-django", "pytest-xdist", "selenium"]
+
+[[package]]
 name = "django-object-actions"
 version = "5.1.2"
 description = "A Django app for adding object tools for models in the admin"
@@ -2216,6 +2235,18 @@ files = [
 ]
 
 [[package]]
+name = "python-monkey-business"
+version = "1.1.0"
+description = "Utility functions for monkey-patching python code"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "python-monkey-business-1.1.0.tar.gz", hash = "sha256:8393839cc741415ed5ddc2bd58e2d4ce07f966a7d26b7aebff19dcec64818edc"},
+    {file = "python_monkey_business-1.1.0-py2.py3-none-any.whl", hash = "sha256:15b4f603c749ba9a7b4f1acd36af023a6c5ba0f7e591c945f8253f0ef44bf389"},
+]
+
+[[package]]
 name = "pyyaml"
 version = "6.0.3"
 description = "YAML parser and emitter for Python"
@@ -2727,4 +2758,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "db79f3305386a479f62ba754742679d7037b1aeb44a62aecd974d8bdbb17a5bc"
+content-hash = "a087fe7a238e8fccdd569b57932171ccd3d5a7b1d34df4c1876f6cd0572501b8"

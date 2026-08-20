@@ -1,26 +1,19 @@
 from apps.products.models import (
-    Attribute,
-    AttributeValue,
-    Product,
-    ProductAttribute,
-    ProductImage,
-    ProductVariant,
-    VariantAttribute,
     Wishlist,
     WishlistItem,
 )
 from django.contrib import admin
 
-from apps.shared.admin import BaseModelAdmin
 
 
 class WishlistItemInline(admin.TabularInline):
     model = WishlistItem
     extra = 0
+    exclude = ("creator",)
 
 
 @admin.register(Wishlist)
-class WishlistAdmin(BaseModelAdmin):
+class WishlistAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user",
@@ -41,3 +34,4 @@ class WishlistAdmin(BaseModelAdmin):
     inlines = [
         WishlistItemInline,
     ]
+    exclude = ("creator",)

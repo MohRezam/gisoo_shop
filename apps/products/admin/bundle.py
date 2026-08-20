@@ -2,17 +2,21 @@ from django.contrib import admin
 
 from apps.products.models import Bundle
 
+import nested_admin
 
-class BundleInline(admin.TabularInline):
+
+class BundleInline(nested_admin.NestedTabularInline):
     model = Bundle
     extra = 1
 
     fields = (
         "title",
+        "quantity",
         "price",
         "is_active",
         "display_order",
     )
+    exclude = ("creator",)
 
 
 @admin.register(Bundle)
@@ -40,3 +44,4 @@ class BundleAdmin(admin.ModelAdmin):
         "display_order",
         "-created_at",
     )
+    exclude = ("creator",)

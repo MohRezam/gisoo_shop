@@ -1,11 +1,10 @@
 from django.contrib import admin
 
 from apps.home.models import Banner, Slider
-from apps.shared.admin import BaseModelAdmin
 
 
 @admin.register(Banner)
-class BannerAdmin(BaseModelAdmin):
+class BannerAdmin(admin.ModelAdmin):
     list_display = (
         "title",
         "link_type",
@@ -38,9 +37,11 @@ class BannerAdmin(BaseModelAdmin):
         "-created_at",
     )
 
+    exclude = ("creator",)
+
 
 @admin.register(Slider)
-class SliderAdmin(BaseModelAdmin):
+class SliderAdmin(admin.ModelAdmin):
     list_display = (
         "link_type",
         "display_order",
@@ -67,3 +68,5 @@ class SliderAdmin(BaseModelAdmin):
         "display_order",
         "-created_at",
     )
+
+    exclude = ("creator",)

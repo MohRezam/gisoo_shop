@@ -15,5 +15,6 @@ admin_urlpatterns = [
 if settings.DEBUG:
     admin_urlpatterns += [
         path("silk/", include("silk.urls", namespace="silk")),
+        path("_nested_admin/", include("nested_admin.urls")),
         path("__debug__/", include("debug_toolbar.urls")),
     ]

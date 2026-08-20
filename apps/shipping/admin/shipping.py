@@ -1,6 +1,5 @@
 from django.contrib import admin
 
-from apps.shared.admin import BaseModelAdmin
 from apps.shipping.models import (
     Shipment,
     ShippingMethod,
@@ -9,7 +8,7 @@ from apps.shipping.models import (
 
 @admin.register(ShippingMethod)
 class ShippingMethodAdmin(
-    BaseModelAdmin
+    admin.ModelAdmin
 ):
     list_display = [
         "title",
@@ -36,6 +35,8 @@ class ShippingMethodAdmin(
     ordering = [
         "price",
     ]
+    exclude = ("creator",)
+
 
 
 @admin.register(Shipment)
@@ -72,3 +73,4 @@ class ShipmentAdmin(
     ordering = [
         "-created_at",
     ]
+    exclude = ("creator",)

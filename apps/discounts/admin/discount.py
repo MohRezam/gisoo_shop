@@ -5,11 +5,10 @@ from apps.discounts.models import (
     Discount,
     DiscountUsage,
 )
-from apps.shared.admin import BaseModelAdmin
 
 
 @admin.register(Discount)
-class DiscountAdmin(BaseModelAdmin):
+class DiscountAdmin(admin.ModelAdmin):
 
     list_display = (
         "code",
@@ -88,6 +87,7 @@ class DiscountAdmin(BaseModelAdmin):
             },
         ),
     )
+    exclude = ("creator",)
 
     @admin.display(
         boolean=True,
@@ -135,3 +135,4 @@ class DiscountUsageAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
+    exclude = ("creator", )

@@ -4,7 +4,6 @@ from apps.orders.models import (
     Order,
     OrderItem,
 )
-from apps.shared.admin import BaseModelAdmin
 
 
 class OrderItemInline(admin.TabularInline):
@@ -20,13 +19,12 @@ class OrderItemInline(admin.TabularInline):
         "unit_price",
         "total_price",
     ]
-
+    exclude = ("creator",)
     can_delete = False
 
 
 @admin.register(Order)
-class OrderAdmin(BaseModelAdmin):
-
+class OrderAdmin(admin.ModelAdmin):
     list_display = [
         "id",
         "user",
@@ -64,3 +62,4 @@ class OrderAdmin(BaseModelAdmin):
     ordering = [
         "-created_at",
     ]
+    exclude = ("creator",)

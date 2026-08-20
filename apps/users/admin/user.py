@@ -89,3 +89,4 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
+    exclude = ("creator",)

@@ -1,11 +1,10 @@
 from django.contrib import admin
 
 from apps.payments.models import Payment
-from apps.shared.admin import BaseModelAdmin
 
 
 @admin.register(Payment)
-class PaymentAdmin(BaseModelAdmin):
+class PaymentAdmin(admin.ModelAdmin):
     list_display = [
         "id",
         "order",
@@ -48,3 +47,5 @@ class PaymentAdmin(BaseModelAdmin):
     list_select_related = [
         "order",
     ]
+
+    exclude = ("creator",)

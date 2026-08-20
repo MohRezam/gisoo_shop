@@ -1,10 +1,9 @@
 from apps.products.models import HairProblem, HairType
-from apps.shared.admin import BaseModelAdmin
 from django.contrib import admin
 
 
 @admin.register(HairProblem)
-class HairProblemAdmin(BaseModelAdmin):
+class HairProblemAdmin(admin.ModelAdmin):
     list_display = (
         "title",
         "slug",
@@ -20,10 +19,11 @@ class HairProblemAdmin(BaseModelAdmin):
     prepopulated_fields = {
         "slug": ("title",),
     }
+    exclude = ("creator",)
 
 
 @admin.register(HairType)
-class HairTypeAdmin(BaseModelAdmin):
+class HairTypeAdmin(admin.ModelAdmin):
     list_display = (
         "title",
         "slug",
@@ -39,3 +39,5 @@ class HairTypeAdmin(BaseModelAdmin):
     prepopulated_fields = {
         "slug": ("title",),
     }
+    exclude = ("creator",)
+

@@ -1,11 +1,10 @@
 from django.contrib import admin
 
 from apps.products.models import Category
-from apps.shared.admin import BaseModelAdmin
 
 
 @admin.register(Category)
-class CategoryAdmin(BaseModelAdmin):
+class CategoryAdmin(admin.ModelAdmin):
     list_display = (
         "title",
         "parent",
@@ -24,5 +23,6 @@ class CategoryAdmin(BaseModelAdmin):
     prepopulated_fields = {
         "slug": ("title",)
     }
+    exclude = ("creator",)
 
 

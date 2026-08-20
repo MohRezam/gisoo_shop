@@ -23,3 +23,4 @@ class MarketingSubscriberAdmin(admin.ModelAdmin):
     ordering = (
         "-subscribed_at",
     )
+    exclude = ("creator", )

@@ -10,30 +10,37 @@ from apps.products.models import (
     ProductVariant,
     VariantAttribute, ProductRelatedProduct,
 )
-from apps.shared.admin import BaseModelAdmin
+import nested_admin
 
-
-class ProductImageInline(admin.TabularInline):
+class ProductImageInline(nested_admin.NestedTabularInline):
     model = ProductImage
     extra = 1
+    exclude = ("creator",)
 
 
-class ProductAttributeInline(admin.TabularInline):
+class ProductAttributeInline(nested_admin.NestedTabularInline):
     model = ProductAttribute
     extra = 1
+    exclude = ("creator",)
 
 
-class ProductVariantInline(admin.TabularInline):
+class ProductVariantInline(nested_admin.NestedTabularInline):
     model = ProductVariant
     extra = 1
+
+    inlines = [
+        BundleInline,
+    ]
+    exclude = ("creator",)
 
 
 class VariantAttributeInline(admin.TabularInline):
     model = VariantAttribute
     extra = 1
+    exclude = ("creator",)
 
 
-class ProductRelatedProductInline(admin.TabularInline):
+class ProductRelatedProductInline(nested_admin.NestedTabularInline):
     model = ProductRelatedProduct
     fk_name = "product"
 
@@ -54,7 +61,10 @@ class ProductRelatedProductInline(admin.TabularInline):
 
 
 @admin.register(Product)
-class ProductAdmin(BaseModelAdmin):
+class ProductAdmin(
+    nested_admin.NestedModelAdmin,
+    admin.ModelAdmin,
+):
     list_display = (
         "title",
         "category",
@@ -93,12 +103,13 @@ class ProductAdmin(BaseModelAdmin):
         ProductImageInline,
         ProductAttributeInline,
         ProductVariantInline,
-        ProductRelatedProductInline
+        ProductRelatedProductInline,
     ]
+    exclude = ("creator", )
 
 
 @admin.register(ProductVariant)
-class ProductVariantAdmin(BaseModelAdmin):
+class ProductVariantAdmin(admin.ModelAdmin):
     list_display = (
         "sku",
         "product",
@@ -133,9 +144,10 @@ class ProductVariantAdmin(BaseModelAdmin):
         BundleInline,
     ]
 
+    exclude = ("creator",)
 
 @admin.register(ProductImage)
-class ProductImageAdmin(BaseModelAdmin):
+class ProductImageAdmin(admin.ModelAdmin):
     list_display = (
         "product",
         "alt_text",
@@ -150,10 +162,10 @@ class ProductImageAdmin(BaseModelAdmin):
     list_select_related = (
         "product",
     )
-
+    exclude = ("creator", )
 
 @admin.register(ProductAttribute)
-class ProductAttributeAdmin(BaseModelAdmin):
+class ProductAttributeAdmin(admin.ModelAdmin):
     list_display = (
         "product",
         "attribute",
@@ -181,10 +193,11 @@ class ProductAttributeAdmin(BaseModelAdmin):
         "product",
         "display_order",
     )
+    exclude = ("creator", )
 
 
 @admin.register(Attribute)
-class AttributeAdmin(BaseModelAdmin):
+class AttributeAdmin(admin.ModelAdmin):
     list_display = (
         "name",
         "is_variant",
@@ -198,10 +211,11 @@ class AttributeAdmin(BaseModelAdmin):
     search_fields = (
         "name",
     )
+    exclude = ("creator", )
 
 
 @admin.register(AttributeValue)
-class AttributeValueAdmin(BaseModelAdmin):
+class AttributeValueAdmin(admin.ModelAdmin):
     list_display = (
         "attribute",
         "value",
@@ -220,9 +234,10 @@ class AttributeValueAdmin(BaseModelAdmin):
         "attribute",
     )
 
+    exclude = ("creator", )
 
 @admin.register(VariantAttribute)
-class VariantAttributeAdmin(BaseModelAdmin):
+class VariantAttributeAdmin(admin.ModelAdmin):
     list_display = (
         "variant",
         "value",
@@ -242,3 +257,5 @@ class VariantAttributeAdmin(BaseModelAdmin):
         "variant",
         "value",
     )
+
+    exclude = ("creator", )

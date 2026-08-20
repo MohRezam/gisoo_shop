@@ -1,11 +1,10 @@
 from django.contrib import admin
 
 from apps.home.models import HomeAbout
-from apps.shared.admin import BaseModelAdmin
 
 
 @admin.register(HomeAbout)
-class HomeAboutAdmin(BaseModelAdmin):
+class HomeAboutAdmin(admin.ModelAdmin):
     list_display = (
         "title",
         "display_order",
@@ -31,3 +30,4 @@ class HomeAboutAdmin(BaseModelAdmin):
         "display_order",
         "-created_at",
     )
+    exclude = ("creator",)

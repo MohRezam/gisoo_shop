@@ -15,6 +15,8 @@ class CustomerSatisfactionAdmin(admin.ModelAdmin):
     list_filter = ("is_active",)
     readonly_fields = ("image_preview", "created_at")
 
+    exclude = ("creator",)
+
     @admin.display(description="تصویر")
     def image_preview(self, obj):
         if not obj.image:
