@@ -22,7 +22,7 @@ from apps.products.models import (
 )
 from apps.products.serializers import (
     ProductDetailSerializer,
-    ProductListSerializer, SpecialOfferProductListSerializer,
+    ProductListSerializer, SpecialOfferProductListSerializer, RelatedProductSerializer,
 )
 from utils.paginators import StandardResultPagination
 from django.db.models import F
@@ -223,6 +223,69 @@ class ProductDetailAPIView(RetrieveAPIView):
 
     lookup_field = "slug"
 
+
+@extend_schema(
+    tags=["Products"],
+    summary="List All Related Products",
+    responses={
+        200: RelatedProductSerializer(many=True),
+    },
+)
+class ProductRelatedProductsAPIView(ListAPIView):
+    serializer_class = RelatedProductSerializer
+    pagination_class = StandardResultPagination
+
+    def get_queryset(self):
+        product = (
+            Product.objects
+            .filter(
+                slug=self.kwargs["slug"],
+                is_available=True,
+            )
+            .select_related(
+                "category",
+            )
+            .first()
+        )
+
+        if not product:
+            return Product.objects.none()
+
+        manual_products = (
+            product.related_products
+            .filter(
+                is_available=True,
+            )
+            .prefetch_related(
+                "images",
+                "variants",
+            )
+            .order_by(
+                "related_product_relations__display_order",
+                "-created_at",
+            )
+        )
+
+        if manual_products.exists():
+            return manual_products
+
+        return (
+            Product.objects
+            .filter(
+                category=product.category,
+                is_available=True,
+            )
+            .exclude(
+                pk=product.pk,
+            )
+            .prefetch_related(
+                "images",
+                "variants",
+            )
+            .order_by(
+                "-created_at",
+            )
+        )
 
 @extend_schema(
     tags=["Products"],
