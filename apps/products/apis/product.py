@@ -258,6 +258,9 @@ class ProductRelatedProductsAPIView(ListAPIView):
                 related_product_relations__product=product,
                 is_available=True,
             )
+            .exclude(
+                pk=product.pk,
+            )
             .prefetch_related(
                 "images",
                 "variants",
