@@ -1,4 +1,4 @@
-from django.db.models import Min, Prefetch
+from django.db.models import Min, Prefetch, Subquery, OuterRef
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -18,7 +18,7 @@ from apps.products.filters import ProductFilter
 from apps.products.models import (
     Product,
     ProductImage,
-    ProductVariant, Bundle, ProductAttribute,
+    ProductVariant, Bundle, ProductAttribute, ProductRelatedProduct,
 )
 from apps.products.serializers import (
     ProductDetailSerializer,
@@ -192,7 +192,9 @@ class ProductDetailAPIView(RetrieveAPIView):
                 "product_attributes",
                 queryset=(
                     ProductAttribute.objects
-                    .select_related("attribute")
+                    .select_related(
+                        "attribute",
+                    )
                     .order_by(
                         "display_order",
                         "created_at",
@@ -207,15 +209,27 @@ class ProductDetailAPIView(RetrieveAPIView):
                     .filter(
                         is_available=True,
                     )
+                    .annotate(
+                        related_display_order=Subquery(
+                            ProductRelatedProduct.objects
+                            .filter(
+                                product=OuterRef(
+                                    "pk",
+                                ),
+                            )
+                            .values(
+                                "display_order",
+                            )[:1]
+                        ),
+                    )
                     .prefetch_related(
                         "images",
                         "variants",
                     )
                     .order_by(
-                        "related_product_relations__display_order",
+                        "related_display_order",
                         "-created_at",
                     )
-                    .distinct()
                 ),
                 to_attr="manual_related_products",
             ),
@@ -262,15 +276,26 @@ class ProductRelatedProductsAPIView(ListAPIView):
             .exclude(
                 pk=product.pk,
             )
+            .annotate(
+                related_display_order=Subquery(
+                    ProductRelatedProduct.objects
+                    .filter(
+                        product=product,
+                        related_product=OuterRef("pk"),
+                    )
+                    .values(
+                        "display_order",
+                    )[:1]
+                ),
+            )
             .prefetch_related(
                 "images",
                 "variants",
             )
             .order_by(
-                "related_product_relations__display_order",
+                "related_display_order",
                 "-created_at",
             )
-            .distinct()
         )
 
         if manual_products.exists():
