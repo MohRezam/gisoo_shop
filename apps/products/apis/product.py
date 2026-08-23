@@ -215,6 +215,7 @@ class ProductDetailAPIView(RetrieveAPIView):
                         "related_product_relations__display_order",
                         "-created_at",
                     )
+                    .distinct()
                 ),
                 to_attr="manual_related_products",
             ),
