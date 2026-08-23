@@ -535,7 +535,6 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
         ]
 
 
-
 class ProductDetailSerializer(serializers.ModelSerializer):
     brand = brand = serializers.CharField(
         source="brand.title",
@@ -564,6 +563,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     has_multiple_variants = serializers.SerializerMethodField()
 
     is_favorited = serializers.SerializerMethodField()
+    is_in_stock = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -592,7 +592,14 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "has_multiple_variants",
 
             "is_favorited",
+            "is_in_stock"
         ]
+
+    def get_is_in_stock(self, obj):
+        return any(
+            variant.stock > 0
+            for variant in obj.variants.all()
+        )
 
     def get_has_multiple_variants(self, obj):
         return len(obj.variants.all()) > 1
