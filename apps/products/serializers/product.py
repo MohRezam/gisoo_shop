@@ -516,11 +516,14 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
         ]
 
 
+
 class ProductDetailSerializer(serializers.ModelSerializer):
     brand = serializers.StringRelatedField()
     category = serializers.StringRelatedField()
 
-    images = ProductImageSerializer(many=True)
+    images = ProductImageSerializer(
+        many=True,
+    )
 
     variants = ProductVariantDetailSerializer(
         many=True,
@@ -531,7 +534,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         many=True,
         read_only=True,
     )
-
 
     related_products = serializers.SerializerMethodField()
 
@@ -581,18 +583,18 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
         if request.user.is_authenticated:
             return obj.wishlist_items.filter(
-                wishlist__user=request.user
+                wishlist__user=request.user,
             ).exists()
 
         token = request.COOKIES.get(
-            "wishlist_token"
+            "wishlist_token",
         )
 
         if not token:
             return False
 
         return obj.wishlist_items.filter(
-            wishlist__guest_token=token
+            wishlist__guest_token=token,
         ).exists()
 
     def get_min_price(self, obj):
@@ -638,22 +640,26 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         return max(prices)
 
     def get_related_products(self, obj):
-        manual_products = getattr(
+        relations = getattr(
             obj,
-            "manual_related_products",
+            "ordered_related_product_relations",
             None,
         )
 
-        # Admin has manually selected related products.
-        if manual_products:
+        if relations:
+            products = [
+                relation.related_product
+                for relation in relations[:4]
+            ]
+
             return RelatedProductSerializer(
-                manual_products[:4],
+                products,
                 many=True,
                 context=self.context,
             ).data
 
-        # Fallback: automatically select products
-        # from the same category.
+        # Automatic fallback:
+        # products from the same category.
         products = (
             Product.objects
             .filter(
@@ -667,7 +673,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 "images",
                 "variants",
             )
-            .order_by("-created_at")[:4]
+            .order_by(
+                "-created_at",
+            )[:4]
         )
 
         return RelatedProductSerializer(

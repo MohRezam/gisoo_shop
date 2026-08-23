@@ -202,36 +202,23 @@ class ProductDetailAPIView(RetrieveAPIView):
                 ),
             ),
 
+            # Related products
             Prefetch(
-                "related_products",
+                "related_product_relations",
                 queryset=(
-                    Product.objects
+                    ProductRelatedProduct.objects
                     .filter(
-                        is_available=True,
+                        related_product__is_available=True,
                     )
-                    .annotate(
-                        related_display_order=Subquery(
-                            ProductRelatedProduct.objects
-                            .filter(
-                                product=OuterRef(
-                                    "pk",
-                                ),
-                            )
-                            .values(
-                                "display_order",
-                            )[:1]
-                        ),
-                    )
-                    .prefetch_related(
-                        "images",
-                        "variants",
+                    .select_related(
+                        "related_product",
                     )
                     .order_by(
-                        "related_display_order",
-                        "-created_at",
+                        "display_order",
+                        "created_at",
                     )
                 ),
-                to_attr="manual_related_products",
+                to_attr="ordered_related_product_relations",
             ),
         )
     )
