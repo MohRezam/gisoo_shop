@@ -3,6 +3,7 @@ from django.urls import path
 from apps.products.apis import (
     BrandListAPIView,
     CategoryListAPIView, ProductListAPIView, ProductDetailAPIView, HairProblemAPIView, SpecialOfferProductListAPIView,
+    ProductRelatedProductsAPIView,
 )
 from apps.products.apis.wishlist import WishlistListAPIView, WishlistToggleAPIView, WishlistItemDeleteAPIView
 
@@ -56,5 +57,10 @@ urlpatterns = [
         "wishlist/items/<int:product_id>/",
         WishlistItemDeleteAPIView.as_view(),
         name="wishlist-item-delete",
+    ),
+    path(
+        "products/<slug:slug>/related/",
+        ProductRelatedProductsAPIView.as_view(),
+        name="product-related-products",
     ),
 ]
