@@ -255,7 +255,7 @@ class ProductRelatedProductsAPIView(ListAPIView):
         manual_products = (
             Product.objects
             .filter(
-                related_product_relations__product=product,
+                related_to_relations__product=product,
                 is_available=True,
             )
             .exclude(
