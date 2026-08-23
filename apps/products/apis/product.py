@@ -251,9 +251,11 @@ class ProductRelatedProductsAPIView(ListAPIView):
         if not product:
             return Product.objects.none()
 
+        # Manually selected related products
         manual_products = (
-            product.related_products
+            Product.objects
             .filter(
+                related_product_relations__product=product,
                 is_available=True,
             )
             .prefetch_related(
@@ -264,11 +266,13 @@ class ProductRelatedProductsAPIView(ListAPIView):
                 "related_product_relations__display_order",
                 "-created_at",
             )
+            .distinct()
         )
 
         if manual_products.exists():
             return manual_products
 
+        # Automatic fallback
         return (
             Product.objects
             .filter(
