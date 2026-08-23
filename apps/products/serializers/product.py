@@ -518,7 +518,10 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
-    brand = serializers.StringRelatedField()
+    brand = brand = serializers.CharField(
+        source="brand.title",
+        read_only=True,
+    )
     category = serializers.StringRelatedField()
 
     images = ProductImageSerializer(
