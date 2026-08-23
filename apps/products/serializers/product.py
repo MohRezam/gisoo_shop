@@ -95,6 +95,7 @@ class ProductListSerializer(
     )
 
     stock = serializers.SerializerMethodField()
+    is_in_stock = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -111,6 +112,22 @@ class ProductListSerializer(
             "has_discount",
             "stock",
             "is_available",
+            "is_in_stock"
+        )
+
+    def get_is_in_stock(
+            self,
+            obj,
+    ):
+        variants = getattr(
+            obj,
+            "active_variants",
+            [],
+        )
+
+        return any(
+            variant.stock > 0
+            for variant in variants
         )
 
     def _first_variant(
@@ -189,14 +206,16 @@ class ProductListSerializer(
             self,
             obj,
     ):
-        variant = self._first_variant(
+        variants = getattr(
             obj,
+            "active_variants",
+            [],
         )
 
-        if variant is None:
-            return 0
-
-        return variant.stock
+        return sum(
+            variant.stock
+            for variant in variants
+        )
 
 
 class SpecialOfferProductListSerializer(

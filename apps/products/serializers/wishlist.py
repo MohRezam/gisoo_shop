@@ -9,6 +9,7 @@ from apps.products.models import (
 class WishlistProductSerializer(serializers.ModelSerializer):
     thumbnail = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
+    is_in_stock = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -18,7 +19,14 @@ class WishlistProductSerializer(serializers.ModelSerializer):
             "slug",
             "thumbnail",
             "price",
+            "is_in_stock"
         ]
+
+    def get_is_in_stock(self, obj):
+        return any(
+            variant.stock > 0
+            for variant in obj.variants.all()
+        )
 
     def get_thumbnail(self, obj):
         image = next(
@@ -114,6 +122,7 @@ class WishlistToggleResponseSerializer(serializers.Serializer):
             "Action performed on the wishlist."
         ),
     )
+
 
 class WishlistDeleteResponseSerializer(serializers.Serializer):
     detail = serializers.CharField(
