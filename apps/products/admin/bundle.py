@@ -7,7 +7,7 @@ import nested_admin
 
 class BundleInline(nested_admin.NestedTabularInline):
     model = Bundle
-    extra = 1
+    extra = 0
 
     fields = (
         "title",
