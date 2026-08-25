@@ -14,19 +14,19 @@ import nested_admin
 
 class ProductImageInline(nested_admin.NestedTabularInline):
     model = ProductImage
-    extra = 1
+    extra = 0
     exclude = ("creator",)
 
 
 class ProductAttributeInline(nested_admin.NestedTabularInline):
     model = ProductAttribute
-    extra = 1
+    extra = 0
     exclude = ("creator",)
 
 
 class ProductVariantInline(nested_admin.NestedTabularInline):
     model = ProductVariant
-    extra = 1
+    extra = 0
 
     inlines = [
         BundleInline,
@@ -36,7 +36,7 @@ class ProductVariantInline(nested_admin.NestedTabularInline):
 
 class VariantAttributeInline(admin.TabularInline):
     model = VariantAttribute
-    extra = 1
+    extra = 0
     exclude = ("creator",)
 
 
@@ -44,7 +44,7 @@ class ProductRelatedProductInline(nested_admin.NestedTabularInline):
     model = ProductRelatedProduct
     fk_name = "product"
 
-    extra = 1
+    extra = 0
 
     autocomplete_fields = [
         "related_product",

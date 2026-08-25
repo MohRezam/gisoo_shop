@@ -232,7 +232,6 @@ class ProductVariant(BaseModel):
 
     volume = models.PositiveIntegerField(
         verbose_name=_("Volume (ml)"),
-        default=0,
         help_text=_("Volume in milliliter."),
     )
 
@@ -261,6 +260,10 @@ class ProductVariant(BaseModel):
                         | Q(discounted_price__lt=F("price"))
                 ),
                 name="discounted_price_less_than_price",
+            ),
+            models.UniqueConstraint(
+                fields=["product", "volume"],
+                name="unique_volume_per_product",
             ),
         ]
 
