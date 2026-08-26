@@ -1,32 +1,49 @@
 from django.urls import path
 
-from apps.consultations.apis import ConsultationOptionsAPIView, ConsultationCreateAPIView, ConsultationDetailAPIView, \
-    ConsultationRecommendationsAPIView
+from apps.consultations.apis import ConsultationOptionsAPIView, ConsultationCreateAPIView, ConsultationListAPIView, \
+    GuestOTPRequestAPIView, GuestOTPVerifyAPIView, ConsultationDetailAPIView, ConsultationRecommendationsAPIView
 
 app_name = "apps.consultations"
 
-
 urlpatterns = [
     path(
-        "v1/options/",
+        "options/",
         ConsultationOptionsAPIView.as_view(),
         name="options",
     ),
 
     path(
-        "v1/",
+        "",
         ConsultationCreateAPIView.as_view(),
         name="create",
     ),
 
     path(
-        "v1/<uuid:pk>/",
+        "my/",
+        ConsultationListAPIView.as_view(),
+        name="my",
+    ),
+
+    path(
+        "guest/access/request/",
+        GuestOTPRequestAPIView.as_view(),
+        name="guest-access-request",
+    ),
+
+    path(
+        "guest/access/verify/",
+        GuestOTPVerifyAPIView.as_view(),
+        name="guest-access-verify",
+    ),
+
+    path(
+        "<uuid:pk>/",
         ConsultationDetailAPIView.as_view(),
         name="detail",
     ),
 
     path(
-        "v1/<uuid:pk>/recommendations/",
+        "<uuid:pk>/recommendations/",
         ConsultationRecommendationsAPIView.as_view(),
         name="recommendations",
     ),

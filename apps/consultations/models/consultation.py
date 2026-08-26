@@ -1,11 +1,99 @@
+import secrets
 import uuid
 
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
-class ConsultationRequest(models.Model):
+class GuestIdentity(models.Model):
+    """
+    Represents the identity of a guest user.
 
+    A guest can have multiple devices and multiple
+    consultation requests.
+    """
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    phone_number = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name=_("phone number"),
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("created at"),
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("updated at"),
+    )
+
+    class Meta:
+        verbose_name = _("guest identity")
+        verbose_name_plural = _("guest identities")
+
+    def __str__(self):
+        return self.phone_number
+
+
+class GuestDeviceAccess(models.Model):
+    """
+    Represents access to a GuestIdentity from a specific browser/device.
+    """
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    guest = models.ForeignKey(
+        GuestIdentity,
+        on_delete=models.CASCADE,
+        related_name="device_accesses",
+        verbose_name=_("guest"),
+    )
+
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        editable=False,
+        verbose_name=_("token"),
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("created at"),
+    )
+
+    last_used_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("last used at"),
+    )
+
+    class Meta:
+        verbose_name = _("guest device access")
+        verbose_name_plural = _("guest device accesses")
+
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = secrets.token_urlsafe(32)
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.guest.phone_number} - {self.id}"
+
+
+class ConsultationRequest(models.Model):
     class Gender(models.TextChoices):
         FEMALE = "female", _("Female")
         MALE = "male", _("Male")
@@ -15,10 +103,12 @@ class ConsultationRequest(models.Model):
             "less_than_month",
             _("Less than a month"),
         )
+
         ONE_TO_THREE_MONTHS = (
             "one_to_three_months",
             _("One to three months"),
         )
+
         MORE_THAN_THREE_MONTHS = (
             "more_than_three_months",
             _("More than three months"),
@@ -33,6 +123,24 @@ class ConsultationRequest(models.Model):
         primary_key=True,
         default=uuid.uuid4,
         editable=False,
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="consultation_requests",
+        null=True,
+        blank=True,
+        verbose_name=_("user"),
+    )
+
+    guest = models.ForeignKey(
+        GuestIdentity,
+        on_delete=models.SET_NULL,
+        related_name="consultation_requests",
+        null=True,
+        blank=True,
+        verbose_name=_("guest"),
     )
 
     full_name = models.CharField(
@@ -84,7 +192,27 @@ class ConsultationRequest(models.Model):
     class Meta:
         verbose_name = _("consultation request")
         verbose_name_plural = _("consultation requests")
-        ordering = ["-created_at"]
+
+        ordering = [
+            "-created_at",
+        ]
+
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                        (
+                                models.Q(user__isnull=False)
+                                & models.Q(guest__isnull=True)
+                        )
+                        |
+                        (
+                                models.Q(user__isnull=True)
+                                & models.Q(guest__isnull=False)
+                        )
+                ),
+                name="consultation_has_exactly_one_owner",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.full_name} - {self.phone_number}"
@@ -124,7 +252,11 @@ class ConsultationRecommendation(models.Model):
     class Meta:
         verbose_name = _("consultation recommendation")
         verbose_name_plural = _("consultation recommendations")
-        ordering = ["display_order", "id"]
+
+        ordering = [
+            "display_order",
+            "created_at",
+        ]
 
         constraints = [
             models.UniqueConstraint(
@@ -138,6 +270,45 @@ class ConsultationRecommendation(models.Model):
 
     def __str__(self):
         return (
-            f"{self.consultation.full_name} - "
+            f"{self.consultation.full_name} → "
             f"{self.product.title}"
         )
+
+
+class GuestOTP(models.Model):
+    """
+    Temporary OTP used to verify guest phone number
+    when accessing consultations from another device.
+    """
+
+    guest = models.ForeignKey(
+        GuestIdentity,
+        on_delete=models.CASCADE,
+        related_name="otps",
+    )
+
+    code = models.CharField(
+        max_length=6,
+    )
+
+    expires_at = models.DateTimeField()
+
+    attempts = models.PositiveIntegerField(
+        default=0,
+    )
+
+    is_used = models.BooleanField(
+        default=False,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+        ordering = [
+            "-created_at",
+        ]
+
+    def __str__(self):
+        return f"{self.guest.phone_number} - {self.created_at}"

@@ -4,7 +4,7 @@ from apps.consultations.models.consultation import ConsultationRecommendation, C
 
 
 class ConsultationRecommendationInline(
-    admin.TabularInline,
+    admin.TabularInline
 ):
     model = ConsultationRecommendation
 
@@ -23,7 +23,7 @@ class ConsultationRecommendationInline(
 
 @admin.register(ConsultationRequest)
 class ConsultationRequestAdmin(
-    admin.ModelAdmin,
+    admin.ModelAdmin
 ):
     list_display = (
         "full_name",
@@ -32,6 +32,7 @@ class ConsultationRequestAdmin(
         "gender",
         "duration",
         "status",
+        "owner",
         "created_at",
     )
 
@@ -54,9 +55,23 @@ class ConsultationRequestAdmin(
     )
 
     list_select_related = (
+        "user",
+        "guest",
         "hair_problem",
     )
 
     inlines = (
         ConsultationRecommendationInline,
     )
+
+    @admin.display(
+        description="Owner"
+    )
+    def owner(self, obj):
+        if obj.user_id:
+            return str(obj.user)
+
+        if obj.guest_id:
+            return f"Guest ({obj.phone_number})"
+
+        return "-"

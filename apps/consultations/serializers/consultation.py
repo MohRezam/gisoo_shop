@@ -4,11 +4,12 @@ from rest_framework import serializers
 
 from apps.consultations.models.consultation import ConsultationRequest, ConsultationRecommendation
 from apps.products.models import HairProblem
-
 from apps.products.serializers import ProductListSerializer
 
 
-class ConsultationOptionsSerializer(serializers.Serializer):
+class ConsultationOptionsSerializer(
+    serializers.Serializer
+):
     genders = serializers.SerializerMethodField()
     durations = serializers.SerializerMethodField()
     hair_problems = serializers.SerializerMethodField()
@@ -36,8 +37,10 @@ class ConsultationOptionsSerializer(serializers.Serializer):
     def get_hair_problems(self, obj):
         problems = (
             HairProblem.objects
-            .filter(is_active=True)
-            .order_by("id")
+            .filter(
+                is_active=True,
+            )
+            .order_by("created_at")
         )
 
         return [
@@ -50,7 +53,7 @@ class ConsultationOptionsSerializer(serializers.Serializer):
 
 
 class ConsultationCreateSerializer(
-    serializers.ModelSerializer,
+    serializers.ModelSerializer
 ):
     class Meta:
         model = ConsultationRequest
@@ -68,7 +71,7 @@ class ConsultationCreateSerializer(
 
         if len(value) < 3:
             raise serializers.ValidationError(
-                "the full name is not valid"
+                "نام و نام خانوادگی معتبر نیست."
             )
 
         return value
@@ -76,9 +79,12 @@ class ConsultationCreateSerializer(
     def validate_phone_number(self, value):
         value = value.strip()
 
-        if not re.match(r"^09\d{9}$", value):
+        if not re.fullmatch(
+            r"09\d{9}",
+            value,
+        ):
             raise serializers.ValidationError(
-                "the phone number is not valid"
+                "شماره موبایل معتبر نیست."
             )
 
         return value
@@ -86,14 +92,14 @@ class ConsultationCreateSerializer(
     def validate_hair_problem(self, value):
         if not value.is_active:
             raise serializers.ValidationError(
-                "can't chose this hair problem"
+                "این مشکل مو در حال حاضر قابل انتخاب نیست."
             )
 
         return value
 
 
 class ConsultationCreateResponseSerializer(
-    serializers.ModelSerializer,
+    serializers.ModelSerializer
 ):
     class Meta:
         model = ConsultationRequest
@@ -104,8 +110,27 @@ class ConsultationCreateResponseSerializer(
         )
 
 
+class ConsultationListSerializer(
+    serializers.ModelSerializer
+):
+    hair_problem = serializers.CharField(
+        source="hair_problem.title",
+    )
+
+    class Meta:
+        model = ConsultationRequest
+
+        fields = (
+            "id",
+            "status",
+            "hair_problem",
+            "duration",
+            "created_at",
+        )
+
+
 class ConsultationDetailSerializer(
-    serializers.ModelSerializer,
+    serializers.ModelSerializer
 ):
     hair_problem = serializers.CharField(
         source="hair_problem.title",
@@ -124,7 +149,7 @@ class ConsultationDetailSerializer(
 
 
 class ConsultationRecommendationSerializer(
-    serializers.ModelSerializer,
+    serializers.ModelSerializer
 ):
     product = serializers.SerializerMethodField()
 
@@ -144,7 +169,7 @@ class ConsultationRecommendationSerializer(
 
 
 class ConsultationRecommendationsResponseSerializer(
-    serializers.Serializer,
+    serializers.Serializer
 ):
     consultation_id = serializers.UUIDField()
 
@@ -153,3 +178,58 @@ class ConsultationRecommendationsResponseSerializer(
     products = ConsultationRecommendationSerializer(
         many=True,
     )
+
+
+class GuestOTPRequestSerializer(
+    serializers.Serializer
+):
+    phone_number = serializers.CharField(
+        max_length=20,
+    )
+
+    def validate_phone_number(self, value):
+        value = value.strip()
+
+        if not re.fullmatch(
+            r"09\d{9}",
+            value,
+        ):
+            raise serializers.ValidationError(
+                "شماره موبایل معتبر نیست."
+            )
+
+        return value
+
+
+class GuestOTPVerifySerializer(
+    serializers.Serializer
+):
+    phone_number = serializers.CharField(
+        max_length=20,
+    )
+
+    code = serializers.CharField(
+        min_length=6,
+        max_length=6,
+    )
+
+    def validate_phone_number(self, value):
+        value = value.strip()
+
+        if not re.fullmatch(
+            r"09\d{9}",
+            value,
+        ):
+            raise serializers.ValidationError(
+                "شماره موبایل معتبر نیست."
+            )
+
+        return value
+
+    def validate_code(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError(
+                "کد تایید معتبر نیست."
+            )
+
+        return value
