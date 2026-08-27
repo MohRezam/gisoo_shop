@@ -1,12 +1,9 @@
-import random
-from datetime import timedelta
-
 from django.db import transaction
-from django.utils import timezone
 
-from apps.consultations.models.consultation import GuestIdentity, GuestDeviceAccess, GuestOTP, ConsultationRequest
-
-OTP_EXPIRATION_MINUTES = 2
+from apps.consultations.models.consultation import (
+    ConsultationRequest,
+    GuestIdentity,
+)
 
 
 def normalize_phone_number(phone_number):
@@ -37,64 +34,32 @@ def get_or_create_guest(phone_number):
     return guest
 
 
-def get_or_create_device_access(guest):
-    access = (
-        GuestDeviceAccess.objects
-        .filter(guest=guest)
-        .order_by("-last_used_at")
-        .first()
+def has_active_consultation(*, user=None, guest=None):
+    queryset = ConsultationRequest.objects.filter(
+        status__in=[
+            ConsultationRequest.Status.PENDING,
+            ConsultationRequest.Status.REVIEWING,
+        ],
     )
 
-    if access:
-        return access
+    if user is not None:
+        return queryset.filter(user=user).exists()
 
-    return GuestDeviceAccess.objects.create(
-        guest=guest,
-    )
+    if guest is not None:
+        return queryset.filter(guest=guest).exists()
+
+    return False
 
 
 @transaction.atomic
-def create_guest_otp(phone_number):
-    guest = get_or_create_guest(
-        phone_number,
-    )
+def merge_guest_consultations_after_login(user):
+    """
+    Attach guest consultations with the same phone number
+    to the authenticated user so they appear in /my/.
+    """
 
-    GuestOTP.objects.filter(
-        guest=guest,
-        is_used=False,
-    ).update(
-        is_used=True,
-    )
-
-    # code = str(
-    #     random.randint(
-    #         100000,
-    #         999999,
-    #     )
-    # )
-
-    code = str(123456)
-
-    otp = GuestOTP.objects.create(
-        guest=guest,
-        code=code,
-        expires_at=(
-                timezone.now()
-                + timedelta(
-            minutes=OTP_EXPIRATION_MINUTES,
-        )
-        ),
-    )
-
-    return guest, otp
-
-
-def verify_guest_otp(
-    phone_number,
-    code,
-):
     phone_number = normalize_phone_number(
-        phone_number,
+        user.phone_number
     )
 
     guest = GuestIdentity.objects.filter(
@@ -102,62 +67,16 @@ def verify_guest_otp(
     ).first()
 
     if not guest:
-        return None, "invalid"
+        return 0
 
-    otp = (
-        GuestOTP.objects
-        .filter(
-            guest=guest,
-            is_used=False,
-        )
-        .order_by("-created_at")
-        .first()
-    )
-
-    if not otp:
-        return None, "invalid"
-
-    if otp.attempts >= 5:
-        return None, "too_many_attempts"
-
-    if otp.expires_at < timezone.now():
-        return None, "expired"
-
-    if otp.code != code:
-        otp.attempts += 1
-
-        otp.save(
-            update_fields=[
-                "attempts",
-            ],
-        )
-
-        return None, "invalid"
-
-    otp.is_used = True
-
-    otp.save(
-        update_fields=[
-            "is_used",
-        ],
-    )
-
-    device_access = GuestDeviceAccess.objects.create(
-        guest=guest,
-    )
-
-    return device_access, None
-
-
-def has_active_consultation(guest):
     return (
         ConsultationRequest.objects
         .filter(
             guest=guest,
-            status__in=[
-                ConsultationRequest.Status.PENDING,
-                ConsultationRequest.Status.REVIEWING,
-            ],
+            user__isnull=True,
         )
-        .exists()
+        .update(
+            user=user,
+            guest=None,
+        )
     )

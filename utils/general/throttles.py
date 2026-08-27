@@ -56,15 +56,3 @@ class ConsultationCreateThrottle(
     UserRateThrottle
 ):
     scope = "consultation_create"
-
-
-class GuestOTPRequestThrottle(
-    UserRateThrottle
-):
-    scope = "guest_otp_request"
-
-
-class GuestOTPVerifyThrottle(
-    UserRateThrottle
-):
-    scope = "guest_otp_verify"

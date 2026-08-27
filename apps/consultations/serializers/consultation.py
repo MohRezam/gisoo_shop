@@ -2,9 +2,11 @@ import re
 
 from rest_framework import serializers
 
-from apps.consultations.models.consultation import ConsultationRequest, ConsultationRecommendation
+from apps.consultations.models.consultation import (
+    ConsultationRequest,
+    ConsultationRecommendation,
+)
 from apps.products.models import HairProblem
-from apps.products.serializers import ProductListSerializer
 
 
 class ConsultationOptionsSerializer(
@@ -18,7 +20,7 @@ class ConsultationOptionsSerializer(
         return [
             {
                 "value": value,
-                "label": label,
+                "label": str(label),
             }
             for value, label
             in ConsultationRequest.Gender.choices
@@ -28,7 +30,7 @@ class ConsultationOptionsSerializer(
         return [
             {
                 "value": value,
-                "label": label,
+                "label": str(label),
             }
             for value, label
             in ConsultationRequest.Duration.choices
@@ -105,9 +107,61 @@ class ConsultationCreateResponseSerializer(
         model = ConsultationRequest
 
         fields = (
-            "id",
             "status",
         )
+
+
+class ConsultationRecommendationSerializer(
+    serializers.ModelSerializer
+):
+    title = serializers.CharField(
+        source="product.title",
+    )
+    brand = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ConsultationRecommendation
+
+        fields = (
+            "title",
+            "brand",
+            "image",
+            "explanation",
+        )
+
+    def get_brand(self, obj):
+        brand = obj.product.brand
+
+        if not brand:
+            return None
+
+        return str(brand)
+
+    def get_image(self, obj):
+        product = obj.product
+        images = getattr(
+            product,
+            "primary_images",
+            None,
+        )
+
+        if images:
+            image = images[0]
+            if image.image:
+                return image.image.url
+            return None
+
+        image = (
+            product.images
+            .filter(is_primary=True)
+            .first()
+        )
+
+        if image and image.image:
+            return image.image.url
+
+        return None
 
 
 class ConsultationListSerializer(
@@ -116,120 +170,28 @@ class ConsultationListSerializer(
     hair_problem = serializers.CharField(
         source="hair_problem.title",
     )
+    products = serializers.SerializerMethodField()
 
     class Meta:
         model = ConsultationRequest
 
         fields = (
-            "id",
             "status",
             "hair_problem",
             "duration",
             "created_at",
+            "products",
         )
 
+    def get_products(self, obj):
+        if obj.status not in [
+            ConsultationRequest.Status.REVIEWING,
+            ConsultationRequest.Status.COMPLETED,
+        ]:
+            return []
 
-class ConsultationDetailSerializer(
-    serializers.ModelSerializer
-):
-    hair_problem = serializers.CharField(
-        source="hair_problem.title",
-    )
-
-    class Meta:
-        model = ConsultationRequest
-
-        fields = (
-            "id",
-            "status",
-            "hair_problem",
-            "duration",
-            "created_at",
-        )
-
-
-class ConsultationRecommendationSerializer(
-    serializers.ModelSerializer
-):
-    product = serializers.SerializerMethodField()
-
-    class Meta:
-        model = ConsultationRecommendation
-
-        fields = (
-            "product",
-            "explanation",
-        )
-
-    def get_product(self, obj):
-        return ProductListSerializer(
-            obj.product,
+        return ConsultationRecommendationSerializer(
+            obj.recommendations.all(),
+            many=True,
             context=self.context,
         ).data
-
-
-class ConsultationRecommendationsResponseSerializer(
-    serializers.Serializer
-):
-    consultation_id = serializers.UUIDField()
-
-    status = serializers.CharField()
-
-    products = ConsultationRecommendationSerializer(
-        many=True,
-    )
-
-
-class GuestOTPRequestSerializer(
-    serializers.Serializer
-):
-    phone_number = serializers.CharField(
-        max_length=20,
-    )
-
-    def validate_phone_number(self, value):
-        value = value.strip()
-
-        if not re.fullmatch(
-            r"09\d{9}",
-            value,
-        ):
-            raise serializers.ValidationError(
-                "شماره موبایل معتبر نیست."
-            )
-
-        return value
-
-
-class GuestOTPVerifySerializer(
-    serializers.Serializer
-):
-    phone_number = serializers.CharField(
-        max_length=20,
-    )
-
-    code = serializers.CharField(
-        min_length=6,
-        max_length=6,
-    )
-
-    def validate_phone_number(self, value):
-        value = value.strip()
-
-        if not re.fullmatch(
-            r"09\d{9}",
-            value,
-        ):
-            raise serializers.ValidationError(
-                "شماره موبایل معتبر نیست."
-            )
-
-        return value
-
-    def validate_code(self, value):
-        if not value.isdigit():
-            raise serializers.ValidationError(
-                "کد تایید معتبر نیست."
-            )
-
-        return value

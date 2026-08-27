@@ -11,6 +11,9 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.translation import gettext as _
 
+from apps.consultations.services import (
+    merge_guest_consultations_after_login,
+)
 from apps.products.services.wishlist import (
     WishlistService,
 )
@@ -170,6 +173,10 @@ class VerifyOTPAPIView(APIView):
         WishlistService.merge_wishlist_after_login(
             request=request,
             user=user,
+        )
+
+        merge_guest_consultations_after_login(
+            user,
         )
 
         refresh = RefreshToken.for_user(user)

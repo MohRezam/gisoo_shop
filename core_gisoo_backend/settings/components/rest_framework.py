@@ -15,8 +15,6 @@ REST_FRAMEWORK = {
         "user": config("THROTTLE_RATE_USER", default="1000/day"),
         "otp": config("THROTTLE_RATE_OTP", default="2/minute"),
         "consultation_create": "8/day",
-        "guest_otp_request": "10/hour",
-        "guest_otp_verify": "10/hour",
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
