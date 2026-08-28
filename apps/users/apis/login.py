@@ -17,6 +17,7 @@ from apps.consultations.services import (
 from apps.products.services.wishlist import (
     WishlistService,
 )
+from apps.users.models import UserPhoneNumber
 
 from apps.users.serializers.login import (
     RequestOTPSerializer,
@@ -27,6 +28,8 @@ from core_gisoo_backend.settings.components.constants import WISHLIST_COOKIE_NAM
 from utils.general.throttles import (
     OTPThrottle,
 )
+
+from django.db import transaction
 
 User = get_user_model()
 
@@ -166,9 +169,34 @@ class VerifyOTPAPIView(APIView):
             "phone_number"
         ]
 
-        user, created = User.objects.get_or_create(
-            phone_number=phone_number
+
+        user_phone = (
+            UserPhoneNumber.objects
+            .select_related("user")
+            .filter(
+                phone_number=phone_number,
+                is_verified=True,
+            )
+            .first()
         )
+
+        if user_phone:
+            user = user_phone.user
+            created = False
+
+        else:
+            user, created = User.objects.get_or_create(
+                phone_number=phone_number
+            )
+
+            UserPhoneNumber.objects.get_or_create(
+                user=user,
+                phone_number=phone_number,
+                defaults={
+                    "is_verified": True,
+                    "is_primary": True,
+                },
+            )
 
         WishlistService.merge_wishlist_after_login(
             request=request,
@@ -198,6 +226,8 @@ class VerifyOTPAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
-        response.delete_cookie(WISHLIST_COOKIE_NAME)
+        response.delete_cookie(
+            WISHLIST_COOKIE_NAME
+        )
 
         return response

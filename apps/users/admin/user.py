@@ -1,7 +1,20 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from apps.users.models import User
+from apps.users.models import User, UserPhoneNumber
+
+
+class UserPhoneNumberInline(admin.TabularInline):
+    model = UserPhoneNumber
+    extra = 0
+    fields = (
+        "phone_number",
+        "is_verified",
+        "is_primary",
+    )
+    readonly_fields = (
+        "is_verified",
+    )
 
 
 @admin.register(User)
@@ -27,6 +40,7 @@ class CustomUserAdmin(UserAdmin):
         "first_name",
         "last_name",
         "email",
+        "phone_numbers__phone_number",
     )
 
     ordering = ("-id",)
@@ -48,7 +62,7 @@ class CustomUserAdmin(UserAdmin):
                     "first_name",
                     "last_name",
                     "email",
-                    "avatar"
+                    "avatar",
                 )
             },
         ),
@@ -89,4 +103,9 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
+
     exclude = ("creator",)
+
+    inlines = (
+        UserPhoneNumberInline,
+    )
