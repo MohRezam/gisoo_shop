@@ -44,6 +44,8 @@ class Address(BaseModel):
     )
 
     postal_code = models.CharField(
+        null=True,
+        blank=True,
         max_length=20,
         verbose_name=_("postal code"),
     )
