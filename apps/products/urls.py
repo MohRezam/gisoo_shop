@@ -3,7 +3,7 @@ from django.urls import path
 from apps.products.apis import (
     BrandListAPIView,
     CategoryListAPIView, ProductListAPIView, ProductDetailAPIView, HairProblemAPIView, SpecialOfferProductListAPIView,
-    ProductRelatedProductsAPIView,
+    ProductRelatedProductsAPIView, ProductViewerAPIView,
 )
 from apps.products.apis.wishlist import WishlistListAPIView, WishlistToggleAPIView, WishlistItemDeleteAPIView
 
@@ -62,5 +62,10 @@ urlpatterns = [
         "products/<slug:slug>/related/",
         ProductRelatedProductsAPIView.as_view(),
         name="product-related-products",
+    ),
+    path(
+        "products/<slug:slug>/viewers/",
+        ProductViewerAPIView.as_view(),
+        name="product-viewers",
     ),
 ]

@@ -26,6 +26,15 @@ from apps.products.serializers import (
 )
 from utils.paginators import StandardResultPagination
 from django.db.models import F
+from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+from apps.products.services.product_viewers import (
+    register_viewer,
+    VIEWER_COOKIE_NAME,
+)
 
 
 @extend_schema(
@@ -307,6 +316,7 @@ class ProductRelatedProductsAPIView(ListAPIView):
             )
         )
 
+
 @extend_schema(
     tags=["Products"],
     summary="Special Offer Product List",
@@ -360,3 +370,83 @@ class SpecialOfferProductListAPIView(ListAPIView):
             .distinct()
             .order_by("-created_at")
         )
+
+
+@extend_schema(
+    tags=["Products"],
+    summary="Register product viewer",
+    description=(
+            "Registers the current user or guest as an active viewer of the product "
+            "and returns the number of users currently viewing the product. "
+            "The viewer remains active as long as heartbeat requests are sent "
+            "within the viewer timeout period."
+    ),
+    responses={
+        200: OpenApiResponse(
+            description="Viewer registered successfully.",
+            response={
+                "type": "object",
+                "properties": {
+                    "viewers_count": {
+                        "type": "integer",
+                        "description": "Number of active viewers currently viewing the product.",
+                        "example": 7,
+                    },
+                },
+                "required": ["viewers_count"],
+            },
+        ),
+        404: OpenApiResponse(
+            description="Product not found or unavailable."
+        ),
+    },
+)
+class ProductViewerAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request, slug):
+        product = (
+            Product.objects
+            .filter(
+                slug=slug,
+                is_available=True,
+            )
+            .only("id")
+            .first()
+        )
+
+        if not product:
+            return Response(
+                {
+                    "detail": "Product not found."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        viewers_count, viewer_id = register_viewer(
+            request=request,
+            product_id=product.id,
+        )
+
+        response = Response(
+            {
+                "viewers_count": viewers_count,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+        if not request.COOKIES.get(
+                VIEWER_COOKIE_NAME
+        ):
+            response.set_cookie(
+                key=VIEWER_COOKIE_NAME,
+                value=viewer_id.replace(
+                    "guest:",
+                    "",
+                ),
+                max_age=60 * 60 * 24 * 365,
+                httponly=True,
+                samesite="Lax",
+            )
+
+        return response
