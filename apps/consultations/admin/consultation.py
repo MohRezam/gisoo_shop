@@ -32,6 +32,7 @@ class ConsultationRequestAdmin(
         "gender",
         "duration",
         "status",
+        "request_phone_consultation",
         "owner",
         "created_at",
     )
@@ -41,6 +42,7 @@ class ConsultationRequestAdmin(
         "gender",
         "duration",
         "hair_problem",
+        "request_phone_consultation"
     )
 
     search_fields = (

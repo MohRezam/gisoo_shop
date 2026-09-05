@@ -66,6 +66,7 @@ class ConsultationCreateSerializer(
             "gender",
             "hair_problem",
             "duration",
+            "request_phone_consultation"
         )
 
     def validate_full_name(self, value):

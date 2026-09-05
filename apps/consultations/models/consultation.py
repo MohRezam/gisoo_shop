@@ -179,6 +179,11 @@ class ConsultationRequest(models.Model):
         verbose_name=_("status"),
     )
 
+    request_phone_consultation = models.BooleanField(
+        default=False,
+        verbose_name=_("phone consultation"),
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_("created at"),
