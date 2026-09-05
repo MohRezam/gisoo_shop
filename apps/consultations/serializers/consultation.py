@@ -3,14 +3,14 @@ import re
 from rest_framework import serializers
 
 from apps.consultations.models.consultation import (
-    ConsultationRequest,
     ConsultationRecommendation,
+    ConsultationRequest,
 )
 from apps.products.models import HairProblem
 
 
 class ConsultationOptionsSerializer(
-    serializers.Serializer
+    serializers.Serializer,
 ):
     genders = serializers.SerializerMethodField()
     durations = serializers.SerializerMethodField()
@@ -55,7 +55,7 @@ class ConsultationOptionsSerializer(
 
 
 class ConsultationCreateSerializer(
-    serializers.ModelSerializer
+    serializers.ModelSerializer,
 ):
     class Meta:
         model = ConsultationRequest
@@ -66,7 +66,7 @@ class ConsultationCreateSerializer(
             "gender",
             "hair_problem",
             "duration",
-            "request_phone_consultation"
+            "request_phone_consultation",
         )
 
     def validate_full_name(self, value):
@@ -102,23 +102,25 @@ class ConsultationCreateSerializer(
 
 
 class ConsultationCreateResponseSerializer(
-    serializers.ModelSerializer
+    serializers.ModelSerializer,
 ):
     class Meta:
         model = ConsultationRequest
 
         fields = (
+            "id",
             "status",
         )
 
-
 class ConsultationRecommendationSerializer(
-    serializers.ModelSerializer
+    serializers.ModelSerializer,
 ):
     title = serializers.CharField(
         source="product.title",
     )
+
     brand = serializers.SerializerMethodField()
+
     image = serializers.SerializerMethodField()
 
     class Meta:
@@ -141,6 +143,7 @@ class ConsultationRecommendationSerializer(
 
     def get_image(self, obj):
         product = obj.product
+
         images = getattr(
             product,
             "primary_images",
@@ -149,13 +152,17 @@ class ConsultationRecommendationSerializer(
 
         if images:
             image = images[0]
+
             if image.image:
                 return image.image.url
+
             return None
 
         image = (
             product.images
-            .filter(is_primary=True)
+            .filter(
+                is_primary=True,
+            )
             .first()
         )
 
@@ -166,29 +173,31 @@ class ConsultationRecommendationSerializer(
 
 
 class ConsultationListSerializer(
-    serializers.ModelSerializer
+    serializers.ModelSerializer,
 ):
     hair_problem = serializers.CharField(
         source="hair_problem.title",
     )
+
     products = serializers.SerializerMethodField()
 
     class Meta:
         model = ConsultationRequest
 
         fields = (
+            "id",
             "status",
             "hair_problem",
             "duration",
             "created_at",
+            "updated_at",
             "products",
         )
 
     def get_products(self, obj):
-        if obj.status not in [
-            ConsultationRequest.Status.REVIEWING,
-            ConsultationRequest.Status.COMPLETED,
-        ]:
+        if obj.status != (
+            ConsultationRequest.Status.COMPLETED
+        ):
             return []
 
         return ConsultationRecommendationSerializer(
@@ -196,3 +205,36 @@ class ConsultationListSerializer(
             many=True,
             context=self.context,
         ).data
+
+
+class ConsultationUpdateSerializer(
+    serializers.ModelSerializer,
+):
+    class Meta:
+        model = ConsultationRequest
+
+        fields = (
+            "full_name",
+            "gender",
+            "hair_problem",
+            "duration",
+            "request_phone_consultation",
+        )
+
+    def validate_full_name(self, value):
+        value = value.strip()
+
+        if len(value) < 3:
+            raise serializers.ValidationError(
+                "نام و نام خانوادگی معتبر نیست."
+            )
+
+        return value
+
+    def validate_hair_problem(self, value):
+        if not value.is_active:
+            raise serializers.ValidationError(
+                "این مشکل مو در حال حاضر قابل انتخاب نیست."
+            )
+
+        return value

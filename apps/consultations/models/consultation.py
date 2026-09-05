@@ -7,13 +7,6 @@ from django.utils.translation import gettext_lazy as _
 
 
 class GuestIdentity(models.Model):
-    """
-    Represents the identity of a guest user.
-
-    A guest can have multiple devices and multiple
-    consultation requests.
-    """
-
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -45,10 +38,6 @@ class GuestIdentity(models.Model):
 
 
 class GuestDeviceAccess(models.Model):
-    """
-    Represents access to a GuestIdentity from a specific browser/device.
-    """
-
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -79,6 +68,10 @@ class GuestDeviceAccess(models.Model):
         verbose_name=_("last used at"),
     )
 
+    expires_at = models.DateTimeField(
+        verbose_name=_("expires at"),
+    )
+
     class Meta:
         verbose_name = _("guest device access")
         verbose_name_plural = _("guest device accesses")
@@ -94,6 +87,7 @@ class GuestDeviceAccess(models.Model):
 
 
 class ConsultationRequest(models.Model):
+
     class Gender(models.TextChoices):
         FEMALE = "female", _("Female")
         MALE = "male", _("Male")
@@ -116,7 +110,6 @@ class ConsultationRequest(models.Model):
 
     class Status(models.TextChoices):
         PENDING = "pending", _("Pending")
-        REVIEWING = "reviewing", _("Reviewing")
         COMPLETED = "completed", _("Completed")
 
     id = models.UUIDField(
@@ -205,15 +198,15 @@ class ConsultationRequest(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=(
-                        (
-                                models.Q(user__isnull=False)
-                                & models.Q(guest__isnull=True)
-                        )
-                        |
-                        (
-                                models.Q(user__isnull=True)
-                                & models.Q(guest__isnull=False)
-                        )
+                    (
+                        models.Q(user__isnull=False)
+                        & models.Q(guest__isnull=True)
+                    )
+                    |
+                    (
+                        models.Q(user__isnull=True)
+                        & models.Q(guest__isnull=False)
+                    )
                 ),
                 name="consultation_has_exactly_one_owner",
             ),
@@ -255,9 +248,6 @@ class ConsultationRecommendation(models.Model):
     )
 
     class Meta:
-        verbose_name = _("consultation recommendation")
-        verbose_name_plural = _("consultation recommendations")
-
         ordering = [
             "display_order",
             "created_at",
@@ -275,17 +265,12 @@ class ConsultationRecommendation(models.Model):
 
     def __str__(self):
         return (
-            f"{self.consultation.full_name} → "
-            f"{self.product.title}"
+            f"{self.consultation.full_name} "
+            f"→ {self.product.title}"
         )
 
 
 class GuestOTP(models.Model):
-    """
-    Temporary OTP used to verify guest phone number
-    when accessing consultations from another device.
-    """
-
     guest = models.ForeignKey(
         GuestIdentity,
         on_delete=models.CASCADE,
@@ -316,4 +301,7 @@ class GuestOTP(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.guest.phone_number} - {self.created_at}"
+        return (
+            f"{self.guest.phone_number} "
+            f"- {self.created_at}"
+        )

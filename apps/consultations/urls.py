@@ -1,12 +1,15 @@
 from django.urls import path
 
 from apps.consultations.apis import (
-    ConsultationOptionsAPIView,
     ConsultationCreateAPIView,
     ConsultationListAPIView,
+    ConsultationOptionsAPIView,
+    ConsultationUpdateAPIView,
 )
 
+
 app_name = "apps.consultations"
+
 
 urlpatterns = [
     path(
@@ -25,5 +28,11 @@ urlpatterns = [
         "my/",
         ConsultationListAPIView.as_view(),
         name="my",
+    ),
+
+    path(
+        "<uuid:pk>/",
+        ConsultationUpdateAPIView.as_view(),
+        name="detail",
     ),
 ]

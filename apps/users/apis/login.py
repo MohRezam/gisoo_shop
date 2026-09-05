@@ -23,7 +23,7 @@ from apps.users.serializers.login import (
     RequestOTPSerializer,
     VerifyOTPSerializer,
 )
-from core_gisoo_backend.settings.components.constants import WISHLIST_COOKIE_NAME
+from core_gisoo_backend.settings.components.constants import WISHLIST_COOKIE_NAME, GUEST_CONSULTATION_COOKIE_NAME
 
 from utils.general.throttles import (
     OTPThrottle,
@@ -158,17 +158,18 @@ class VerifyOTPAPIView(APIView):
 
     def post(self, request):
         serializer = self.serializer_class(
-            data=request.data
+            data=request.data,
         )
 
         serializer.is_valid(
-            raise_exception=True
+            raise_exception=True,
         )
 
-        phone_number = serializer.validated_data[
-            "phone_number"
-        ]
-
+        phone_number = (
+            serializer.validated_data[
+                "phone_number"
+            ]
+        )
 
         user_phone = (
             UserPhoneNumber.objects
@@ -185,8 +186,10 @@ class VerifyOTPAPIView(APIView):
             created = False
 
         else:
-            user, created = User.objects.get_or_create(
-                phone_number=phone_number
+            user, created = (
+                User.objects.get_or_create(
+                    phone_number=phone_number,
+                )
             )
 
             UserPhoneNumber.objects.get_or_create(
@@ -198,24 +201,46 @@ class VerifyOTPAPIView(APIView):
                 },
             )
 
-        WishlistService.merge_wishlist_after_login(
-            request=request,
-            user=user,
-        )
+        # -----------------------------------------
+        # MERGE GUEST DATA
+        # -----------------------------------------
 
         merge_guest_consultations_after_login(
             user,
         )
 
-        refresh = RefreshToken.for_user(user)
+        # -----------------------------------------
+        # MERGE WISHLIST
+        # -----------------------------------------
+
+        WishlistService.merge_wishlist_after_login(
+            request=request,
+            user=user,
+        )
+
+        # -----------------------------------------
+        # CREATE JWT
+        # -----------------------------------------
+
+        refresh = RefreshToken.for_user(
+            user,
+        )
 
         access_token = str(
-            refresh.access_token
+            refresh.access_token,
         )
 
+        # -----------------------------------------
+        # CLEAR OTP
+        # -----------------------------------------
+
         cache.delete(
-            f"otp_{phone_number}"
+            f"otp_{phone_number}",
         )
+
+        # -----------------------------------------
+        # RESPONSE
+        # -----------------------------------------
 
         response = Response(
             {
@@ -226,8 +251,20 @@ class VerifyOTPAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
+        # -----------------------------------------
+        # DELETE GUEST CONSULTATION COOKIE
+        # -----------------------------------------
+
         response.delete_cookie(
-            WISHLIST_COOKIE_NAME
+            GUEST_CONSULTATION_COOKIE_NAME,
+        )
+
+        # -----------------------------------------
+        # DELETE WISHLIST COOKIE
+        # -----------------------------------------
+
+        response.delete_cookie(
+            WISHLIST_COOKIE_NAME,
         )
 
         return response
