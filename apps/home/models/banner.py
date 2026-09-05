@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -12,11 +13,6 @@ class Banner(BaseModel):
         CATEGORY = "category", _("Category")
         CUSTOM = "custom", _("Custom URL")
         NONE = "none", _("No link")
-
-    title = models.CharField(
-        max_length=255,
-        verbose_name=_("title"),
-    )
 
     image = models.ImageField(
         upload_to=banner_image_path(),
@@ -54,8 +50,13 @@ class Banner(BaseModel):
     )
 
     display_order = models.PositiveIntegerField(
-        default=0,
-        verbose_name=_("display order"),
+        default=1,
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(3),
+        ],
+        verbose_name=_("hero position"),
+        help_text=_("1 = first hero, 2 = second hero, 3 = third hero"),
     )
 
     is_active = models.BooleanField(
@@ -68,8 +69,15 @@ class Banner(BaseModel):
         verbose_name_plural = _("banners")
         ordering = ["display_order", "-created_at"]
 
+        constraints = [
+            models.UniqueConstraint(
+                fields=["display_order"],
+                name="unique_banner_display_order",
+            ),
+        ]
+
     def __str__(self):
-        return self.title
+        return self.link_type
 
     def clean(self):
         super().clean()
@@ -97,6 +105,7 @@ class Banner(BaseModel):
 
         if self.link_type != self.LinkType.CUSTOM:
             self.custom_url = ""
+
 
 class Slider(BaseModel):
     class LinkType(models.TextChoices):

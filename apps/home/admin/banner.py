@@ -6,7 +6,6 @@ from apps.home.models import Banner, Slider
 @admin.register(Banner)
 class BannerAdmin(admin.ModelAdmin):
     list_display = (
-        "title",
         "link_type",
         "display_order",
         "is_active",
@@ -16,10 +15,6 @@ class BannerAdmin(admin.ModelAdmin):
     list_filter = (
         "link_type",
         "is_active",
-    )
-
-    search_fields = (
-        "title",
     )
 
     list_editable = (
