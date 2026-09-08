@@ -131,6 +131,7 @@ class ConsultationRecommendationSerializer(
             "brand",
             "image",
             "explanation",
+            "usage_instruction"
         )
 
     def get_brand(self, obj):

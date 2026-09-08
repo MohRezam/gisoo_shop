@@ -17,7 +17,8 @@ class ConsultationRecommendationInline(
     fields = (
         "product",
         "explanation",
-        "display_order",
+        "usage_instruction",
+        "display_order"
     )
 
 

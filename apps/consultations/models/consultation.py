@@ -87,7 +87,6 @@ class GuestDeviceAccess(models.Model):
 
 
 class ConsultationRequest(models.Model):
-
     class Gender(models.TextChoices):
         FEMALE = "female", _("Female")
         MALE = "male", _("Male")
@@ -198,15 +197,15 @@ class ConsultationRequest(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=(
-                    (
-                        models.Q(user__isnull=False)
-                        & models.Q(guest__isnull=True)
-                    )
-                    |
-                    (
-                        models.Q(user__isnull=True)
-                        & models.Q(guest__isnull=False)
-                    )
+                        (
+                                models.Q(user__isnull=False)
+                                & models.Q(guest__isnull=True)
+                        )
+                        |
+                        (
+                                models.Q(user__isnull=True)
+                                & models.Q(guest__isnull=False)
+                        )
                 ),
                 name="consultation_has_exactly_one_owner",
             ),
@@ -235,6 +234,12 @@ class ConsultationRecommendation(models.Model):
         blank=True,
         default="",
         verbose_name=_("explanation"),
+    )
+
+    usage_instruction = models.TextField(
+        blank=True,
+        default="",
+        verbose_name=_("usage instruction"),
     )
 
     display_order = models.PositiveIntegerField(
