@@ -174,14 +174,11 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
         else:
             product = obj.bundle.variant.product
 
-        images = getattr(product, "primary_images", [])
+        image = product.images.filter(
+            is_primary=True
+        ).first()
 
-        if not images:
-            return None
-
-        image = images[0]
-
-        if not image.image:
+        if not image or not image.image:
             return None
 
         return image.image.url
