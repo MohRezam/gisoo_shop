@@ -227,7 +227,18 @@ class ConsultationRecommendation(models.Model):
         "products.Product",
         on_delete=models.PROTECT,
         related_name="consultation_recommendations",
+        null=True,
+        blank=True,
         verbose_name=_("product"),
+    )
+
+    bundle = models.ForeignKey(
+        "products.Bundle",
+        on_delete=models.PROTECT,
+        related_name="consultation_recommendations",
+        null=True,
+        blank=True,
+        verbose_name=_("bundle"),
     )
 
     explanation = models.TextField(
@@ -259,19 +270,46 @@ class ConsultationRecommendation(models.Model):
         ]
 
         constraints = [
+            models.CheckConstraint(
+                condition=(
+                        (
+                                models.Q(product__isnull=False)
+                                & models.Q(bundle__isnull=True)
+                        )
+                        |
+                        (
+                                models.Q(product__isnull=True)
+                                & models.Q(bundle__isnull=False)
+                        )
+                ),
+                name="recommendation_has_exactly_one_target",
+            ),
+
             models.UniqueConstraint(
                 fields=[
                     "consultation",
                     "product",
                 ],
-                name="unique_consultation_recommendation",
+                condition=models.Q(product__isnull=False),
+                name="unique_consultation_product_recommendation",
+            ),
+
+            models.UniqueConstraint(
+                fields=[
+                    "consultation",
+                    "bundle",
+                ],
+                condition=models.Q(bundle__isnull=False),
+                name="unique_consultation_bundle_recommendation",
             ),
         ]
 
     def __str__(self):
+        target = self.product or self.bundle
+
         return (
             f"{self.consultation.full_name} "
-            f"→ {self.product.title}"
+            f"→ {target}"
         )
 
 

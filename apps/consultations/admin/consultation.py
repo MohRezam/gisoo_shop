@@ -1,6 +1,12 @@
 from django.contrib import admin
 
-from apps.consultations.models.consultation import ConsultationRecommendation, ConsultationRequest
+from apps.consultations.forms import (
+    ConsultationRecommendationAdminForm,
+)
+from apps.consultations.models.consultation import (
+    ConsultationRecommendation,
+    ConsultationRequest,
+)
 
 
 class ConsultationRecommendationInline(
@@ -8,17 +14,21 @@ class ConsultationRecommendationInline(
 ):
     model = ConsultationRecommendation
 
+    form = ConsultationRecommendationAdminForm
+
     extra = 1
 
     autocomplete_fields = (
         "product",
+        "bundle",
     )
 
     fields = (
         "product",
+        "bundle",
         "explanation",
         "usage_instruction",
-        "display_order"
+        "display_order",
     )
 
 
@@ -43,7 +53,7 @@ class ConsultationRequestAdmin(
         "gender",
         "duration",
         "hair_problem",
-        "request_phone_consultation"
+        "request_phone_consultation",
     )
 
     search_fields = (

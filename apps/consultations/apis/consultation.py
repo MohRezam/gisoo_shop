@@ -28,7 +28,7 @@ from apps.consultations.services import (
     get_or_create_guest,
     merge_guest_consultations_after_login, create_guest_device_access,
 )
-from apps.products.models import ProductImage
+from apps.products.models import ProductImage, ProductVariant
 from core_gisoo_backend.settings.components.constants import GUEST_CONSULTATION_COOKIE_NAME
 from utils.general.throttles import ConsultationCreateThrottle
 
@@ -52,10 +52,10 @@ class ConsultationOptionsAPIView(
         },
     )
     def get(
-        self,
-        request,
-        *args,
-        **kwargs,
+            self,
+            request,
+            *args,
+            **kwargs,
     ):
         serializer = self.get_serializer({})
 
@@ -88,10 +88,10 @@ class ConsultationCreateAPIView(
         },
     )
     def create(
-        self,
-        request,
-        *args,
-        **kwargs,
+            self,
+            request,
+            *args,
+            **kwargs,
     ):
         data = request.data.copy()
 
@@ -108,12 +108,12 @@ class ConsultationCreateAPIView(
                 part
                 for part in [
                     (
-                        request.user.first_name
-                        or ""
+                            request.user.first_name
+                            or ""
                     ).strip(),
                     (
-                        request.user.last_name
-                        or ""
+                            request.user.last_name
+                            or ""
                     ).strip(),
                 ]
                 if part
@@ -238,6 +238,7 @@ class ConsultationCreateAPIView(
 
         return response
 
+
 class ConsultationListAPIView(
     ListAPIView,
 ):
@@ -264,16 +265,22 @@ class ConsultationListAPIView(
             .select_related(
                 "product",
                 "product__brand",
+                "bundle",
+                "bundle__variant",
+                "bundle__variant__product",
             )
             .prefetch_related(
                 Prefetch(
                     "product__images",
-                    queryset=(
-                        ProductImage.objects.filter(
-                            is_primary=True,
-                        )
-                    ),
+                    queryset=ProductImage.objects.filter(is_primary=True),
                     to_attr="primary_images",
+                ),
+                Prefetch(
+                    "product__variants",
+                    queryset=ProductVariant.objects.filter(
+                        is_active=True
+                    ).order_by("price"),
+                    to_attr="active_variants",
                 ),
             )
         )
@@ -297,8 +304,8 @@ class ConsultationListAPIView(
     @extend_schema(
         tags=["Consultations"],
         summary=(
-            "List my consultations "
-            "with product suggestions"
+                "List my consultations "
+                "with product suggestions"
         ),
         responses={
             200: ConsultationListSerializer(
@@ -307,10 +314,10 @@ class ConsultationListAPIView(
         },
     )
     def get(
-        self,
-        request,
-        *args,
-        **kwargs,
+            self,
+            request,
+            *args,
+            **kwargs,
     ):
         if not request.user.is_authenticated:
             return Response(
@@ -429,10 +436,10 @@ class ConsultationUpdateAPIView(
         return consultation
 
     def retrieve(
-        self,
-        request,
-        *args,
-        **kwargs,
+            self,
+            request,
+            *args,
+            **kwargs,
     ):
         consultation = self.get_object()
 
@@ -458,16 +465,16 @@ class ConsultationUpdateAPIView(
         )
 
     def update(
-        self,
-        request,
-        *args,
-        **kwargs,
+            self,
+            request,
+            *args,
+            **kwargs,
     ):
         consultation = self.get_object()
 
         # Only PENDING consultations are editable.
         if consultation.status != (
-            ConsultationRequest.Status.PENDING
+                ConsultationRequest.Status.PENDING
         ):
             return Response(
                 {
