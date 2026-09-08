@@ -161,18 +161,20 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
         return obj.bundle.title
 
     def get_brand(self, obj):
-        if not obj.product_id:
-            return None
-
-        brand = obj.product.brand
+        if obj.product_id:
+            brand = obj.product.brand
+        else:
+            brand = obj.bundle.variant.product.brand
 
         return str(brand) if brand else None
 
     def get_image(self, obj):
-        if not obj.product_id:
-            return None
+        if obj.product_id:
+            product = obj.product
+        else:
+            product = obj.bundle.variant.product
 
-        images = getattr(obj.product, "primary_images", [])
+        images = getattr(product, "primary_images", [])
 
         if not images:
             return None
