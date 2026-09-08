@@ -6,18 +6,19 @@ from apps.cart.serializers import AddCartItemSerializer, CartSerializer, UpdateC
 from apps.cart.services.cart import add_to_cart, update_cart_item, delete_cart_item
 from rest_framework.generics import RetrieveAPIView
 from apps.cart.models import Cart
+from drf_spectacular.utils import extend_schema
 
 
 class AddToCartAPIView(APIView):
 
+    @extend_schema(
+        request=AddCartItemSerializer,
+    )
     def post(self, request):
         serializer = AddCartItemSerializer(
-            data=request.data,
+            data=request.data
         )
-
-        serializer.is_valid(
-            raise_exception=True,
-        )
+        serializer.is_valid(raise_exception=True)
 
         cart_uuid = request.headers.get(
             "X-Cart-UUID"
@@ -26,35 +27,31 @@ class AddToCartAPIView(APIView):
         cart = add_to_cart(
             cart_uuid=cart_uuid,
             user=request.user,
-            variant_id=serializer.validated_data[
+            variant_id=serializer.validated_data.get(
                 "variant_id"
-            ],
-            quantity=serializer.validated_data[
-                "quantity"
-            ],
+            ),
+            bundle_id=serializer.validated_data.get(
+                "bundle_id"
+            ),
+            quantity=serializer.validated_data["quantity"],
         )
 
         return Response(
             {
-                "cart_uuid": str(cart.uuid),
+                "cart_uuid": str(cart.uuid)
             },
             status=status.HTTP_200_OK,
         )
 
 
-class CartDetailAPIView(
-    RetrieveAPIView
-):
+class CartDetailAPIView(RetrieveAPIView):
     serializer_class = CartSerializer
-
-    permission_classes = [
-        AllowAny
-    ]
-
+    permission_classes = [AllowAny]
     lookup_field = "uuid"
 
     queryset = Cart.objects.prefetch_related(
-        "items__variant__product"
+        "items__variant__product",
+        "items__bundle__variant__product",
     )
 
 

@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db.models import Prefetch
 from rest_framework import status
 from rest_framework.generics import (
@@ -10,6 +11,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from drf_spectacular.utils import extend_schema
+from rest_framework.views import APIView
 
 from apps.consultations.models.consultation import (
     ConsultationRecommendation,
@@ -21,12 +23,13 @@ from apps.consultations.serializers import (
     ConsultationListSerializer,
     ConsultationOptionsSerializer,
     ConsultationRecommendationSerializer,
-    ConsultationUpdateSerializer,
+    ConsultationUpdateSerializer, AddSelectedRecommendationsSerializer,
 )
 from apps.consultations.services import (
     get_guest_by_token,
     get_or_create_guest,
-    merge_guest_consultations_after_login, create_guest_device_access,
+    merge_guest_consultations_after_login, create_guest_device_access, get_accessible_consultation,
+    add_consultation_recommendations_to_cart,
 )
 from apps.products.models import ProductImage, ProductVariant
 from core_gisoo_backend.settings.components.constants import GUEST_CONSULTATION_COOKIE_NAME
@@ -263,24 +266,28 @@ class ConsultationListAPIView(
         recommendations_qs = (
             ConsultationRecommendation.objects
             .select_related(
-                "product",
-                "product__brand",
+                "variant",
+                "variant__product",
+                "variant__product__brand",
                 "bundle",
                 "bundle__variant",
                 "bundle__variant__product",
+                "bundle__variant__product__brand",
             )
             .prefetch_related(
                 Prefetch(
-                    "product__images",
-                    queryset=ProductImage.objects.filter(is_primary=True),
+                    "variant__product__images",
+                    queryset=ProductImage.objects.filter(
+                        is_primary=True
+                    ),
                     to_attr="primary_images",
                 ),
                 Prefetch(
-                    "product__variants",
-                    queryset=ProductVariant.objects.filter(
-                        is_active=True
-                    ).order_by("price"),
-                    to_attr="active_variants",
+                    "bundle__variant__product__images",
+                    queryset=ProductImage.objects.filter(
+                        is_primary=True
+                    ),
+                    to_attr="primary_images",
                 ),
             )
         )
@@ -513,5 +520,126 @@ class ConsultationUpdateAPIView(
 
         return Response(
             serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class AddAllRecommendationsToCartAPIView(
+    APIView,
+):
+    permission_classes = [
+        AllowAny,
+    ]
+
+    @extend_schema(
+        tags=["Consultations"],
+        summary="Add all consultation recommendations to cart",
+        responses={
+            200: {
+                "description": "Recommendations added to cart successfully."
+            }
+        },
+    )
+    def post(
+        self,
+        request,
+        pk,
+    ):
+        consultation = get_accessible_consultation(
+            consultation_id=pk,
+            request=request,
+        )
+
+        cart_uuid = request.headers.get(
+            "X-Cart-UUID",
+        )
+
+        try:
+            cart = add_consultation_recommendations_to_cart(
+                consultation=consultation,
+                user=request.user,
+                cart_uuid=cart_uuid,
+                recommendation_ids=None,
+            )
+        except ValidationError as exc:
+            return Response(
+                {
+                    "detail": str(exc),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "cart_uuid": str(cart.uuid),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class AddSelectedRecommendationsToCartAPIView(
+    APIView,
+):
+    permission_classes = [
+        AllowAny,
+    ]
+
+    @extend_schema(
+        tags=["Consultations"],
+        summary="Add selected consultation recommendations to cart",
+        request=AddSelectedRecommendationsSerializer,
+        responses={
+            200: {
+                "description": "Selected recommendations added to cart successfully."
+            }
+        },
+    )
+    def post(
+        self,
+        request,
+        pk,
+    ):
+        consultation = get_accessible_consultation(
+            consultation_id=pk,
+            request=request,
+        )
+
+        serializer = (
+            AddSelectedRecommendationsSerializer(
+                data=request.data,
+            )
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        cart_uuid = request.headers.get(
+            "X-Cart-UUID",
+        )
+
+        try:
+            cart = add_consultation_recommendations_to_cart(
+                consultation=consultation,
+                user=request.user,
+                cart_uuid=cart_uuid,
+                recommendation_ids=(
+                    serializer.validated_data[
+                        "recommendation_ids"
+                    ]
+                ),
+            )
+        except ValidationError as exc:
+            return Response(
+                {
+                    "detail": str(exc),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "cart_uuid": str(cart.uuid),
+            },
             status=status.HTTP_200_OK,
         )

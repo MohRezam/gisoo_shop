@@ -114,11 +114,12 @@ class ConsultationCreateResponseSerializer(
 
 
 class ConsultationRecommendationSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
     type = serializers.SerializerMethodField()
     title = serializers.SerializerMethodField()
     brand = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+
+    product_id = serializers.SerializerMethodField()
 
     price = serializers.SerializerMethodField()
     discounted_price = serializers.SerializerMethodField()
@@ -131,6 +132,7 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "type",
+            "product_id",
             "title",
             "brand",
             "image",
@@ -142,35 +144,38 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
             "usage_instruction",
         )
 
-    def get_id(self, obj):
-        if obj.product_id:
-            return obj.product_id
-
-        return obj.bundle_id
-
     def get_type(self, obj):
-        if obj.product_id:
+        if obj.variant_id:
             return "product"
 
         return "bundle"
 
+    def get_product_id(self, obj):
+        if obj.variant_id:
+            return obj.variant.product_id
+
+        if obj.bundle_id:
+            return obj.bundle.variant.product_id
+
+        return None
+
     def get_title(self, obj):
-        if obj.product_id:
-            return obj.product.title
+        if obj.variant_id:
+            return obj.variant.product.title
 
         return obj.bundle.title
 
     def get_brand(self, obj):
-        if obj.product_id:
-            brand = obj.product.brand
+        if obj.variant_id:
+            brand = obj.variant.product.brand
         else:
             brand = obj.bundle.variant.product.brand
 
         return str(brand) if brand else None
 
     def get_image(self, obj):
-        if obj.product_id:
-            product = obj.product
+        if obj.variant_id:
+            product = obj.variant.product
         else:
             product = obj.bundle.variant.product
 
@@ -184,30 +189,26 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
         return image.image.url
 
     def get_price(self, obj):
-        if obj.product_id:
-            variant = self._get_product_variant(obj)
-
-            if variant is None:
-                return None
-
-            return variant.price
+        if obj.variant_id:
+            return obj.variant.price
 
         bundle = obj.bundle
 
-        return bundle.variant.price * bundle.quantity
+        return (
+            bundle.variant.price
+            * bundle.quantity
+        )
 
     def get_discounted_price(self, obj):
-        if obj.product_id:
-            variant = self._get_product_variant(obj)
+        if obj.variant_id:
+            return obj.variant.discounted_price
 
-            if variant is None:
-                return None
-
-            return variant.discounted_price
-
-        # Bundle
         bundle = obj.bundle
-        original_price = bundle.variant.price * bundle.quantity
+
+        original_price = (
+            bundle.variant.price
+            * bundle.quantity
+        )
 
         if bundle.price < original_price:
             return bundle.price
@@ -215,54 +216,25 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
         return None
 
     def get_discount_percent(self, obj):
-        if obj.product_id:
-            variant = self._get_product_variant(obj)
+        price = self.get_price(obj)
+        discounted_price = self.get_discounted_price(obj)
 
-            if (
-                variant is None
-                or variant.discounted_price is None
-                or variant.price <= 0
-            ):
-                return 0
-
-            return round(
-                (
-                    (variant.price - variant.discounted_price)
-                    / variant.price
-                )
-                * 100
-            )
-
-        # Bundle
-        bundle = obj.bundle
-        original_price = bundle.variant.price * bundle.quantity
-
-        if original_price <= 0 or bundle.price >= original_price:
+        if (
+            discounted_price is None
+            or price <= 0
+        ):
             return 0
 
         return round(
             (
-                (original_price - bundle.price)
-                / original_price
-            )
-            * 100
+                (price - discounted_price)
+                / price
+            ) * 100
         )
 
     def get_quantity(self, obj):
         if obj.bundle_id:
             return obj.bundle.quantity
-
-        return None
-
-    def _get_product_variant(self, obj):
-        variants = getattr(
-            obj.product,
-            "active_variants",
-            [],
-        )
-
-        if variants:
-            return variants[0]
 
         return None
 
@@ -333,3 +305,14 @@ class ConsultationUpdateSerializer(
             )
 
         return value
+
+
+class AddSelectedRecommendationsSerializer(
+    serializers.Serializer
+):
+    recommendation_ids = serializers.ListField(
+        child=serializers.IntegerField(
+            min_value=1,
+        ),
+        allow_empty=False,
+    )

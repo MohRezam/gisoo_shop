@@ -11,8 +11,7 @@ class ConsultationRecommendationAdminForm(
     class Meta:
         model = ConsultationRecommendation
         fields = (
-            "product",
-            "bundle",
+            "variant",
             "explanation",
             "usage_instruction",
             "display_order",
@@ -21,17 +20,13 @@ class ConsultationRecommendationAdminForm(
     def clean(self):
         cleaned_data = super().clean()
 
-        product = cleaned_data.get("product")
-        bundle = cleaned_data.get("bundle")
+        variant = cleaned_data.get("variant")
 
-        if product and bundle:
+        if variant and bundle:
             raise forms.ValidationError(
                 "فقط یکی از محصول یا پک را انتخاب کنید."
             )
 
-        if not product and not bundle:
-            raise forms.ValidationError(
-                "باید یک محصول یا یک پک انتخاب کنید."
-            )
+
 
         return cleaned_data

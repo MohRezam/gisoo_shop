@@ -2,6 +2,7 @@ import secrets
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -223,22 +224,11 @@ class ConsultationRecommendation(models.Model):
         verbose_name=_("consultation"),
     )
 
-    product = models.ForeignKey(
-        "products.Product",
+    variant = models.ForeignKey(
+        "products.ProductVariant",
         on_delete=models.PROTECT,
         related_name="consultation_recommendations",
-        null=True,
-        blank=True,
-        verbose_name=_("product"),
-    )
-
-    bundle = models.ForeignKey(
-        "products.Bundle",
-        on_delete=models.PROTECT,
-        related_name="consultation_recommendations",
-        null=True,
-        blank=True,
-        verbose_name=_("bundle"),
+        verbose_name=_("product variant"),
     )
 
     explanation = models.TextField(
@@ -270,46 +260,139 @@ class ConsultationRecommendation(models.Model):
         ]
 
         constraints = [
-            models.CheckConstraint(
-                condition=(
-                        (
-                                models.Q(product__isnull=False)
-                                & models.Q(bundle__isnull=True)
-                        )
-                        |
-                        (
-                                models.Q(product__isnull=True)
-                                & models.Q(bundle__isnull=False)
-                        )
-                ),
-                name="recommendation_has_exactly_one_target",
-            ),
-
             models.UniqueConstraint(
                 fields=[
                     "consultation",
-                    "product",
+                    "variant",
                 ],
-                condition=models.Q(product__isnull=False),
-                name="unique_consultation_product_recommendation",
-            ),
-
-            models.UniqueConstraint(
-                fields=[
-                    "consultation",
-                    "bundle",
-                ],
-                condition=models.Q(bundle__isnull=False),
-                name="unique_consultation_bundle_recommendation",
+                name="unique_consultation_variant_recommendation",
             ),
         ]
 
     def __str__(self):
-        target = self.product or self.bundle
-
         return (
             f"{self.consultation.full_name} "
-            f"→ {target}"
+            f"→ {self.variant}"
+        )
+
+
+class ConsultationRecommendationPack(models.Model):
+    consultation = models.ForeignKey(
+        ConsultationRequest,
+        on_delete=models.CASCADE,
+        related_name="recommendation_packs",
+        verbose_name=_("consultation"),
+    )
+
+    title = models.CharField(
+        max_length=255,
+        verbose_name=_("title"),
+    )
+
+    description = models.TextField(
+        blank=True,
+        default="",
+        verbose_name=_("description"),
+    )
+
+    display_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("display order"),
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("created at"),
+    )
+
+    class Meta:
+        ordering = [
+            "display_order",
+            "created_at",
+        ]
+
+        verbose_name = _("consultation recommendation pack")
+        verbose_name_plural = _(
+            "consultation recommendation packs"
+        )
+
+    def __str__(self):
+        return (
+            f"{self.consultation.full_name} "
+            f"→ {self.title}"
+        )
+
+
+class ConsultationRecommendationPackItem(models.Model):
+    pack = models.ForeignKey(
+        ConsultationRecommendationPack,
+        on_delete=models.CASCADE,
+        related_name="items",
+        verbose_name=_("pack"),
+    )
+
+    recommendation = models.ForeignKey(
+        ConsultationRecommendation,
+        on_delete=models.CASCADE,
+        related_name="pack_items",
+        verbose_name=_("recommendation"),
+    )
+
+    display_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("display order"),
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("created at"),
+    )
+
+    class Meta:
+        ordering = [
+            "display_order",
+            "created_at",
+        ]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "pack",
+                    "recommendation",
+                ],
+                name="unique_pack_recommendation",
+            ),
+        ]
+
+        verbose_name = _(
+            "consultation recommendation pack item"
+        )
+        verbose_name_plural = _(
+            "consultation recommendation pack items"
+        )
+
+    def clean(self):
+        if (
+                self.pack_id
+                and self.recommendation_id
+                and self.pack.consultation_id
+                != self.recommendation.consultation_id
+        ):
+            raise ValidationError(
+                _(
+                    "Pack and recommendation "
+                    "must belong to the same consultation."
+                )
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return (
+            f"{self.pack.title} → "
+            f"{self.recommendation}"
         )
 
 

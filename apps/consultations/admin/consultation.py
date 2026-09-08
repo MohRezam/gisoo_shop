@@ -19,13 +19,11 @@ class ConsultationRecommendationInline(
     extra = 1
 
     autocomplete_fields = (
-        "product",
-        "bundle",
+        "variant",
     )
 
     fields = (
-        "product",
-        "bundle",
+        "variant",
         "explanation",
         "usage_instruction",
         "display_order",

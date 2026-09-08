@@ -4,12 +4,10 @@ from apps.consultations.apis import (
     ConsultationCreateAPIView,
     ConsultationListAPIView,
     ConsultationOptionsAPIView,
-    ConsultationUpdateAPIView,
+    ConsultationUpdateAPIView, AddAllRecommendationsToCartAPIView, AddSelectedRecommendationsToCartAPIView,
 )
 
-
 app_name = "apps.consultations"
-
 
 urlpatterns = [
     path(
@@ -34,5 +32,16 @@ urlpatterns = [
         "<uuid:pk>/",
         ConsultationUpdateAPIView.as_view(),
         name="detail",
+    ),
+    path(
+        "<uuid:pk>/recommendations/add-all-to-cart/",
+        AddAllRecommendationsToCartAPIView.as_view(),
+        name="consultation-add-all-recommendations-to-cart",
+    ),
+
+    path(
+        "<uuid:pk>/recommendations/add-selected-to-cart/",
+        AddSelectedRecommendationsToCartAPIView.as_view(),
+        name="consultation-add-selected-recommendations-to-cart",
     ),
 ]
