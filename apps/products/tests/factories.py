@@ -47,18 +47,20 @@ def create_product(
 
 
 def create_product_variant(
-        *,
-        product,
-        sku="sku-1",
-        stock=10,
-        price=100000,
+    product,
+    sku,
+    stock,
+    price,
+    discounted_price=None,
+    volume=100,
 ):
     return ProductVariant.objects.create(
         product=product,
         sku=sku,
-        price=price,
         stock=stock,
-        is_active=True,
+        price=price,
+        discounted_price=discounted_price,
+        volume=volume,
     )
 
 

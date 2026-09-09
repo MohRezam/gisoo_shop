@@ -11,18 +11,27 @@ from apps.discounts.models import (
 
 
 def calculate_discount(
-        *,
-        user,
-        code,
-        products_price,
+    *,
+    user,
+    code,
+    products_price,
+    eligible_price=None,
 ):
     """
     Validate discount code and calculate discount amount.
 
+    products_price:
+        Cart subtotal after product-level discounts.
+        Used for minimum order validation.
+
+    eligible_price:
+        Amount that the coupon is allowed to discount.
+
     Returns:
         {
             "discount": Discount,
-            "discount_amount": Decimal,
+            "discount_amount": int,
+            "eligible_price": int,
         }
     """
 
@@ -53,18 +62,14 @@ def calculate_discount(
         )
 
     if (
-            discount.usage_limit > 0
-            and
-            discount.used_count >= discount.usage_limit
+        discount.usage_limit > 0
+        and discount.used_count >= discount.usage_limit
     ):
         raise ValidationError(
             _("Discount usage limit reached.")
         )
 
-    if (
-            products_price <
-            discount.minimum_order_amount
-    ):
+    if products_price < discount.minimum_order_amount:
         raise ValidationError(
             _(
                 "Minimum order amount is %(amount)s."
@@ -73,60 +78,55 @@ def calculate_discount(
             }
         )
 
-    user_usage_count = DiscountUsage.objects.filter(
-        discount=discount,
-        user=user,
-    ).count()
+    if user and user.is_authenticated:
+        user_usage_count = DiscountUsage.objects.filter(
+            discount=discount,
+            user=user,
+        ).count()
 
-    if (
-            user_usage_count >=
-            discount.per_user_limit
-    ):
-        raise ValidationError(
-            _("You have already used this discount.")
-        )
+        if user_usage_count >= discount.per_user_limit:
+            raise ValidationError(
+                _("You have already used this discount.")
+            )
 
-    if (
-            discount.discount_type ==
-            DiscountType.PERCENTAGE
-    ):
+    if eligible_price is None:
+        eligible_price = products_price
+
+    if discount.discount_type == DiscountType.PERCENTAGE:
         discount_amount = (
-                                  products_price *
-                                  discount.value
-                          ) // 100
-
+            eligible_price * discount.value
+        ) // 100
     else:
-        discount_amount = discount.value
-
-    if (
-            discount.maximum_discount_amount
-            and
-            discount_amount >
-            discount.maximum_discount_amount
-    ):
-        discount_amount = (
-            discount.maximum_discount_amount
+        discount_amount = min(
+            discount.value,
+            eligible_price,
         )
 
-    if discount_amount > products_price:
-        discount_amount = products_price
+    if (
+        discount.maximum_discount_amount
+        and discount_amount
+        > discount.maximum_discount_amount
+    ):
+        discount_amount = discount.maximum_discount_amount
+
+    discount_amount = min(
+        discount_amount,
+        eligible_price,
+    )
 
     return {
         "discount": discount,
         "discount_amount": discount_amount,
+        "eligible_price": eligible_price,
     }
 
 
 def register_discount_usage(
-        *,
-        discount,
-        user,
-        order,
+    *,
+    discount,
+    user,
+    order,
 ):
-    """
-    Register successful discount usage.
-    """
-
     DiscountUsage.objects.create(
         discount=discount,
         user=user,

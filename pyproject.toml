@@ -3,7 +3,7 @@ name = "gisoo-center"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Mohammad Reza",email = "mkalhor81126@gmail.com"}
+    { name = "Mohammad Reza", email = "mkalhor81126@gmail.com" }
 ]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
@@ -48,3 +48,7 @@ dependencies = [
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "core_gisoo_backend.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]

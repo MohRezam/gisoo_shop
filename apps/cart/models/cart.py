@@ -24,6 +24,14 @@ class Cart(BaseModel):
         blank=True,
     )
 
+    discount = models.ForeignKey(
+        "discounts.Discount",
+        on_delete=models.SET_NULL,
+        related_name="carts",
+        null=True,
+        blank=True,
+        verbose_name=_("discount"),
+    )
     is_active = models.BooleanField(
         default=True,
     )

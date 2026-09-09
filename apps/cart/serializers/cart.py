@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.cart.models import Cart, CartItem
+from apps.cart.services import calculate_cart_totals
 
 
 class AddCartItemSerializer(serializers.Serializer):
@@ -82,8 +83,8 @@ class CartItemSerializer(serializers.ModelSerializer):
     def get_price(self, obj):
         if obj.bundle_id:
             return (
-                obj.bundle.variant.price
-                * obj.bundle.quantity
+                    obj.bundle.variant.price
+                    * obj.bundle.quantity
             )
 
         return obj.variant.price
@@ -91,8 +92,8 @@ class CartItemSerializer(serializers.ModelSerializer):
     def get_discounted_price(self, obj):
         if obj.bundle_id:
             original_price = (
-                obj.bundle.variant.price
-                * obj.bundle.quantity
+                    obj.bundle.variant.price
+                    * obj.bundle.quantity
             )
 
             if obj.bundle.price < original_price:
@@ -111,10 +112,9 @@ class CartItemSerializer(serializers.ModelSerializer):
 
         return round(
             (
-                (price - discounted_price)
-                / price
-            )
-            * 100
+                    (price - discounted_price)
+                    / price
+            ) * 100
         )
 
     def get_bundle_quantity(self, obj):
@@ -141,9 +141,13 @@ class CartSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    original_subtotal = serializers.SerializerMethodField()
+    product_discount = serializers.SerializerMethodField()
     subtotal = serializers.SerializerMethodField()
-    total_discount = serializers.SerializerMethodField()
+    coupon_discount = serializers.SerializerMethodField()
     total_price = serializers.SerializerMethodField()
+    discount = serializers.SerializerMethodField()
+
     total_items = serializers.SerializerMethodField()
     total_products = serializers.SerializerMethodField()
 
@@ -154,63 +158,55 @@ class CartSerializer(serializers.ModelSerializer):
             "uuid",
             "total_items",
             "total_products",
+            "original_subtotal",
+            "product_discount",
             "subtotal",
-            "total_discount",
+            "coupon_discount",
             "total_price",
+            "discount",
             "items",
         )
 
+    def get_totals(self, obj):
+        if hasattr(self, "_cart_totals"):
+            return self._cart_totals
+
+        request = self.context.get("request")
+
+        user = (
+            request.user
+            if request
+            else None
+        )
+
+        self._cart_totals = calculate_cart_totals(
+            cart=obj,
+            user=user,
+            discount=obj.discount,
+        )
+
+        return self._cart_totals
+
+    def get_original_subtotal(self, obj):
+        return self.get_totals(obj)["original_subtotal"]
+
+    def get_product_discount(self, obj):
+        return self.get_totals(obj)["product_discount"]
+
     def get_subtotal(self, obj):
-        total = 0
+        return self.get_totals(obj)["subtotal"]
 
-        for item in obj.items.all():
-            if item.bundle_id:
-                price = (
-                    item.bundle.variant.price
-                    * item.bundle.quantity
-                )
-            else:
-                price = item.variant.price
-
-            total += price * item.quantity
-
-        return total
-
-    def get_total_discount(self, obj):
-        total_discount = 0
-
-        for item in obj.items.all():
-            if item.bundle_id:
-                original_price = (
-                    item.bundle.variant.price
-                    * item.bundle.quantity
-                )
-
-                final_price = item.bundle.price
-
-                if final_price >= original_price:
-                    final_price = original_price
-
-            else:
-                original_price = item.variant.price
-
-                final_price = (
-                    item.variant.discounted_price
-                    if item.variant.discounted_price is not None
-                    else item.variant.price
-                )
-
-            total_discount += (
-                original_price - final_price
-            ) * item.quantity
-
-        return total_discount
+    def get_coupon_discount(self, obj):
+        return self.get_totals(obj)["coupon_discount"]
 
     def get_total_price(self, obj):
-        return (
-            self.get_subtotal(obj)
-            - self.get_total_discount(obj)
-        )
+        return self.get_totals(obj)["total"]
+
+    def get_discount(self, obj):
+        if obj.discount_id:
+            return obj.discount.code
+
+        return None
 
     def get_total_items(self, obj):
         return sum(
@@ -224,15 +220,23 @@ class CartSerializer(serializers.ModelSerializer):
         for item in obj.items.all():
             if item.bundle_id:
                 total += (
-                    item.quantity
-                    * item.bundle.quantity
+                        item.quantity
+                        * item.bundle.quantity
                 )
             else:
                 total += item.quantity
 
         return total
 
+
 class UpdateCartItemSerializer(serializers.Serializer):
     quantity = serializers.IntegerField(
         min_value=1,
+    )
+
+
+class ApplyDiscountSerializer(serializers.Serializer):
+    code = serializers.CharField(
+        max_length=50,
+        trim_whitespace=True,
     )

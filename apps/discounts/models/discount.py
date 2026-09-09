@@ -40,6 +40,15 @@ class Discount(BaseModel):
         blank=True,
     )
 
+    applies_to_discounted_products = models.BooleanField(
+        verbose_name=_("Applies to discounted products"),
+        default=True,
+        help_text=_(
+            "Whether this discount can be applied to products "
+            "that already have a product discount."
+        ),
+    )
+
     usage_limit = models.PositiveIntegerField(
         verbose_name=_("Usage limit"),
         default=0,
@@ -84,8 +93,8 @@ class Discount(BaseModel):
         now = timezone.now()
 
         return (
-            self.is_active
-            and self.starts_at <= now <= self.expires_at
+                self.is_active
+                and self.starts_at <= now <= self.expires_at
         )
 
 
