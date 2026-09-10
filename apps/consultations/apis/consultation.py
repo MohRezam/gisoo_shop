@@ -235,7 +235,7 @@ class ConsultationCreateAPIView(
             value=guest_access.token,
             max_age=30 * 24 * 60 * 60,
             httponly=True,
-            secure=False,
+            secure=True,
             samesite="Lax",
         )
 
@@ -541,9 +541,9 @@ class AddAllRecommendationsToCartAPIView(
         },
     )
     def post(
-        self,
-        request,
-        pk,
+            self,
+            request,
+            pk,
     ):
         consultation = get_accessible_consultation(
             consultation_id=pk,
@@ -595,9 +595,9 @@ class AddSelectedRecommendationsToCartAPIView(
         },
     )
     def post(
-        self,
-        request,
-        pk,
+            self,
+            request,
+            pk,
     ):
         consultation = get_accessible_consultation(
             consultation_id=pk,
