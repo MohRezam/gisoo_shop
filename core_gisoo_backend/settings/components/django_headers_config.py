@@ -4,6 +4,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://localhost:3000",
     "http://194.5.195.195:8080",
+
+    "https://gisoocenter.ir",
+    "https://www.gisoocenter.ir",
 ]
 
 CORS_ALLOW_CREDENTIALS = True

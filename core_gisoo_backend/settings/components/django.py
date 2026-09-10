@@ -27,7 +27,6 @@ ROOT_URLCONF = f"{PROJECT_NAME}.urls"
 
 WSGI_APPLICATION = f"{PROJECT_NAME}.wsgi.application"
 
-
 # Configure HTTPS
 USE_X_FORWARDED_HOST = True
 
@@ -51,4 +50,7 @@ if not settings.DEBUG:
         "https://core-donation.stzarebin.ir",
         "https://donation.stzarebin.ir",
         "https://donation.pr.mci.dev",
+        "https://gisoocenter.ir",
+        "https://www.gisoocenter.ir",
+        "https://api.gisoocenter.ir",
     ]
