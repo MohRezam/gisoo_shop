@@ -6,7 +6,7 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Install Poetry
-RUN pip install --no-cache-dir poetry
+RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple poetry
 
 # Poetry configuration
 ENV POETRY_NO_INTERACTION=1
