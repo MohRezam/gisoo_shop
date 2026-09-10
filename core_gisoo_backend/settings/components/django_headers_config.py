@@ -17,6 +17,7 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
     "x-token",
     "X-Token",
     "accept-language",
+    "x-cart-uuid",
 ]
 
 CORS_ALLOW_METHODS = list(default_methods)
