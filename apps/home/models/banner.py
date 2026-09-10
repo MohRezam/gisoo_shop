@@ -53,10 +53,10 @@ class Banner(BaseModel):
         default=1,
         validators=[
             MinValueValidator(1),
-            MaxValueValidator(3),
+            MaxValueValidator(5),
         ],
         verbose_name=_("hero position"),
-        help_text=_("1 = first hero, 2 = second hero, 3 = third hero"),
+        help_text=_("1 = first hero, 2 = second hero, 3 = third hero, 4 = fourth hero, 5 = fifth hero"),
     )
 
     is_active = models.BooleanField(
