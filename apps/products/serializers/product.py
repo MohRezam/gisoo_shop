@@ -7,6 +7,7 @@ from apps.products.models import (
     ProductVariant,
     VariantAttribute, ProductAttribute
 )
+from apps.reviews.serializers import ProductReviewPublicSerializer
 
 
 class AttributeValueSerializer(
@@ -558,9 +559,17 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     related_products = serializers.SerializerMethodField()
 
+    reviews = ProductReviewPublicSerializer(
+        source="approved_reviews",
+        many=True,
+        read_only=True,
+    )
+
     min_price = serializers.SerializerMethodField()
     max_price = serializers.SerializerMethodField()
     has_multiple_variants = serializers.SerializerMethodField()
+
+    rating = serializers.SerializerMethodField()
 
     is_favorited = serializers.SerializerMethodField()
     is_in_stock = serializers.SerializerMethodField()
@@ -588,12 +597,28 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "product_attributes",
 
             "related_products",
-
+            "reviews",
             "has_multiple_variants",
-
+            "rating",
             "is_favorited",
             "is_in_stock"
         ]
+
+    def get_rating(self, obj):
+        return {
+            "average": round(
+                obj.reviews_average or 0,
+                1,
+            ),
+            "count": obj.reviews_count,
+            "distribution": {
+                "5": obj.reviews_5,
+                "4": obj.reviews_4,
+                "3": obj.reviews_3,
+                "2": obj.reviews_2,
+                "1": obj.reviews_1,
+            },
+        }
 
     def get_is_in_stock(self, obj):
         return any(

@@ -1,4 +1,12 @@
-from django.db.models import Min, Prefetch, Subquery, OuterRef
+from django.db.models import (
+    Avg,
+    Count,
+    Min,
+    OuterRef,
+    Prefetch,
+    Q,
+    Subquery,
+)
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -24,6 +32,7 @@ from apps.products.serializers import (
     ProductDetailSerializer,
     ProductListSerializer, SpecialOfferProductListSerializer, RelatedProductSerializer,
 )
+from apps.reviews.models import ProductReview, ReviewStatus
 from utils.paginators import StandardResultPagination
 from django.db.models import F
 from rest_framework.permissions import AllowAny
@@ -158,7 +167,6 @@ class ProductDetailAPIView(RetrieveAPIView):
             "category",
         )
         .prefetch_related(
-
             Prefetch(
                 "images",
                 queryset=ProductImage.objects.order_by(
@@ -211,6 +219,23 @@ class ProductDetailAPIView(RetrieveAPIView):
                 ),
             ),
 
+            Prefetch(
+                "reviews",
+                queryset=(
+                    ProductReview.objects
+                    .filter(
+                        status=ReviewStatus.APPROVED,
+                    )
+                    .select_related(
+                        "user",
+                    )
+                    .order_by(
+                        "-created_at",
+                    )[:5]
+                ),
+                to_attr="approved_reviews",
+            ),
+
             # Related products
             Prefetch(
                 "related_product_relations",
@@ -228,6 +253,55 @@ class ProductDetailAPIView(RetrieveAPIView):
                     )
                 ),
                 to_attr="ordered_related_product_relations",
+            ),
+        )
+        .annotate(
+            reviews_count=Count(
+                "reviews",
+                filter=Q(
+                    reviews__status="approved",
+                ),
+            ),
+            reviews_average=Avg(
+                "reviews__rating",
+                filter=Q(
+                    reviews__status="approved",
+                ),
+            ),
+            reviews_5=Count(
+                "reviews",
+                filter=Q(
+                    reviews__status="approved",
+                    reviews__rating=5,
+                ),
+            ),
+            reviews_4=Count(
+                "reviews",
+                filter=Q(
+                    reviews__status="approved",
+                    reviews__rating=4,
+                ),
+            ),
+            reviews_3=Count(
+                "reviews",
+                filter=Q(
+                    reviews__status="approved",
+                    reviews__rating=3,
+                ),
+            ),
+            reviews_2=Count(
+                "reviews",
+                filter=Q(
+                    reviews__status="approved",
+                    reviews__rating=2,
+                ),
+            ),
+            reviews_1=Count(
+                "reviews",
+                filter=Q(
+                    reviews__status="approved",
+                    reviews__rating=1,
+                ),
             ),
         )
     )

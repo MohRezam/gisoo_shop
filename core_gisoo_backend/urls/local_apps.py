@@ -46,5 +46,9 @@ local_apps_urlpatterns = [
         "consultations/",
         include("apps.consultations.urls", namespace="apps.consultations"),
     ),
+    path(
+        "reviews/",
+        include("apps.reviews.urls", namespace="apps.reviews")
+    )
 
 ]

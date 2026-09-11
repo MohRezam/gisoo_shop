@@ -66,6 +66,7 @@ class ProductAdmin(
     admin.ModelAdmin,
 ):
     list_display = (
+        "id",
         "title",
         "category",
         "brand",
