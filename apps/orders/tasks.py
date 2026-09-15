@@ -83,3 +83,20 @@ def expire_order(
         new_status=OrderStatus.EXPIRED,
         reason="Order expired automatically.",
     )
+
+@shared_task
+def expire_overdue_orders():
+    overdue_order_ids = list(
+        Order.objects.filter(
+            status=OrderStatus.CREATED,
+            expires_at__lte=timezone.now(),
+        ).values_list(
+            "id",
+            flat=True,
+        )
+    )
+
+    for order_id in overdue_order_ids:
+        expire_order.delay(order_id)
+
+    return len(overdue_order_ids)

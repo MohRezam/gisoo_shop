@@ -92,6 +92,34 @@ services:
     networks:
       - gisoo_network
 
+
+
+  celery-beat:
+    build: .
+    container_name: gisoo_center_celery_beat
+    restart: always
+
+    command:
+      - celery
+      - -A
+      - core_gisoo_backend
+      - beat
+      - -l
+      - info
+
+    env_file:
+      - .env
+
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - gisoo_network
+
+
   nginx:
     image: nginx:alpine
     container_name: gisoo_center_nginx
