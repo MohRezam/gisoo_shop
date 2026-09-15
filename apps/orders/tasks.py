@@ -16,10 +16,35 @@ from apps.payments.models import (
 )
 
 
+ACTIVE_PAYMENT_STATUSES = [
+    PaymentIntentStatus.PENDING_PAYMENT,
+    PaymentIntentStatus.RECEIPT_SUBMITTED,
+    PaymentIntentStatus.UNDER_REVIEW,
+    PaymentIntentStatus.MANUAL_REVIEW,
+]
+
+
+def has_valid_payment_receipt(
+        *,
+        order,
+        expires_at,
+):
+    return PaymentIntent.objects.filter(
+        order=order,
+        status__in=[
+            PaymentIntentStatus.RECEIPT_SUBMITTED,
+            PaymentIntentStatus.UNDER_REVIEW,
+            PaymentIntentStatus.MANUAL_REVIEW,
+        ],
+        submitted_at__isnull=False,
+        submitted_at__lte=expires_at,
+    ).exists()
+
+
 @shared_task
 @transaction.atomic
 def expire_order(
-    order_id: int,
+        order_id: int,
 ):
     order = (
         Order.objects
@@ -39,7 +64,15 @@ def expire_order(
     if order.status != OrderStatus.CREATED:
         return
 
-    if order.expires_at > timezone.now():
+    now = timezone.now()
+
+    if order.expires_at > now:
+        return
+
+    if has_valid_payment_receipt(
+        order=order,
+        expires_at=order.expires_at,
+    ):
         return
 
     payment_intent = (
@@ -47,12 +80,7 @@ def expire_order(
         .select_for_update()
         .filter(
             order=order,
-            status__in=[
-                PaymentIntentStatus.PENDING_PAYMENT,
-                PaymentIntentStatus.RECEIPT_SUBMITTED,
-                PaymentIntentStatus.UNDER_REVIEW,
-                PaymentIntentStatus.MANUAL_REVIEW,
-            ],
+            status__in=ACTIVE_PAYMENT_STATUSES,
         )
         .first()
     )
@@ -84,13 +112,18 @@ def expire_order(
         reason="Order expired automatically.",
     )
 
+
 @shared_task
 def expire_overdue_orders():
+    now = timezone.now()
+
     overdue_order_ids = list(
-        Order.objects.filter(
+        Order.objects
+        .filter(
             status=OrderStatus.CREATED,
-            expires_at__lte=timezone.now(),
-        ).values_list(
+            expires_at__lte=now,
+        )
+        .values_list(
             "id",
             flat=True,
         )
