@@ -9,7 +9,6 @@ from apps.discounts.models import (
 
 @admin.register(Discount)
 class DiscountAdmin(admin.ModelAdmin):
-
     list_display = (
         "code",
         "discount_type",
@@ -88,26 +87,26 @@ class DiscountAdmin(admin.ModelAdmin):
         ),
     )
     exclude = ("creator",)
+    list_per_page = 15
 
     @admin.display(
         boolean=True,
         description="Valid"
     )
     def is_valid(
-        self,
-        obj,
+            self,
+            obj,
     ):
         now = timezone.now()
 
         return (
-            obj.is_active
-            and obj.starts_at <= now <= obj.expires_at
+                obj.is_active
+                and obj.starts_at <= now <= obj.expires_at
         )
 
 
 @admin.register(DiscountUsage)
 class DiscountUsageAdmin(admin.ModelAdmin):
-
     list_display = (
         "discount",
         "user",
@@ -121,12 +120,6 @@ class DiscountUsageAdmin(admin.ModelAdmin):
         "user__email",
     )
 
-    autocomplete_fields = (
-        "discount",
-        "user",
-        "order",
-    )
-
     ordering = (
         "-created_at",
     )
@@ -135,4 +128,6 @@ class DiscountUsageAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
-    exclude = ("creator", )
+    exclude = ("creator", "archived")
+    raw_id_fields = ("discount", "user", "order")
+    list_per_page = 15

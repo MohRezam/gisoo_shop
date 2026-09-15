@@ -15,8 +15,8 @@ class MagazineCategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {
         "slug": ("name",),
     }
-    exclude = ("creator", )
-
+    exclude = ("creator", "archived")
+    list_per_page = 15
 
 @admin.register(Magazine)
 class MagazineAdmin(admin.ModelAdmin):
@@ -48,11 +48,10 @@ class MagazineAdmin(admin.ModelAdmin):
         "related_articles",
     )
 
-    autocomplete_fields = (
-        "category",
-    )
+    raw_id_fields = ("category",)
 
-    exclude = ("creator", )
+    exclude = ("creator", "archived")
+    list_per_page = 15
     def save_model(self, request, obj, form, change):
         if obj.is_featured:
             Magazine.objects.exclude(

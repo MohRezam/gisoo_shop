@@ -62,4 +62,7 @@ class OrderAdmin(admin.ModelAdmin):
     ordering = [
         "-created_at",
     ]
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
+    raw_id_fields = ("user", "discount", "shipping_method")
+    list_per_page = 15
+

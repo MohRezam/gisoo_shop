@@ -35,8 +35,8 @@ class ShippingMethodAdmin(
     ordering = [
         "price",
     ]
-    exclude = ("creator",)
-
+    exclude = ("creator", "archived")
+    list_per_page = 15
 
 
 @admin.register(Shipment)
@@ -60,11 +60,6 @@ class ShipmentAdmin(
         "order__id",
     ]
 
-    autocomplete_fields = [
-        "order",
-        "created_by",
-    ]
-
     readonly_fields = [
         "created_at",
         "updated_at",
@@ -73,4 +68,6 @@ class ShipmentAdmin(
     ordering = [
         "-created_at",
     ]
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
+    raw_id_fields = ("order", "created_by")
+    list_per_page = 15

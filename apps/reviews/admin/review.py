@@ -42,3 +42,7 @@ class ProductReviewAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
+    exclude = ("creator", "archived")
+
+    raw_id_fields = ("user", "product")
+    list_per_page = 15

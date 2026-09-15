@@ -1,0 +1,74 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+
+<div id="content-main">
+
+    <h1>{{ title }}</h1>
+
+    <div style="margin: 20px 0;">
+        <strong>Payment ID:</strong>
+        {{ payment_intent.id }}
+    </div>
+
+    <div style="margin: 20px 0;">
+        <strong>Order:</strong>
+        {{ payment_intent.order_id }}
+    </div>
+
+    <div style="margin: 20px 0;">
+        <strong>Payable amount:</strong>
+        {{ payment_intent.payable_amount_rial }}
+        Rial
+    </div>
+
+    <div style="margin: 20px 0;">
+        <strong>Current status:</strong>
+        {{ payment_intent.status }}
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+
+        {% for field in form %}
+            <div style="margin-bottom: 20px;">
+                {{ field.errors }}
+
+                <div>
+                    {{ field.label_tag }}
+                </div>
+
+                <div style="margin-top: 5px;">
+                    {{ field }}
+                </div>
+
+                {% if field.help_text %}
+                    <div style="color: #666; margin-top: 5px;">
+                        {{ field.help_text }}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div style="margin-top: 30px;">
+            <input
+                type="submit"
+                value="Confirm"
+                class="default"
+            >
+
+            <a
+                href="{% url 'admin:payments_paymentintent_change' payment_intent.pk %}"
+                class="button"
+                style="margin-left: 10px;"
+            >
+                Cancel
+            </a>
+        </div>
+    </form>
+
+</div>
+
+{% endblock %}

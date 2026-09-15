@@ -23,6 +23,6 @@ class CategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {
         "slug": ("title",)
     }
-    exclude = ("creator",)
-
-
+    exclude = ("creator", "archived")
+    raw_id_fields = ("parent",)
+    list_per_page = 15

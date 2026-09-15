@@ -18,4 +18,4 @@ class BrandAdmin(admin.ModelAdmin):
     prepopulated_fields = {
         "slug": ("title",)
     }
-    exclude = ("creator",)
+    exclude = ("creator", "archived")

@@ -98,9 +98,27 @@ def calculate_cart(
 
         bundle = cart_item.bundle
 
+        variant = ProductVariant.objects.select_for_update().get(
+            pk=bundle.variant_id,
+        )
+
+        bundle_quantity = (
+                bundle.quantity *
+                cart_item.quantity
+        )
+
+        if bundle_quantity > variant.stock:
+            raise ValidationError(
+                _(
+                    "Not enough stock for '%(product)s'."
+                ) % {
+                    "product": variant.product.title,
+                }
+            )
+
         bundle_total = (
-            bundle.price *
-            cart_item.quantity
+                bundle.price *
+                cart_item.quantity
         )
 
         order_bundle = OrderBundle(
@@ -113,6 +131,13 @@ def calculate_cart(
         )
 
         order_bundles.append(order_bundle)
+
+        variants.append(
+            (
+                variant,
+                bundle_quantity,
+            )
+        )
 
         products_total += bundle_total
 

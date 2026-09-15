@@ -8,7 +8,7 @@ from apps.discounts.models import (
     DiscountType,
     DiscountUsage,
 )
-
+from django.db import transaction
 
 def calculate_discount(
     *,
@@ -121,20 +121,20 @@ def calculate_discount(
     }
 
 
-def register_discount_usage(
-    *,
-    discount,
-    user,
-    order,
-):
-    DiscountUsage.objects.create(
+
+
+@transaction.atomic
+def register_discount_usage(*, discount, user, order):
+    usage, created = DiscountUsage.objects.get_or_create(
         discount=discount,
         user=user,
         order=order,
     )
 
-    Discount.objects.filter(
-        id=discount.id,
-    ).update(
-        used_count=F("used_count") + 1,
-    )
+    if created:
+        Discount.objects.filter(id=discount.id).update(
+            used_count=F("used_count") + 1,
+        )
+
+    return usage, created
+

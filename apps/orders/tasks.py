@@ -9,8 +9,10 @@ from apps.orders.models import (
 from apps.orders.services.change_order_status import (
     change_order_status,
 )
+from apps.orders.services.inventory import release_stock
 from apps.payments.models import (
-    PaymentStatus,
+    PaymentIntent,
+    PaymentIntentStatus,
 )
 
 
@@ -22,9 +24,6 @@ def expire_order(
     order = (
         Order.objects
         .select_for_update()
-        .select_related(
-            "payment",
-        )
         .prefetch_related(
             "items__variant",
         )
@@ -43,19 +42,41 @@ def expire_order(
     if order.expires_at > timezone.now():
         return
 
-    if order.payment.status != PaymentStatus.PENDING:
-        return
+    payment_intent = (
+        PaymentIntent.objects
+        .select_for_update()
+        .filter(
+            order=order,
+            status__in=[
+                PaymentIntentStatus.PENDING_PAYMENT,
+                PaymentIntentStatus.RECEIPT_SUBMITTED,
+                PaymentIntentStatus.UNDER_REVIEW,
+                PaymentIntentStatus.MANUAL_REVIEW,
+            ],
+        )
+        .first()
+    )
 
-    for item in order.items.all():
-        variant = item.variant
-
-        variant.stock += item.quantity
-
-        variant.save(
+    if payment_intent is not None:
+        payment_intent.status = PaymentIntentStatus.EXPIRED
+        payment_intent.save(
             update_fields=[
-                "stock",
+                "status",
+                "updated_at",
             ]
         )
+
+    variants = [
+        (
+            item.variant,
+            item.quantity,
+        )
+        for item in order.items.all()
+    ]
+
+    release_stock(
+        variants=variants,
+    )
 
     change_order_status(
         order=order,

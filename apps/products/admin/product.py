@@ -12,16 +12,17 @@ from apps.products.models import (
 )
 import nested_admin
 
+
 class ProductImageInline(nested_admin.NestedTabularInline):
     model = ProductImage
     extra = 0
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
 
 
 class ProductAttributeInline(nested_admin.NestedTabularInline):
     model = ProductAttribute
     extra = 0
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
 
 
 class ProductVariantInline(nested_admin.NestedTabularInline):
@@ -31,13 +32,13 @@ class ProductVariantInline(nested_admin.NestedTabularInline):
     inlines = [
         BundleInline,
     ]
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
 
 
 class VariantAttributeInline(admin.TabularInline):
     model = VariantAttribute
     extra = 0
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
 
 
 class ProductRelatedProductInline(nested_admin.NestedTabularInline):
@@ -100,13 +101,16 @@ class ProductAdmin(
         "brand",
     ]
 
+    exclude = ("creator", "archived")
+    raw_id_fields = ("category", "brand")
+    list_per_page = 15
+
     inlines = [
         ProductImageInline,
         ProductAttributeInline,
         ProductVariantInline,
         ProductRelatedProductInline,
     ]
-    exclude = ("creator", )
 
 
 @admin.register(ProductVariant)
@@ -145,7 +149,10 @@ class ProductVariantAdmin(admin.ModelAdmin):
         BundleInline,
     ]
 
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
+    raw_id_fields = ("product",)
+    list_per_page = 15
+
 
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
@@ -163,7 +170,10 @@ class ProductImageAdmin(admin.ModelAdmin):
     list_select_related = (
         "product",
     )
-    exclude = ("creator", )
+    exclude = ("creator", "archived")
+    raw_id_fields = ("product",)
+    list_per_page = 15
+
 
 @admin.register(ProductAttribute)
 class ProductAttributeAdmin(admin.ModelAdmin):
@@ -194,7 +204,9 @@ class ProductAttributeAdmin(admin.ModelAdmin):
         "product",
         "display_order",
     )
-    exclude = ("creator", )
+    exclude = ("creator", "archived")
+    raw_id_fields = ("product", "attribute")
+    list_per_page = 15
 
 
 @admin.register(Attribute)
@@ -212,7 +224,7 @@ class AttributeAdmin(admin.ModelAdmin):
     search_fields = (
         "name",
     )
-    exclude = ("creator", )
+    exclude = ("creator", "archived")
 
 
 @admin.register(AttributeValue)
@@ -235,7 +247,8 @@ class AttributeValueAdmin(admin.ModelAdmin):
         "attribute",
     )
 
-    exclude = ("creator", )
+    exclude = ("creator", "archived")
+
 
 @admin.register(VariantAttribute)
 class VariantAttributeAdmin(admin.ModelAdmin):
@@ -259,4 +272,5 @@ class VariantAttributeAdmin(admin.ModelAdmin):
         "value",
     )
 
-    exclude = ("creator", )
+    exclude = ("creator", "archived")
+    raw_id_fields = ("variant", "value")

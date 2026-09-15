@@ -1,5 +1,6 @@
 from decouple import config
 
+PAYMENT_DESTINATION_CARD_ID = config("PAYMENT_DESTINATION_CARD_ID", default=1)
 CLIENT_URL = config("CLIENT_URL", default="")
 IN_APP_LOG_LEVEL = int(config("LOG_LEVEL", default=3))
 PROJECT_NAME = config("APP_BASE_NAME", "core_gisoo_backend")

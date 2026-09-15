@@ -25,4 +25,6 @@ class AddressAdmin(admin.ModelAdmin):
         "receiver_name",
         "postal_code",
     )
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
+    raw_id_fields = ("user",)
+    list_per_page = 15

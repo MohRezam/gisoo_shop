@@ -37,10 +37,7 @@ class CartItemInline(admin.TabularInline):
         "item_type",
     )
 
-    autocomplete_fields = (
-        "variant",
-        "bundle",
-    )
+    raw_id_fields = ("variant", "bundle")
 
     def item_type(self, obj):
         if obj.bundle_id:
@@ -82,9 +79,9 @@ class CartAdmin(admin.ModelAdmin):
         "updated_at",
     )
 
-    autocomplete_fields = (
-        "user",
-    )
+    exclude = ("creator", "archived")
+    raw_id_fields = ("user", "discount")
+    list_per_page = 15
 
     inlines = (
         CartItemInline,
@@ -118,16 +115,13 @@ class CartItemAdmin(admin.ModelAdmin):
         "bundle__title",
     )
 
-    autocomplete_fields = (
-        "cart",
-        "variant",
-        "bundle",
-    )
-
     readonly_fields = (
         "created_at",
         "updated_at",
     )
+    exclude = ("creator", "archived")
+    raw_id_fields = ("cart", "variant", "bundle")
+    list_per_page = 15
 
     def item_type(self, obj):
         if obj.bundle_id:

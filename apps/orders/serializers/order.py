@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from apps.orders.models import Order
-from apps.payments.models import Payment
 
 
 class CreateOrderSerializer(
@@ -19,29 +18,9 @@ class CreateOrderSerializer(
     )
 
 
-class OrderPaymentSerializer(
-    serializers.ModelSerializer,
-):
-    class Meta:
-        model = Payment
-
-        fields = [
-            "id",
-            "amount",
-            "status",
-            "gateway_payment_id",
-            "gateway_reference_id",
-            "paid_at",
-        ]
-
-
 class OrderDetailSerializer(
     serializers.ModelSerializer,
 ):
-    payment = OrderPaymentSerializer(
-        read_only=True,
-    )
-
     class Meta:
         model = Order
 
@@ -59,6 +38,5 @@ class OrderDetailSerializer(
             "postal_code",
             "address",
             "description",
-            "payment",
             "created_at",
         ]

@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.addresses.models import Address
 from apps.cart.models import Cart
+from apps.discounts.services import calculate_discount
 from apps.orders.constants import ORDER_EXPIRATION_MINUTES
 from apps.orders.models import (
     Order,
@@ -16,7 +17,6 @@ from apps.orders.models import (
 from apps.orders.services.cart_calculator import calculate_cart
 from apps.orders.services.expiration import schedule_order_expiration
 from apps.orders.services.inventory import reserve_stock
-from apps.payments.services.create_payment import create_payment
 from apps.shipping.models import ShippingMethod
 from apps.shipping.services.shipping import calculate_shipping_price
 
@@ -100,17 +100,37 @@ def create_order(
         products_total=cart_result["products_total"],
     )
 
-    order.products_price = cart_result["products_total"]
+    products_total = cart_result["products_total"]
+
+    discount = None
+    discount_amount = 0
+
+    if cart.discount_id is not None:
+        discount_result = calculate_discount(
+            user=user,
+            code=cart.discount.code,
+            products_price=products_total,
+        )
+
+        discount = discount_result["discount"]
+        discount_amount = discount_result["discount_amount"]
+
+    order.products_price = products_total
     order.shipping_price = shipping_price
+    order.discount = discount
+    order.discount_amount = discount_amount
     order.total_price = (
-            cart_result["products_total"]
+            products_total
             + shipping_price
+            - discount_amount
     )
 
     order.save(
         update_fields=[
             "products_price",
             "shipping_price",
+            "discount",
+            "discount_amount",
             "total_price",
         ]
     )
@@ -121,10 +141,6 @@ def create_order(
 
     OrderItem.objects.bulk_create(
         cart_result["order_items"]
-    )
-
-    create_payment(
-        order=order,
     )
 
     cart.is_active = False

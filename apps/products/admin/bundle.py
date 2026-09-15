@@ -16,7 +16,7 @@ class BundleInline(nested_admin.NestedTabularInline):
         "is_active",
         "display_order",
     )
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
 
 
 @admin.register(Bundle)
@@ -44,4 +44,6 @@ class BundleAdmin(admin.ModelAdmin):
         "display_order",
         "-created_at",
     )
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
+    raw_id_fields = ("variant",)
+    list_per_page = 15

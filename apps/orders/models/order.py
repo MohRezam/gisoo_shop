@@ -148,13 +148,24 @@ class OrderBundle(BaseModel):
         verbose_name=_("order"),
     )
 
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.PROTECT,
+        related_name="order_bundles",
+        verbose_name=_("variant"),
+    )
+
     title = models.CharField(
         max_length=255,
         verbose_name=_("title"),
     )
 
+    bundle_quantity = models.PositiveIntegerField(
+        verbose_name=_("bundle quantity"),
+    )
+
     unit_price = models.PositiveBigIntegerField(
-        verbose_name=_("unit_price"),
+        verbose_name=_("unit price"),
     )
 
     quantity = models.PositiveIntegerField(
@@ -163,7 +174,7 @@ class OrderBundle(BaseModel):
     )
 
     total_price = models.PositiveBigIntegerField(
-        verbose_name=_("total_price"),
+        verbose_name=_("total price"),
     )
 
     class Meta:

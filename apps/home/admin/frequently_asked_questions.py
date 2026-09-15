@@ -26,6 +26,7 @@ class FAQCategoryAdmin(admin.ModelAdmin):
         "id",
     )
     exclude = ("creator",)
+    list_per_page = 15
 
 
 @admin.register(FAQ)
@@ -49,11 +50,11 @@ class FAQAdmin(admin.ModelAdmin):
         "is_active",
         "ordering",
     )
-    autocomplete_fields = (
-        "category",
-    )
+
     ordering = (
         "ordering",
         "id",
     )
     exclude = ("creator",)
+    raw_id_fields = ("category",)
+    list_per_page = 15

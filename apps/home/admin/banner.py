@@ -22,17 +22,14 @@ class BannerAdmin(admin.ModelAdmin):
         "is_active",
     )
 
-    autocomplete_fields = (
-        "product",
-        "category",
-    )
-
     ordering = (
         "display_order",
         "-created_at",
     )
 
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
+    raw_id_fields = ("product", "category")
+    list_per_page = 15
 
 
 @admin.register(Slider)
@@ -54,14 +51,10 @@ class SliderAdmin(admin.ModelAdmin):
         "is_active",
     )
 
-    autocomplete_fields = (
-        "product",
-        "category",
-    )
-
     ordering = (
         "display_order",
         "-created_at",
     )
 
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
+    raw_id_fields = ("product", "category")

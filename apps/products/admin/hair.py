@@ -19,7 +19,8 @@ class HairProblemAdmin(admin.ModelAdmin):
     prepopulated_fields = {
         "slug": ("title",),
     }
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
+    list_per_page = 15
 
 
 @admin.register(HairType)
@@ -39,5 +40,5 @@ class HairTypeAdmin(admin.ModelAdmin):
     prepopulated_fields = {
         "slug": ("title",),
     }
-    exclude = ("creator",)
-
+    exclude = ("creator", "archived")
+    list_per_page = 15

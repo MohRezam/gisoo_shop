@@ -30,4 +30,5 @@ class HomeAboutAdmin(admin.ModelAdmin):
         "display_order",
         "-created_at",
     )
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
+    list_per_page = 15

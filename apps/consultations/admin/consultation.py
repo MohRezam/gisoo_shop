@@ -16,11 +16,7 @@ class ConsultationRecommendationInline(
 
     form = ConsultationRecommendationAdminForm
 
-    extra = 1
-
-    autocomplete_fields = (
-        "variant",
-    )
+    extra = 0
 
     fields = (
         "variant",
@@ -28,6 +24,7 @@ class ConsultationRecommendationInline(
         "usage_instruction",
         "display_order",
     )
+    raw_id_fields = ("variant",)
 
 
 @admin.register(ConsultationRequest)
@@ -65,11 +62,8 @@ class ConsultationRequestAdmin(
         "updated_at",
     )
 
-    list_select_related = (
-        "user",
-        "guest",
-        "hair_problem",
-    )
+    raw_id_fields = ("user", "guest", "hair_problem")
+    list_per_page = 15
 
     inlines = (
         ConsultationRecommendationInline,

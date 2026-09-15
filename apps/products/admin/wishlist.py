@@ -5,7 +5,6 @@ from apps.products.models import (
 from django.contrib import admin
 
 
-
 class WishlistItemInline(admin.TabularInline):
     model = WishlistItem
     extra = 0
@@ -34,4 +33,6 @@ class WishlistAdmin(admin.ModelAdmin):
     inlines = [
         WishlistItemInline,
     ]
-    exclude = ("creator",)
+    exclude = ("creator", "archived")
+    raw_id_fields = ("user",)
+    list_per_page = 15

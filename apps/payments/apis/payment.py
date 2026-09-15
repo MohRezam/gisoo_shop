@@ -1,114 +1,121 @@
-from django.shortcuts import get_object_or_404
-
-from rest_framework import status
-from rest_framework.generics import RetrieveAPIView
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework import permissions, status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.payments.models import Payment
+from apps.payments.models import PaymentIntentStatus, PaymentIntent
 from apps.payments.serializers import (
-    PaymentSerializer,
+    PaymentIntentSerializer,
+    PaymentReceiptSerializer,
 )
-from apps.payments.services.gateway_callback import gateway_callback
-from apps.payments.services.start_payment import (
-    start_payment,
+from apps.payments.services.create_payment_intent import (
+    create_payment_intent,
 )
+from apps.payments.services.submit_receipt import (
+    submit_receipt,
+)
+from django.utils import timezone
 
 
-class PaymentDetailAPIView(
-    RetrieveAPIView,
-):
-    serializer_class = PaymentSerializer
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
-    permission_classes = [
-        IsAuthenticated,
-    ]
 
-    lookup_url_kwarg = "payment_id"
+class PaymentReceiptSubmitAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
-    def get_queryset(self):
-        return (
-            Payment.objects
+    def post(self, request, id):
+        idempotency_key = request.headers.get("Idempotency-Key")
+        receipt_file = request.FILES.get("file")
+
+        result = submit_receipt(
+            payment_intent_id=id,
+            user=request.user,
+            uploaded_file=receipt_file,
+            idempotency_key=idempotency_key,
+        )
+
+        receipt = result["receipt"]
+
+        response_status = (
+            status.HTTP_200_OK
+            if result["idempotent_replay"]
+            else status.HTTP_201_CREATED
+        )
+
+        return Response(
+            {
+                "receipt": PaymentReceiptSerializer(
+                    receipt,
+                    context={"request": request},
+                ).data,
+                "duplicate": result["duplicate"],
+                "idempotent_replay": result["idempotent_replay"],
+            },
+            status=response_status,
+        )
+
+
+class PaymentIntentCreateAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, id):
+        payment_intent = create_payment_intent(
+            order_id=id,
+            user=request.user,
+        )
+
+        return Response(
+            PaymentIntentSerializer(
+                payment_intent,
+                context={"request": request},
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class PaymentIntentDetailAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, token):
+        payment_intent = (
+            PaymentIntent.objects
             .select_related(
                 "order",
+                "destination_card",
             )
             .filter(
-                order__user=self.request.user,
+                token=token,
+                order__user=request.user,
             )
+            .first()
         )
 
-
-class StartPaymentAPIView(
-    APIView,
-):
-    permission_classes = [
-        IsAuthenticated,
-    ]
-
-    def post(
-            self,
-            request,
-            payment_id,
-    ):
-        payment = get_object_or_404(
-            Payment.objects.select_related(
-                "order",
-            ),
-            id=payment_id,
-            order__user=request.user,
-        )
-
-        result = start_payment(
-            payment=payment,
-        )
-
-        return Response(
-            {
-                "payment_id": result["payment"].id,
-                "status": result["payment"].status,
-                "redirect_url": result["redirect_url"],
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
-class GatewayCallbackAPIView(
-    APIView,
-):
-    permission_classes = [
-        AllowAny,
-    ]
-
-    def get(
-            self,
-            request,
-    ):
-        authority = request.query_params.get(
-            "Authority",
-        )
-
-        status_param = request.query_params.get(
-            "Status",
-        )
-
-        if status_param != "OK":
+        if payment_intent is None:
             return Response(
                 {
-                    "success": False,
-                    "message": "Payment canceled.",
+                    "detail": "Payment intent not found."
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_404_NOT_FOUND,
             )
 
-        payment = gateway_callback(
-            authority=authority,
-        )
+        if (
+                payment_intent.status
+                in {
+            PaymentIntentStatus.PENDING_PAYMENT,
+            PaymentIntentStatus.RECEIPT_SUBMITTED,
+        }
+                and payment_intent.expires_at <= timezone.now()
+        ):
+            payment_intent.status = PaymentIntentStatus.EXPIRED
+            payment_intent.save(
+                update_fields=["status"]
+            )
 
         return Response(
-            {
-                "success": True,
-                "payment_id": payment.id,
-                "order_id": payment.order.id,
-            }
+            PaymentIntentSerializer(
+                payment_intent,
+                context={"request": request},
+            ).data
         )
