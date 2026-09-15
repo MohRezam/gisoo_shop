@@ -44,26 +44,15 @@ def get_payment_expiration(order: Order):
 
 def get_destination_card():
     """
-    Returns the active destination card configured for payments.
+    Returns the currently active destination card for payments.
     """
-
-    card_id = getattr(
-        settings,
-        "PAYMENT_DESTINATION_CARD_ID",
-        None,
-    )
-
-    if not card_id:
-        raise ValidationError(
-            "Payment destination card is not configured."
-        )
 
     card = (
         DestinationCard.objects
         .filter(
-            id=card_id,
             is_active=True,
         )
+        .order_by("id")
         .first()
     )
 
