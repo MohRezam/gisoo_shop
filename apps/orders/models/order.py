@@ -63,9 +63,18 @@ class Order(BaseModel):
         blank=True,
         verbose_name=_("description"),
     )
+
+    tracking_code = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        verbose_name=_("tracking code")
+    )
+
     expires_at = models.DateTimeField(
         null=True,
         blank=True,
+        verbose_name=_("expires at")
     )
     prepared_at = models.DateTimeField(
         null=True,

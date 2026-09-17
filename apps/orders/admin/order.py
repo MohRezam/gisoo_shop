@@ -46,6 +46,7 @@ class OrderAdmin(admin.ModelAdmin):
         "user__phone_number",
         "receiver_name",
         "phone_number",
+        "tracking_code"
     ]
 
     readonly_fields = [

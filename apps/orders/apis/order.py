@@ -1,13 +1,13 @@
 from rest_framework import status
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveAPIView, ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.orders.models import Order
+from apps.orders.models import Order, OrderStatus
 from apps.orders.serializers import (
     CreateOrderSerializer,
-    OrderDetailSerializer,
+    OrderDetailSerializer, OrderListSerializer,
 )
 from apps.orders.services.create_order import (
     create_order,
@@ -18,6 +18,8 @@ from drf_spectacular.utils import (
     OpenApiResponse,
     extend_schema,
 )
+
+from utils.paginators import StandardResultPagination
 
 
 @extend_schema(
@@ -104,8 +106,11 @@ class CreateOrderAPIView(APIView):
 
 @extend_schema(
     tags=["Orders"],
-    summary="Retrieve Order",
-    description="Returns details of one of the authenticated user's orders.",
+    summary="Retrieve My Order",
+    description=(
+            "Returns details of one of the authenticated user's "
+            "orders that is currently being prepared or has been shipped."
+    ),
     responses={
         200: OrderDetailSerializer,
         401: OpenApiResponse(
@@ -119,9 +124,7 @@ class CreateOrderAPIView(APIView):
 class OrderDetailAPIView(
     RetrieveAPIView,
 ):
-    serializer_class = (
-        OrderDetailSerializer
-    )
+    serializer_class = OrderDetailSerializer
 
     permission_classes = [
         IsAuthenticated,
@@ -134,10 +137,118 @@ class OrderDetailAPIView(
     ):
         return (
             Order.objects
-            .select_related(
-                "payment",
-            )
             .filter(
                 user=self.request.user,
+                status__in=[
+                    OrderStatus.PREPARING,
+                    OrderStatus.SHIPPED,
+                ],
             )
+            .prefetch_related(
+                "items",
+            )
+        )
+
+
+@extend_schema(
+    tags=["Orders"],
+    summary="List My Active Orders",
+    description=(
+            "Returns the authenticated user's orders that are "
+            "currently being prepared or have been shipped."
+    ),
+    responses={
+        200: OrderListSerializer(many=True),
+        401: OpenApiResponse(
+            description="Authentication required.",
+        ),
+    },
+)
+class OrderListAPIView(
+    ListAPIView,
+):
+    serializer_class = OrderListSerializer
+
+    permission_classes = [
+        IsAuthenticated,
+    ]
+    pagination_class = StandardResultPagination
+
+    def get_queryset(
+            self,
+    ):
+        return (
+            Order.objects
+            .filter(
+                user=self.request.user,
+                status__in=[
+                    "preparing",
+                    "shipped",
+                ],
+            )
+            .prefetch_related(
+                "items",
+            )
+            .order_by(
+                "-created_at",
+            )
+        )
+
+
+@extend_schema(
+    tags=["Orders"],
+    summary="Get Latest My Order",
+    description=(
+            "Returns the authenticated user's latest order "
+            "that is currently being prepared or has been shipped."
+    ),
+    responses={
+        200: OrderDetailSerializer,
+        401: OpenApiResponse(
+            description="Authentication required.",
+        ),
+        404: OpenApiResponse(
+            description="No active order found.",
+        ),
+    },
+)
+class LatestOrderAPIView(
+    APIView,
+):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def get(
+            self,
+            request,
+    ):
+        order = (
+            Order.objects
+            .filter(
+                user=request.user,
+                status__in=[
+                    "preparing",
+                    "shipped",
+                ],
+            )
+            .prefetch_related(
+                "items",
+            )
+            .order_by(
+                "-created_at",
+            )
+            .first()
+        )
+
+        if order is None:
+            return Response(
+                {
+                    "detail": "No active order found.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        return Response(
+            OrderDetailSerializer(order).data,
         )
