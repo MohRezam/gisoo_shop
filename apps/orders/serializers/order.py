@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.orders.models import Order
+from apps.orders.models import Order, OrderStatus
 
 
 class CreateOrderSerializer(
@@ -18,18 +18,14 @@ class CreateOrderSerializer(
     )
 
 
-class OrderDetailSerializer(
-    serializers.ModelSerializer,
-):
+class OrderDetailSerializer(serializers.ModelSerializer):
     items_count = serializers.SerializerMethodField()
     tracking_code = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
-
         fields = [
             "id",
-            "public_number",
             "status",
             "created_at",
             "total_price",
@@ -38,20 +34,14 @@ class OrderDetailSerializer(
             "tracking_code",
         ]
 
-    def get_items_count(
-            self,
-            obj,
-    ):
+    def get_items_count(self, obj):
         return sum(
             item.quantity
             for item in obj.items.all()
         )
 
-    def get_tracking_code(
-            self,
-            obj,
-    ):
-        if obj.status != "shipped":
+    def get_tracking_code(self, obj):
+        if obj.status != OrderStatus.SHIPPED:
             return None
 
         return obj.tracking_code
