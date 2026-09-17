@@ -8,35 +8,13 @@ from apps.products.models import ProductVariant
 
 
 class OrderStatus(models.TextChoices):
-    CREATED = (
-        "created",
-        _("Created"),
-    )
-
-    PREPARING = (
-        "preparing",
-        _("Preparing"),
-    )
-
-    SHIPPED = (
-        "shipped",
-        _("Shipped"),
-    )
-
-    DELIVERED = (
-        "delivered",
-        _("Delivered"),
-    )
-
-    CANCELED = (
-        "canceled",
-        _("Canceled"),
-    )
-
-    EXPIRED = (
-        "expired",
-        _("Expired"),
-    )
+    CREATED = "created", _("Created")
+    PAYMENT_REJECTED = "payment_rejected", _("Payment rejected")
+    PREPARING = "preparing", _("Preparing")
+    SHIPPED = "shipped", _("Shipped")
+    DELIVERED = "delivered", _("Delivered")
+    CANCELED = "canceled", _("Canceled")
+    EXPIRED = "expired", _("Expired")
 
 
 class Order(BaseModel):

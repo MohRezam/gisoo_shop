@@ -133,31 +133,25 @@ def approve_payment(
 @transaction.atomic
 def reject_payment(
         *,
-        payment_intent_id: int,
+        payment_intent_id,
         admin,
-        reason: str,
+        reason,
 ):
-    """
-    Reject a payment after admin review.
-
-    Idempotent: rejecting an already rejected payment does not
-    create another review.
-    """
-
     payment_intent = (
         PaymentIntent.objects
         .select_for_update()
         .select_related("order")
-        .get(pk=payment_intent_id)
+        .get(
+            pk=payment_intent_id,
+        )
     )
 
-    # Idempotency
     if payment_intent.status == PaymentIntentStatus.REJECTED:
         return payment_intent
 
     if payment_intent.status not in REVIEWABLE_STATUSES:
         raise ValidationError(
-            "This payment cannot be rejected in its current status."
+            "This payment cannot be rejected."
         )
 
     reason = (reason or "").strip()
@@ -169,7 +163,9 @@ def reject_payment(
 
     now = timezone.now()
 
-    payment_intent.status = PaymentIntentStatus.REJECTED
+    payment_intent.status = (
+        PaymentIntentStatus.REJECTED
+    )
     payment_intent.reviewed_at = now
     payment_intent.reviewed_by = admin
     payment_intent.rejection_reason = reason
@@ -191,6 +187,15 @@ def reject_payment(
         reason=reason,
         bank_verified=False,
     )
+
+    order = payment_intent.order
+
+    if order.status == OrderStatus.CREATED:
+        change_order_status(
+            order=order,
+            new_status=OrderStatus.PAYMENT_REJECTED,
+            reason="Payment receipt rejected.",
+        )
 
     return payment_intent
 

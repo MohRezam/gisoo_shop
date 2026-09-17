@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.orders.models import Order, OrderStatus
+from apps.payments.models import PaymentIntentStatus
 
 
 class CreateOrderSerializer(
@@ -21,6 +22,7 @@ class CreateOrderSerializer(
 class OrderDetailSerializer(serializers.ModelSerializer):
     items_count = serializers.SerializerMethodField()
     tracking_code = serializers.SerializerMethodField()
+    payment_intent = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -32,6 +34,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "discount_amount",
             "items_count",
             "tracking_code",
+            "payment_intent",
         ]
 
     def get_items_count(self, obj):
@@ -45,6 +48,39 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             return None
 
         return obj.tracking_code
+
+    def get_payment_intent(self, obj):
+        payment_intent = (
+            obj.payment_intents
+            .filter(
+                status__in=[
+                    PaymentIntentStatus.PENDING_PAYMENT,
+                    PaymentIntentStatus.RECEIPT_SUBMITTED,
+                    PaymentIntentStatus.UNDER_REVIEW,
+                    PaymentIntentStatus.MANUAL_REVIEW,
+                    PaymentIntentStatus.REJECTED,
+                ]
+            )
+            .order_by("-created_at")
+            .first()
+        )
+
+        if payment_intent is None:
+            return None
+
+        return {
+            "id": payment_intent.id,
+            "token": payment_intent.token,
+            "status": payment_intent.status,
+            "expires_at": payment_intent.expires_at,
+            "can_upload_receipt": (
+                payment_intent.status
+                in {
+                    PaymentIntentStatus.PENDING_PAYMENT,
+                    PaymentIntentStatus.REJECTED,
+                }
+            ),
+        }
 
 
 class OrderListSerializer(serializers.ModelSerializer):

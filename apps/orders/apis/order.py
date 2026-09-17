@@ -140,6 +140,8 @@ class OrderDetailAPIView(
             .filter(
                 user=self.request.user,
                 status__in=[
+                    OrderStatus.CREATED,
+                    OrderStatus.PAYMENT_REJECTED,
                     OrderStatus.PREPARING,
                     OrderStatus.SHIPPED,
                 ],
@@ -172,6 +174,7 @@ class OrderListAPIView(
     permission_classes = [
         IsAuthenticated,
     ]
+
     pagination_class = StandardResultPagination
 
     def get_queryset(
@@ -182,8 +185,10 @@ class OrderListAPIView(
             .filter(
                 user=self.request.user,
                 status__in=[
-                    "preparing",
-                    "shipped",
+                    OrderStatus.CREATED,
+                    OrderStatus.PAYMENT_REJECTED,
+                    OrderStatus.PREPARING,
+                    OrderStatus.SHIPPED,
                 ],
             )
             .prefetch_related(
@@ -212,9 +217,7 @@ class OrderListAPIView(
         ),
     },
 )
-class LatestOrderAPIView(
-    APIView,
-):
+class LatestOrderAPIView(APIView):
     permission_classes = [
         IsAuthenticated,
     ]
@@ -228,8 +231,10 @@ class LatestOrderAPIView(
             .filter(
                 user=request.user,
                 status__in=[
-                    "preparing",
-                    "shipped",
+                    OrderStatus.CREATED,
+                    OrderStatus.PAYMENT_REJECTED,
+                    OrderStatus.PREPARING,
+                    OrderStatus.SHIPPED,
                 ],
             )
             .prefetch_related(
@@ -250,5 +255,7 @@ class LatestOrderAPIView(
             )
 
         return Response(
-            OrderDetailSerializer(order).data,
+            OrderDetailSerializer(
+                order,
+            ).data,
         )

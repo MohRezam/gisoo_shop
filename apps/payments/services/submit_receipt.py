@@ -4,11 +4,16 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
 
+from apps.orders.models import OrderStatus
+from apps.orders.services.change_order_status import (
+    change_order_status,
+)
 from apps.payments.models import (
     PaymentIntent,
     PaymentIntentStatus,
     PaymentReceipt,
 )
+
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 
@@ -27,14 +32,18 @@ ALLOWED_EXTENSIONS = {
 
 ALLOWED_STATUSES = {
     PaymentIntentStatus.PENDING_PAYMENT,
-    PaymentIntentStatus.REJECTED,
     PaymentIntentStatus.RECEIPT_SUBMITTED,
+    PaymentIntentStatus.UNDER_REVIEW,
+    PaymentIntentStatus.MANUAL_REVIEW,
+    PaymentIntentStatus.REJECTED,
 }
 
 
 def validate_receipt_file(uploaded_file):
     if uploaded_file is None:
-        raise ValidationError("Receipt file is required.")
+        raise ValidationError(
+            "Receipt file is required."
+        )
 
     if uploaded_file.size > MAX_FILE_SIZE:
         raise ValidationError(
@@ -48,14 +57,21 @@ def validate_receipt_file(uploaded_file):
             "Receipt file must have a valid extension."
         )
 
-    extension = "." + original_name.rsplit(".", 1)[1].lower()
+    extension = "." + original_name.rsplit(
+        ".",
+        1,
+    )[1].lower()
 
     if extension not in ALLOWED_EXTENSIONS:
         raise ValidationError(
             "Only JPG, PNG and PDF receipt files are allowed."
         )
 
-    mime_type = getattr(uploaded_file, "content_type", None)
+    mime_type = getattr(
+        uploaded_file,
+        "content_type",
+        None,
+    )
 
     if mime_type not in ALLOWED_MIME_TYPES:
         raise ValidationError(
@@ -67,13 +83,20 @@ def validate_receipt_file(uploaded_file):
     # ---------------------------------------------------------
 
     uploaded_file.seek(0)
+
     file_header = uploaded_file.read(8)
+
     uploaded_file.seek(0)
 
     valid_signature = False
 
-    if extension in {".jpg", ".jpeg"}:
-        valid_signature = file_header.startswith(b"\xff\xd8\xff")
+    if extension in {
+        ".jpg",
+        ".jpeg",
+    }:
+        valid_signature = file_header.startswith(
+            b"\xff\xd8\xff"
+        )
 
     elif extension == ".png":
         valid_signature = file_header.startswith(
@@ -81,7 +104,9 @@ def validate_receipt_file(uploaded_file):
         )
 
     elif extension == ".pdf":
-        valid_signature = file_header.startswith(b"%PDF-")
+        valid_signature = file_header.startswith(
+            b"%PDF-"
+        )
 
     if not valid_signature:
         raise ValidationError(
@@ -114,6 +139,10 @@ def submit_receipt(
         uploaded_file,
         idempotency_key: str,
 ):
+    # ---------------------------------------------------------
+    # Idempotency-Key validation
+    # ---------------------------------------------------------
+
     if not idempotency_key:
         raise ValidationError(
             "Idempotency-Key header is required."
@@ -131,6 +160,10 @@ def submit_receipt(
             "Idempotency-Key must not be longer than 255 characters."
         )
 
+    # ---------------------------------------------------------
+    # Get payment intent
+    # ---------------------------------------------------------
+
     payment_intent = (
         PaymentIntent.objects
         .select_for_update()
@@ -143,10 +176,12 @@ def submit_receipt(
     )
 
     if payment_intent is None:
-        raise NotFound("Payment intent not found.")
+        raise NotFound(
+            "Payment intent not found."
+        )
 
     # ---------------------------------------------------------
-    # Idempotency
+    # Idempotency replay
     # ---------------------------------------------------------
 
     existing_receipt = (
@@ -166,7 +201,7 @@ def submit_receipt(
         }
 
     # ---------------------------------------------------------
-    # Payment state
+    # Payment state validation
     # ---------------------------------------------------------
 
     if payment_intent.status not in ALLOWED_STATUSES:
@@ -176,10 +211,38 @@ def submit_receipt(
 
     now = timezone.now()
 
-    if payment_intent.expires_at <= now:
-        payment_intent.status = PaymentIntentStatus.EXPIRED
+    # ---------------------------------------------------------
+    # Rejected payment can be resubmitted
+    # ---------------------------------------------------------
+
+    is_resubmission = (
+        payment_intent.status
+        == PaymentIntentStatus.REJECTED
+    )
+
+    # ---------------------------------------------------------
+    # Expiration
+    #
+    # Normal payments must not accept receipts after expiry.
+    #
+    # Rejected payments are an exception because the customer
+    # is allowed to correct the rejected receipt and submit
+    # a new one.
+    # ---------------------------------------------------------
+
+    if (
+        not is_resubmission
+        and payment_intent.expires_at <= now
+    ):
+        payment_intent.status = (
+            PaymentIntentStatus.EXPIRED
+        )
+
         payment_intent.save(
-            update_fields=["status"]
+            update_fields=[
+                "status",
+                "updated_at",
+            ]
         )
 
         raise ValidationError(
@@ -190,13 +253,17 @@ def submit_receipt(
     # File validation
     # ---------------------------------------------------------
 
-    file_data = validate_receipt_file(uploaded_file)
+    file_data = validate_receipt_file(
+        uploaded_file,
+    )
 
     # ---------------------------------------------------------
     # SHA-256
     # ---------------------------------------------------------
 
-    sha256 = calculate_sha256(uploaded_file)
+    sha256 = calculate_sha256(
+        uploaded_file,
+    )
 
     duplicate_receipt = (
         PaymentReceipt.objects
@@ -207,27 +274,33 @@ def submit_receipt(
     )
 
     # ---------------------------------------------------------
-    # Deactivate previous receipt for this payment intent
+    # Deactivate previous active receipt
     # ---------------------------------------------------------
 
     PaymentReceipt.objects.filter(
         payment_intent=payment_intent,
         is_active=True,
     ).update(
-        is_active=False
+        is_active=False,
     )
 
     # ---------------------------------------------------------
-    # Create receipt
+    # Create new receipt
     # ---------------------------------------------------------
 
     try:
         receipt = PaymentReceipt.objects.create(
             payment_intent=payment_intent,
             file=uploaded_file,
-            original_name=file_data["original_name"],
-            mime_type=file_data["mime_type"],
-            file_size=file_data["file_size"],
+            original_name=file_data[
+                "original_name"
+            ],
+            mime_type=file_data[
+                "mime_type"
+            ],
+            file_size=file_data[
+                "file_size"
+            ],
             sha256=sha256,
             idempotency_key=idempotency_key,
             is_active=True,
@@ -256,15 +329,40 @@ def submit_receipt(
     # Change payment status
     # ---------------------------------------------------------
 
-    payment_intent.status = PaymentIntentStatus.RECEIPT_SUBMITTED
+    payment_intent.status = (
+        PaymentIntentStatus.RECEIPT_SUBMITTED
+    )
+
     payment_intent.submitted_at = now
+
+    payment_intent.rejection_reason = ""
 
     payment_intent.save(
         update_fields=[
             "status",
             "submitted_at",
+            "rejection_reason",
+            "updated_at",
         ]
     )
+
+    # ---------------------------------------------------------
+    # Rejected order becomes active again
+    # ---------------------------------------------------------
+
+    order = payment_intent.order
+
+    if (
+        is_resubmission
+        and order.status == OrderStatus.PAYMENT_REJECTED
+    ):
+        change_order_status(
+            order=order,
+            new_status=OrderStatus.CREATED,
+            reason=(
+                "Customer resubmitted payment receipt."
+            ),
+        )
 
     return {
         "receipt": receipt,
