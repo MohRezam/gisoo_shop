@@ -47,19 +47,12 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         return obj.tracking_code
 
 
-
-class OrderListSerializer(
-    serializers.ModelSerializer,
-):
+class OrderListSerializer(serializers.ModelSerializer):
     order_name = serializers.SerializerMethodField()
     items_count = serializers.SerializerMethodField()
-    status = serializers.CharField(
-        source="status",
-    )
 
     class Meta:
         model = Order
-
         fields = [
             "id",
             "order_name",
@@ -68,16 +61,10 @@ class OrderListSerializer(
             "created_at",
         ]
 
-    def get_order_name(
-            self,
-            obj,
-    ):
-        return f"سفارش #{obj.public_number}"
+    def get_order_name(self, obj):
+        return f"سفارش #{obj.id}"
 
-    def get_items_count(
-            self,
-            obj,
-    ):
+    def get_items_count(self, obj):
         return sum(
             item.quantity
             for item in obj.items.all()
