@@ -13,6 +13,12 @@ ALLOWED_TRANSITIONS = {
         OrderStatus.PREPARING,
         OrderStatus.CANCELED,
         OrderStatus.EXPIRED,
+        OrderStatus.PAYMENT_REJECTED,
+    ],
+
+    OrderStatus.PAYMENT_REJECTED: [
+        OrderStatus.CREATED,
+        OrderStatus.CANCELED,
     ],
 
     OrderStatus.PREPARING: [
