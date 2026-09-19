@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.orders.models import Order, OrderStatus
+from apps.orders.models import Order, OrderStatus, OrderItem
 from apps.orders.serializers import (
     CreateOrderSerializer,
     OrderDetailSerializer, OrderListSerializer,
@@ -18,10 +18,44 @@ from drf_spectacular.utils import (
     OpenApiResponse,
     extend_schema,
 )
-
+from django.db.models import Prefetch
 from utils.paginators import StandardResultPagination
 
+CUSTOMER_ORDER_STATUSES = [
+    OrderStatus.CREATED,
+    OrderStatus.PAYMENT_REJECTED,
+    OrderStatus.PREPARING,
+    OrderStatus.SHIPPED,
+]
 
+def get_customer_orders_queryset(user):
+    return (
+        Order.objects
+        .filter(
+            user=user,
+            status__in=CUSTOMER_ORDER_STATUSES,
+        )
+        .select_related(
+            "shipping_method",
+        )
+        .prefetch_related(
+            Prefetch(
+                "items",
+                queryset=(
+                    OrderItem.objects
+                    .select_related(
+                        "variant__product",
+                    )
+                    .prefetch_related(
+                        "variant__product__images",
+                    )
+                ),
+            ),
+            "bundles",
+            "payment_intents",
+        )
+        .order_by("-created_at")
+    )
 @extend_schema(
     tags=["Orders"],
     summary="Create Order",
@@ -68,10 +102,7 @@ class CreateOrderAPIView(APIView):
         IsAuthenticated,
     ]
 
-    def post(
-            self,
-            request,
-    ):
+    def post(self, request):
         serializer = CreateOrderSerializer(
             data=request.data,
         )
@@ -95,11 +126,12 @@ class CreateOrderAPIView(APIView):
         )
 
         return Response(
-            {
-                "id": order.id,
-                "status": order.status,
-                "total_price": order.total_price,
-            },
+            OrderDetailSerializer(
+                order,
+                context={
+                    "request": request,
+                },
+            ).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -121,34 +153,38 @@ class CreateOrderAPIView(APIView):
         ),
     },
 )
-class OrderDetailAPIView(
-    RetrieveAPIView,
-):
-    serializer_class = OrderDetailSerializer
-
+class OrderDetailAPIView(APIView):
     permission_classes = [
         IsAuthenticated,
     ]
 
-    lookup_field = "id"
-
-    def get_queryset(
-            self,
-    ):
-        return (
-            Order.objects
+    def get(self, request, id):
+        order = (
+            get_customer_orders_queryset(
+                request.user,
+            )
             .filter(
-                user=self.request.user,
-                status__in=[
-                    OrderStatus.CREATED,
-                    OrderStatus.PAYMENT_REJECTED,
-                    OrderStatus.PREPARING,
-                    OrderStatus.SHIPPED,
-                ],
+                id=id,
             )
-            .prefetch_related(
-                "items",
+            .first()
+        )
+
+        if order is None:
+            return Response(
+                {
+                    "detail": "Order not found."
+                },
+                status=status.HTTP_404_NOT_FOUND,
             )
+
+        return Response(
+            OrderDetailSerializer(
+                order,
+                context={
+                    "request": request,
+                },
+            ).data,
+            status=status.HTTP_200_OK,
         )
 
 
@@ -166,37 +202,17 @@ class OrderDetailAPIView(
         ),
     },
 )
-class OrderListAPIView(
-    ListAPIView,
-):
-    serializer_class = OrderListSerializer
-
+class OrderListAPIView(ListAPIView):
     permission_classes = [
         IsAuthenticated,
     ]
 
+    serializer_class = OrderListSerializer
     pagination_class = StandardResultPagination
 
-    def get_queryset(
-            self,
-    ):
-        return (
-            Order.objects
-            .filter(
-                user=self.request.user,
-                status__in=[
-                    OrderStatus.CREATED,
-                    OrderStatus.PAYMENT_REJECTED,
-                    OrderStatus.PREPARING,
-                    OrderStatus.SHIPPED,
-                ],
-            )
-            .prefetch_related(
-                "items",
-            )
-            .order_by(
-                "-created_at",
-            )
+    def get_queryset(self):
+        return get_customer_orders_queryset(
+            self.request.user,
         )
 
 
@@ -222,40 +238,27 @@ class LatestOrderAPIView(APIView):
         IsAuthenticated,
     ]
 
-    def get(
-            self,
-            request,
-    ):
+    def get(self, request):
         order = (
-            Order.objects
-            .filter(
-                user=request.user,
-                status__in=[
-                    OrderStatus.CREATED,
-                    OrderStatus.PAYMENT_REJECTED,
-                    OrderStatus.PREPARING,
-                    OrderStatus.SHIPPED,
-                ],
-            )
-            .prefetch_related(
-                "items",
-            )
-            .order_by(
-                "-created_at",
+            get_customer_orders_queryset(
+                request.user,
             )
             .first()
         )
 
         if order is None:
             return Response(
-                {
-                    "detail": "No active order found.",
-                },
-                status=status.HTTP_404_NOT_FOUND,
+                None,
+                status=status.HTTP_200_OK,
             )
 
         return Response(
             OrderDetailSerializer(
                 order,
+                context={
+                    "request": request,
+                },
             ).data,
+            status=status.HTTP_200_OK,
         )
+

@@ -1,7 +1,10 @@
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
-from apps.orders.models import OrderBundle, OrderItem
+from apps.orders.models import (
+    OrderItem,
+    OrderBundle,
+)
 from apps.products.models import ProductVariant
 
 
@@ -42,8 +45,12 @@ def calculate_cart(
         # -------------------------
         if cart_item.variant:
 
-            variant = ProductVariant.objects.select_for_update().get(
-                pk=cart_item.variant_id,
+            variant = (
+                ProductVariant.objects
+                .select_for_update()
+                .get(
+                    pk=cart_item.variant_id,
+                )
             )
 
             if cart_item.quantity > variant.stock:
@@ -55,8 +62,18 @@ def calculate_cart(
                     }
                 )
 
+            # قیمت اصلی محصول
+            original_unit_price = variant.price
+
+            # قیمت نهایی محصول بعد از تخفیف
+            unit_price = (
+                variant.discounted_price
+                if variant.discounted_price is not None
+                else variant.price
+            )
+
             item_total = (
-                variant.price *
+                unit_price *
                 cart_item.quantity
             )
 
@@ -67,7 +84,8 @@ def calculate_cart(
                     product_title=variant.product.title,
                     variant_sku=variant.sku,
                     quantity=cart_item.quantity,
-                    unit_price=variant.price,
+                    original_unit_price=original_unit_price,
+                    unit_price=unit_price,
                     total_price=item_total,
                     province=order.province,
                     city=order.city,
@@ -98,13 +116,17 @@ def calculate_cart(
 
         bundle = cart_item.bundle
 
-        variant = ProductVariant.objects.select_for_update().get(
-            pk=bundle.variant_id,
+        variant = (
+            ProductVariant.objects
+            .select_for_update()
+            .get(
+                pk=bundle.variant_id,
+            )
         )
 
         bundle_quantity = (
-                bundle.quantity *
-                cart_item.quantity
+            bundle.quantity *
+            cart_item.quantity
         )
 
         if bundle_quantity > variant.stock:
@@ -117,8 +139,8 @@ def calculate_cart(
             )
 
         bundle_total = (
-                bundle.price *
-                cart_item.quantity
+            bundle.price *
+            cart_item.quantity
         )
 
         order_bundle = OrderBundle(
@@ -130,7 +152,9 @@ def calculate_cart(
             total_price=bundle_total,
         )
 
-        order_bundles.append(order_bundle)
+        order_bundles.append(
+            order_bundle
+        )
 
         variants.append(
             (

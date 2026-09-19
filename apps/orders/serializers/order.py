@@ -1,26 +1,134 @@
 from rest_framework import serializers
 
-from apps.orders.models import Order, OrderStatus
+from apps.orders.models import (
+    Order,
+    OrderBundle,
+    OrderItem,
+    OrderStatus,
+)
 from apps.payments.models import PaymentIntentStatus
 
 
-class CreateOrderSerializer(
-    serializers.Serializer,
-):
+class CreateOrderSerializer(serializers.Serializer):
     address_id = serializers.IntegerField()
-
-    shipping_method_id = (
-        serializers.IntegerField()
-    )
-
+    shipping_method_id = serializers.IntegerField()
     description = serializers.CharField(
         required=False,
         allow_blank=True,
     )
 
 
+class OrderItemListSerializer(serializers.ModelSerializer):
+    product_id = serializers.IntegerField(
+        source="variant.product.id",
+        read_only=True,
+    )
+
+    name = serializers.CharField(
+        source="product_title",
+        read_only=True,
+    )
+
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderItem
+        fields = [
+            "product_id",
+            "name",
+            "image",
+            "quantity",
+            "original_unit_price",
+            "unit_price",
+            "total_price",
+        ]
+        read_only_fields = fields
+
+    def get_image(self, obj):
+        request = self.context.get("request")
+
+        image = next(
+            (
+                product_image
+                for product_image in obj.variant.product.images.all()
+                if product_image.is_primary and product_image.image
+            ),
+            None,
+        )
+
+        if image is None:
+            return None
+
+        image_url = image.image.url
+
+        if request is not None:
+            return request.build_absolute_uri(
+                image_url
+            )
+
+        return image_url
+
+
+class OrderBundleListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderBundle
+        fields = [
+            "id",
+            "title",
+            "quantity",
+            "unit_price",
+            "total_price",
+        ]
+        read_only_fields = fields
+
+
+class OrderListSerializer(serializers.ModelSerializer):
+    order_name = serializers.SerializerMethodField()
+    items_count = serializers.SerializerMethodField()
+    items = serializers.SerializerMethodField()
+    bundles = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "order_name",
+            "status",
+            "created_at",
+            "items_count",
+            "items",
+            "bundles",
+        ]
+        read_only_fields = fields
+
+    def get_order_name(self, obj):
+        return f"سفارش #{obj.id}"
+
+    def get_items_count(self, obj):
+        return sum(
+            item.quantity
+            for item in obj.items.all()
+        )
+
+    def get_items(self, obj):
+        return OrderItemListSerializer(
+            obj.items.all(),
+            many=True,
+            context=self.context,
+        ).data
+
+    def get_bundles(self, obj):
+        return OrderBundleListSerializer(
+            obj.bundles.all(),
+            many=True,
+            context=self.context,
+        ).data
+
+
 class OrderDetailSerializer(serializers.ModelSerializer):
     items_count = serializers.SerializerMethodField()
+    items = serializers.SerializerMethodField()
+    bundles = serializers.SerializerMethodField()
     tracking_code = serializers.SerializerMethodField()
     payment_intent = serializers.SerializerMethodField()
 
@@ -33,15 +141,32 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "total_price",
             "discount_amount",
             "items_count",
+            "items",
+            "bundles",
             "tracking_code",
             "payment_intent",
         ]
+        read_only_fields = fields
 
     def get_items_count(self, obj):
         return sum(
             item.quantity
             for item in obj.items.all()
         )
+
+    def get_items(self, obj):
+        return OrderItemListSerializer(
+            obj.items.all(),
+            many=True,
+            context=self.context,
+        ).data
+
+    def get_bundles(self, obj):
+        return OrderBundleListSerializer(
+            obj.bundles.all(),
+            many=True,
+            context=self.context,
+        ).data
 
     def get_tracking_code(self, obj):
         if obj.status != OrderStatus.SHIPPED:
@@ -70,7 +195,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 
         return {
             "id": payment_intent.id,
-            "token": payment_intent.token,
+            "token": str(payment_intent.token),
             "status": payment_intent.status,
             "expires_at": payment_intent.expires_at,
             "can_upload_receipt": (
@@ -81,27 +206,3 @@ class OrderDetailSerializer(serializers.ModelSerializer):
                 }
             ),
         }
-
-
-class OrderListSerializer(serializers.ModelSerializer):
-    order_name = serializers.SerializerMethodField()
-    items_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Order
-        fields = [
-            "id",
-            "order_name",
-            "items_count",
-            "status",
-            "created_at",
-        ]
-
-    def get_order_name(self, obj):
-        return f"سفارش #{obj.id}"
-
-    def get_items_count(self, obj):
-        return sum(
-            item.quantity
-            for item in obj.items.all()
-        )

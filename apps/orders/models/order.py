@@ -202,6 +202,8 @@ class OrderItem(BaseModel):
 
     quantity = models.PositiveIntegerField()
 
+    original_unit_price = models.PositiveIntegerField()
+
     unit_price = models.PositiveIntegerField()
 
     total_price = models.PositiveIntegerField()
