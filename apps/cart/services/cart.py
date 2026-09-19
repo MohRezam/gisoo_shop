@@ -181,6 +181,7 @@ def update_cart_item(
 
         item = CartItem.objects.select_related(
             "variant",
+            "bundle__variant",
         ).get(
             id=item_id,
             cart=cart,
@@ -189,12 +190,67 @@ def update_cart_item(
     except CartItem.DoesNotExist:
         raise CartItemNotFound()
 
-    if quantity > item.variant.stock:
+    # -----------------------------------------
+    # Validate quantity
+    # -----------------------------------------
+
+    if quantity < 1:
         raise ValidationError(
-            "Not enough stock."
+            "Quantity must be greater than zero."
         )
 
+    # -----------------------------------------
+    # PRODUCT
+    # -----------------------------------------
+
+    if item.variant is not None:
+
+        required_stock = quantity
+
+        if required_stock > item.variant.stock:
+            raise ValidationError(
+                "Not enough stock."
+            )
+
+    # -----------------------------------------
+    # BUNDLE
+    # -----------------------------------------
+
+    elif item.bundle is not None:
+
+        variant = item.bundle.variant
+
+        if not variant.is_active:
+            raise ValidationError(
+                "The product variant of this bundle is not active."
+            )
+
+        # Each bundle consumes `bundle.quantity`
+        # units of the variant.
+        required_stock = (
+            quantity * item.bundle.quantity
+        )
+
+        if required_stock > variant.stock:
+            raise ValidationError(
+                "Not enough stock for this bundle."
+            )
+
+    # -----------------------------------------
+    # INVALID CART ITEM
+    # -----------------------------------------
+
+    else:
+        raise ValidationError(
+            "Invalid cart item."
+        )
+
+    # -----------------------------------------
+    # UPDATE
+    # -----------------------------------------
+
     item.quantity = quantity
+
     item.save(
         update_fields=["quantity"]
     )
