@@ -26,7 +26,11 @@ CUSTOMER_ORDER_STATUSES = [
     OrderStatus.PAYMENT_REJECTED,
     OrderStatus.PREPARING,
     OrderStatus.SHIPPED,
+    OrderStatus.DELIVERED,
+    OrderStatus.CANCELED,
+    OrderStatus.EXPIRED
 ]
+
 
 def get_customer_orders_queryset(user):
     return (
@@ -56,6 +60,8 @@ def get_customer_orders_queryset(user):
         )
         .order_by("-created_at")
     )
+
+
 @extend_schema(
     tags=["Orders"],
     summary="Create Order",
@@ -261,4 +267,3 @@ class LatestOrderAPIView(APIView):
             ).data,
             status=status.HTTP_200_OK,
         )
-
