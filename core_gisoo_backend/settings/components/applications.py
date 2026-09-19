@@ -39,7 +39,7 @@ THIRD_PARTY_APPS = [
     "django_object_actions",
     # "jalali_date",
     "import_export",
-    # "silk",
+    "silk",
     "rest_framework_simplejwt.token_blacklist",
     "colorfield",
     "django_cleanup",
