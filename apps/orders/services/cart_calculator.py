@@ -125,8 +125,8 @@ def calculate_cart(
         )
 
         bundle_quantity = (
-            bundle.quantity *
-            cart_item.quantity
+                bundle.quantity *
+                cart_item.quantity
         )
 
         if bundle_quantity > variant.stock:
@@ -139,14 +139,15 @@ def calculate_cart(
             )
 
         bundle_total = (
-            bundle.price *
-            cart_item.quantity
+                bundle.price *
+                cart_item.quantity
         )
 
         order_bundle = OrderBundle(
             order=order,
-            bundle=bundle,
+            variant=variant,
             title=bundle.title,
+            bundle_quantity=bundle.quantity,
             unit_price=bundle.price,
             quantity=cart_item.quantity,
             total_price=bundle_total,
