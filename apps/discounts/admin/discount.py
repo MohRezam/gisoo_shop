@@ -51,6 +51,7 @@ class DiscountAdmin(admin.ModelAdmin):
                     "code",
                     "discount_type",
                     "value",
+                    "applies_to_discounted_products",
                     "is_active",
                 )
             },
