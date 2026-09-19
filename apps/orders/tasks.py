@@ -6,9 +6,7 @@ from apps.orders.models import (
     Order,
     OrderStatus,
 )
-from apps.orders.services.change_order_status import (
-    change_order_status,
-)
+from apps.orders.services.change_order_status import change_order_status
 from apps.orders.services.inventory import release_stock
 from apps.payments.models import (
     PaymentIntent,
@@ -25,9 +23,9 @@ ACTIVE_PAYMENT_STATUSES = [
 
 
 def has_valid_payment_receipt(
-        *,
-        order,
-        expires_at,
+    *,
+    order,
+    expires_at,
 ):
     return PaymentIntent.objects.filter(
         order=order,
@@ -43,9 +41,7 @@ def has_valid_payment_receipt(
 
 @shared_task
 @transaction.atomic
-def expire_order(
-        order_id: int,
-):
+def expire_order(order_id: int):
     order = (
         Order.objects
         .select_for_update()
@@ -61,7 +57,10 @@ def expire_order(
     if order is None:
         return
 
-    if order.status != OrderStatus.CREATED:
+    if order.status not in {
+        OrderStatus.CREATED,
+        OrderStatus.PAYMENT_REJECTED,
+    }:
         return
 
     now = timezone.now()
@@ -69,24 +68,32 @@ def expire_order(
     if order.expires_at > now:
         return
 
-    if has_valid_payment_receipt(
-        order=order,
-        expires_at=order.expires_at,
-    ):
-        return
+    # اگر سفارش CREATED باشد و مشتری قبل از
+    # expiration رسید معتبر فرستاده باشد،
+    # سفارش نباید منقضی شود.
+    if order.status == OrderStatus.CREATED:
+        if has_valid_payment_receipt(
+            order=order,
+            expires_at=order.expires_at,
+        ):
+            return
 
     payment_intent = (
         PaymentIntent.objects
         .select_for_update()
         .filter(
             order=order,
-            status__in=ACTIVE_PAYMENT_STATUSES,
+            status__in=ACTIVE_PAYMENT_STATUSES + [
+                PaymentIntentStatus.REJECTED,
+            ],
         )
+        .order_by("-created_at")
         .first()
     )
 
     if payment_intent is not None:
         payment_intent.status = PaymentIntentStatus.EXPIRED
+
         payment_intent.save(
             update_fields=[
                 "status",
@@ -120,7 +127,10 @@ def expire_overdue_orders():
     overdue_order_ids = list(
         Order.objects
         .filter(
-            status=OrderStatus.CREATED,
+            status__in=[
+                OrderStatus.CREATED,
+                OrderStatus.PAYMENT_REJECTED,
+            ],
             expires_at__lte=now,
         )
         .values_list(
@@ -130,6 +140,8 @@ def expire_overdue_orders():
     )
 
     for order_id in overdue_order_ids:
-        expire_order.delay(order_id)
+        expire_order.delay(
+            order_id,
+        )
 
     return len(overdue_order_ids)

@@ -336,12 +336,16 @@ def submit_receipt(
     payment_intent.submitted_at = now
 
     payment_intent.rejection_reason = ""
+    payment_intent.reviewed_at = None
+    payment_intent.reviewed_by = None
 
     payment_intent.save(
         update_fields=[
             "status",
             "submitted_at",
             "rejection_reason",
+            "reviewed_at",
+            "reviewed_by",
             "updated_at",
         ]
     )

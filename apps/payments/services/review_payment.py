@@ -17,6 +17,7 @@ from apps.payments.models import (
     PaymentReviewDecision,
 )
 from apps.orders.services.inventory import reserve_stock
+from django.utils.translation import gettext_lazy as _
 
 REVIEWABLE_STATUSES = {
     PaymentIntentStatus.RECEIPT_SUBMITTED,
@@ -132,10 +133,10 @@ def approve_payment(
 
 @transaction.atomic
 def reject_payment(
-        *,
-        payment_intent_id,
-        admin,
-        reason,
+    *,
+    payment_intent_id,
+    admin,
+    reason,
 ):
     payment_intent = (
         PaymentIntent.objects
@@ -151,24 +152,30 @@ def reject_payment(
 
     if payment_intent.status not in REVIEWABLE_STATUSES:
         raise ValidationError(
-            "This payment cannot be rejected."
+            _("This payment cannot be rejected.")
         )
 
     reason = (reason or "").strip()
 
     if not reason:
         raise ValidationError(
-            "Rejection reason is required."
+            _("Rejection reason is required.")
         )
 
     now = timezone.now()
 
-    payment_intent.status = (
-        PaymentIntentStatus.REJECTED
+    new_expiration = (
+        now
+        + timedelta(
+            minutes=ORDER_EXPIRATION_MINUTES,
+        )
     )
+
+    payment_intent.status = PaymentIntentStatus.REJECTED
     payment_intent.reviewed_at = now
     payment_intent.reviewed_by = admin
     payment_intent.rejection_reason = reason
+    payment_intent.expires_at = new_expiration
 
     payment_intent.save(
         update_fields=[
@@ -176,6 +183,7 @@ def reject_payment(
             "reviewed_at",
             "reviewed_by",
             "rejection_reason",
+            "expires_at",
             "updated_at",
         ]
     )
@@ -191,9 +199,19 @@ def reject_payment(
     order = payment_intent.order
 
     if order.status == OrderStatus.CREATED:
+        order.expires_at = new_expiration
+
+        order.save(
+            update_fields=[
+                "expires_at",
+                "updated_at",
+            ]
+        )
+
         change_order_status(
             order=order,
             new_status=OrderStatus.PAYMENT_REJECTED,
+            changed_by=admin,
             reason="Payment receipt rejected.",
         )
 
