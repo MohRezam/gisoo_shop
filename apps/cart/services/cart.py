@@ -231,16 +231,6 @@ def update_cart_item(
             quantity * item.bundle.quantity
         )
 
-        print(
-            "DEBUG BUNDLE:",
-            "item_id =", item.id,
-            "bundle_id =", item.bundle_id,
-            "bundle_quantity =", item.bundle.quantity,
-            "requested_quantity =", quantity,
-            "required_stock =", required_stock,
-            "variant_id =", variant.id,
-            "variant_stock =", variant.stock,
-        )
 
         if required_stock > variant.stock:
             raise ValidationError(
