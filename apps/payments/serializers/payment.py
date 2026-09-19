@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.payments.models import PaymentIntent, PaymentReceipt
+from apps.payments.models import PaymentIntent, PaymentReceipt, PaymentIntentStatus
 from django.utils import timezone
 
 
@@ -23,6 +23,7 @@ class PaymentIntentSerializer(serializers.ModelSerializer):
     order = serializers.SerializerMethodField()
     destination_card = serializers.SerializerMethodField()
     server_time = serializers.SerializerMethodField()
+    expires_at = serializers.SerializerMethodField()
 
     class Meta:
         model = PaymentIntent
@@ -44,9 +45,6 @@ class PaymentIntentSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_server_time(self, obj):
-        return timezone.now()
-
     def get_order(self, obj):
         return {
             "id": obj.order.id,
@@ -63,3 +61,24 @@ class PaymentIntentSerializer(serializers.ModelSerializer):
             "display_pan": obj.destination_card.display_pan,
             "name": obj.destination_card.name,
         }
+
+    def get_server_time(self, obj):
+        return timezone.now()
+
+    def get_expires_at(self, obj):
+        """
+        expires_at is only meaningful while the customer
+        has an active payment deadline.
+
+        Once a receipt has been submitted, the customer
+        is waiting for admin review, so the frontend must
+        not show a countdown.
+        """
+
+        if obj.status in {
+            PaymentIntentStatus.PENDING_PAYMENT,
+            PaymentIntentStatus.REJECTED,
+        }:
+            return obj.expires_at
+
+        return None

@@ -5,9 +5,7 @@ from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
 
 from apps.orders.models import OrderStatus
-from apps.orders.services.change_order_status import (
-    change_order_status,
-)
+from apps.orders.services.change_order_status import change_order_status
 from apps.payments.models import (
     PaymentIntent,
     PaymentIntentStatus,
@@ -15,7 +13,7 @@ from apps.payments.models import (
 )
 
 
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+MAX_FILE_SIZE = 5 * 1024 * 1024
 
 ALLOWED_MIME_TYPES = {
     "image/jpeg",
@@ -57,10 +55,10 @@ def validate_receipt_file(uploaded_file):
             "Receipt file must have a valid extension."
         )
 
-    extension = "." + original_name.rsplit(
-        ".",
-        1,
-    )[1].lower()
+    extension = (
+        "."
+        + original_name.rsplit(".", 1)[1].lower()
+    )
 
     if extension not in ALLOWED_EXTENSIONS:
         raise ValidationError(
@@ -78,10 +76,6 @@ def validate_receipt_file(uploaded_file):
             "Invalid receipt file type."
         )
 
-    # ---------------------------------------------------------
-    # File signature / magic bytes validation
-    # ---------------------------------------------------------
-
     uploaded_file.seek(0)
 
     file_header = uploaded_file.read(8)
@@ -90,10 +84,7 @@ def validate_receipt_file(uploaded_file):
 
     valid_signature = False
 
-    if extension in {
-        ".jpg",
-        ".jpeg",
-    }:
+    if extension in {".jpg", ".jpeg"}:
         valid_signature = file_header.startswith(
             b"\xff\xd8\xff"
         )
@@ -133,16 +124,12 @@ def calculate_sha256(uploaded_file):
 
 @transaction.atomic
 def submit_receipt(
-        *,
-        payment_intent_id: int,
-        user,
-        uploaded_file,
-        idempotency_key: str,
+    *,
+    payment_intent_id: int,
+    user,
+    uploaded_file,
+    idempotency_key: str,
 ):
-    # ---------------------------------------------------------
-    # Idempotency-Key validation
-    # ---------------------------------------------------------
-
     if not idempotency_key:
         raise ValidationError(
             "Idempotency-Key header is required."
@@ -160,10 +147,6 @@ def submit_receipt(
             "Idempotency-Key must not be longer than 255 characters."
         )
 
-    # ---------------------------------------------------------
-    # Get payment intent
-    # ---------------------------------------------------------
-
     payment_intent = (
         PaymentIntent.objects
         .select_for_update()
@@ -180,10 +163,7 @@ def submit_receipt(
             "Payment intent not found."
         )
 
-    # ---------------------------------------------------------
-    # Idempotency replay
-    # ---------------------------------------------------------
-
+    # Idempotent replay
     existing_receipt = (
         PaymentReceipt.objects
         .filter(
@@ -200,10 +180,6 @@ def submit_receipt(
             "idempotent_replay": True,
         }
 
-    # ---------------------------------------------------------
-    # Payment state validation
-    # ---------------------------------------------------------
-
     if payment_intent.status not in ALLOWED_STATUSES:
         raise ValidationError(
             "Receipt cannot be submitted in the current payment status."
@@ -211,32 +187,23 @@ def submit_receipt(
 
     now = timezone.now()
 
-    # ---------------------------------------------------------
-    # Rejected payment can be resubmitted
-    # ---------------------------------------------------------
-
+    # This is the important distinction:
+    #
+    # REJECTED means the customer has received a new
+    # retry window and is allowed to submit another receipt.
+    #
+    # Therefore we don't reject the upload just because
+    # the old expiration timestamp has passed.
     is_resubmission = (
         payment_intent.status
         == PaymentIntentStatus.REJECTED
     )
 
-    # ---------------------------------------------------------
-    # Expiration
-    #
-    # Normal payments must not accept receipts after expiry.
-    #
-    # Rejected payments are an exception because the customer
-    # is allowed to correct the rejected receipt and submit
-    # a new one.
-    # ---------------------------------------------------------
-
     if (
         not is_resubmission
         and payment_intent.expires_at <= now
     ):
-        payment_intent.status = (
-            PaymentIntentStatus.EXPIRED
-        )
+        payment_intent.status = PaymentIntentStatus.EXPIRED
 
         payment_intent.save(
             update_fields=[
@@ -249,58 +216,35 @@ def submit_receipt(
             "Payment intent has expired."
         )
 
-    # ---------------------------------------------------------
-    # File validation
-    # ---------------------------------------------------------
-
     file_data = validate_receipt_file(
-        uploaded_file,
+        uploaded_file
     )
 
-    # ---------------------------------------------------------
-    # SHA-256
-    # ---------------------------------------------------------
-
     sha256 = calculate_sha256(
-        uploaded_file,
+        uploaded_file
     )
 
     duplicate_receipt = (
         PaymentReceipt.objects
-        .filter(
-            sha256=sha256,
-        )
+        .filter(sha256=sha256)
         .exists()
     )
 
-    # ---------------------------------------------------------
-    # Deactivate previous active receipt
-    # ---------------------------------------------------------
-
+    # Previous receipt is no longer the active receipt.
     PaymentReceipt.objects.filter(
         payment_intent=payment_intent,
         is_active=True,
     ).update(
-        is_active=False,
+        is_active=False
     )
-
-    # ---------------------------------------------------------
-    # Create new receipt
-    # ---------------------------------------------------------
 
     try:
         receipt = PaymentReceipt.objects.create(
             payment_intent=payment_intent,
             file=uploaded_file,
-            original_name=file_data[
-                "original_name"
-            ],
-            mime_type=file_data[
-                "mime_type"
-            ],
-            file_size=file_data[
-                "file_size"
-            ],
+            original_name=file_data["original_name"],
+            mime_type=file_data["mime_type"],
+            file_size=file_data["file_size"],
             sha256=sha256,
             idempotency_key=idempotency_key,
             is_active=True,
@@ -325,17 +269,18 @@ def submit_receipt(
             "idempotent_replay": True,
         }
 
-    # ---------------------------------------------------------
-    # Change payment status
-    # ---------------------------------------------------------
-
+    # New receipt starts a new review cycle.
     payment_intent.status = (
         PaymentIntentStatus.RECEIPT_SUBMITTED
     )
 
     payment_intent.submitted_at = now
 
+    # Previous rejection is no longer relevant.
     payment_intent.rejection_reason = ""
+
+    # Very important:
+    # The old review belongs to the previous receipt.
     payment_intent.reviewed_at = None
     payment_intent.reviewed_by = None
 
@@ -350,12 +295,10 @@ def submit_receipt(
         ]
     )
 
-    # ---------------------------------------------------------
-    # Rejected order becomes active again
-    # ---------------------------------------------------------
-
     order = payment_intent.order
 
+    # Rejected order becomes active again after
+    # customer submits a new receipt.
     if (
         is_resubmission
         and order.status == OrderStatus.PAYMENT_REJECTED
@@ -363,9 +306,7 @@ def submit_receipt(
         change_order_status(
             order=order,
             new_status=OrderStatus.CREATED,
-            reason=(
-                "Customer resubmitted payment receipt."
-            ),
+            reason="Customer resubmitted payment receipt.",
         )
 
     return {

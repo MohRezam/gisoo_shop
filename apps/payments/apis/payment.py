@@ -104,7 +104,7 @@ class PaymentIntentDetailAPIView(APIView):
                 payment_intent.status
                 in {
             PaymentIntentStatus.PENDING_PAYMENT,
-            PaymentIntentStatus.RECEIPT_SUBMITTED,
+            PaymentIntentStatus.REJECTED,
         }
                 and payment_intent.expires_at <= timezone.now()
         ):

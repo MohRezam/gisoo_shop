@@ -2,11 +2,10 @@ from celery import shared_task
 from django.db import transaction
 from django.utils import timezone
 
-from apps.orders.models import (
-    Order,
-    OrderStatus,
+from apps.orders.models import Order, OrderStatus
+from apps.orders.services.change_order_status import (
+    change_order_status,
 )
-from apps.orders.services.change_order_status import change_order_status
 from apps.orders.services.inventory import release_stock
 from apps.payments.models import (
     PaymentIntent,
@@ -27,6 +26,14 @@ def has_valid_payment_receipt(
     order,
     expires_at,
 ):
+    """
+    A receipt submitted before the original deadline
+    protects the order from automatic expiration.
+
+    Once the customer has submitted a receipt,
+    expiration is no longer based on the customer.
+    """
+
     return PaymentIntent.objects.filter(
         order=order,
         status__in=[
@@ -48,9 +55,7 @@ def expire_order(order_id: int):
         .prefetch_related(
             "items__variant",
         )
-        .filter(
-            id=order_id,
-        )
+        .filter(id=order_id)
         .first()
     )
 
@@ -68,31 +73,55 @@ def expire_order(order_id: int):
     if order.expires_at > now:
         return
 
-    # اگر سفارش CREATED باشد و مشتری قبل از
-    # expiration رسید معتبر فرستاده باشد،
-    # سفارش نباید منقضی شود.
+    # ---------------------------------------------------------
+    # CREATED
+    # ---------------------------------------------------------
+    #
+    # If the customer submitted a valid receipt before
+    # the deadline, don't expire the order.
+    #
     if order.status == OrderStatus.CREATED:
+
         if has_valid_payment_receipt(
             order=order,
             expires_at=order.expires_at,
         ):
             return
 
+    # ---------------------------------------------------------
+    # PAYMENT_REJECTED
+    # ---------------------------------------------------------
+    #
+    # Here we intentionally DO NOT check for a receipt.
+    #
+    # If the order is still PAYMENT_REJECTED when its
+    # retry deadline passes, it means the customer didn't
+    # submit a new receipt.
+    #
+    # Therefore the order must expire.
+    #
+
     payment_intent = (
         PaymentIntent.objects
         .select_for_update()
         .filter(
             order=order,
-            status__in=ACTIVE_PAYMENT_STATUSES + [
-                PaymentIntentStatus.REJECTED,
-            ],
+            status__in=(
+                ACTIVE_PAYMENT_STATUSES
+                + [
+                    PaymentIntentStatus.REJECTED,
+                ]
+            ),
         )
         .order_by("-created_at")
         .first()
     )
 
     if payment_intent is not None:
-        payment_intent.status = PaymentIntentStatus.EXPIRED
+
+        payment_intent.status = (
+            PaymentIntentStatus.EXPIRED
+        )
 
         payment_intent.save(
             update_fields=[
@@ -101,6 +130,7 @@ def expire_order(order_id: int):
             ]
         )
 
+    # Release the stock reserved for this order.
     variants = [
         (
             item.variant,
@@ -140,8 +170,6 @@ def expire_overdue_orders():
     )
 
     for order_id in overdue_order_ids:
-        expire_order.delay(
-            order_id,
-        )
+        expire_order.delay(order_id)
 
     return len(overdue_order_ids)

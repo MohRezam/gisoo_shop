@@ -193,16 +193,21 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         if payment_intent is None:
             return None
 
+        if payment_intent.status in {
+            PaymentIntentStatus.PENDING_PAYMENT,
+            PaymentIntentStatus.REJECTED,
+        }:
+            expires_at = payment_intent.expires_at
+        else:
+            expires_at = None
+
         return {
             "id": payment_intent.id,
             "token": str(payment_intent.token),
             "status": payment_intent.status,
-            "expires_at": payment_intent.expires_at,
-            "can_upload_receipt": (
-                payment_intent.status
-                in {
-                    PaymentIntentStatus.PENDING_PAYMENT,
-                    PaymentIntentStatus.REJECTED,
-                }
-            ),
+            "expires_at": expires_at,
+            "can_upload_receipt": payment_intent.status in {
+                PaymentIntentStatus.PENDING_PAYMENT,
+                PaymentIntentStatus.REJECTED,
+            },
         }

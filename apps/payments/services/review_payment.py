@@ -131,6 +131,8 @@ def approve_payment(
     return payment_intent
 
 
+
+
 @transaction.atomic
 def reject_payment(
     *,
@@ -142,9 +144,7 @@ def reject_payment(
         PaymentIntent.objects
         .select_for_update()
         .select_related("order")
-        .get(
-            pk=payment_intent_id,
-        )
+        .get(pk=payment_intent_id)
     )
 
     if payment_intent.status == PaymentIntentStatus.REJECTED:
@@ -164,17 +164,24 @@ def reject_payment(
 
     now = timezone.now()
 
+    # New 15-minute retry window.
     new_expiration = (
         now
         + timedelta(
-            minutes=ORDER_EXPIRATION_MINUTES,
+            minutes=ORDER_EXPIRATION_MINUTES
         )
     )
 
-    payment_intent.status = PaymentIntentStatus.REJECTED
+    payment_intent.status = (
+        PaymentIntentStatus.REJECTED
+    )
+
     payment_intent.reviewed_at = now
     payment_intent.reviewed_by = admin
     payment_intent.rejection_reason = reason
+
+    # This expiration belongs to the customer's
+    # retry window.
     payment_intent.expires_at = new_expiration
 
     payment_intent.save(
@@ -199,6 +206,9 @@ def reject_payment(
     order = payment_intent.order
 
     if order.status == OrderStatus.CREATED:
+
+        # The order expiration is also moved to
+        # the new retry deadline.
         order.expires_at = new_expiration
 
         order.save(

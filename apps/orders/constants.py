@@ -19,6 +19,7 @@ ALLOWED_TRANSITIONS = {
     OrderStatus.PAYMENT_REJECTED: [
         OrderStatus.CREATED,
         OrderStatus.CANCELED,
+        OrderStatus.EXPIRED,
     ],
 
     OrderStatus.PREPARING: [
