@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 # from fcm_django.api.rest_framework import FCMDeviceAuthorizedViewSet
@@ -19,4 +19,5 @@ extra_apps_urlpatterns += [
         SpectacularSwaggerView.as_view(),
         name="swagger-ui",
     ),
+    path("silk/", include("silk.urls", namespace="silk")),
 ]
