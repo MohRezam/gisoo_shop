@@ -35,7 +35,5 @@ ALLOWED_TRANSITIONS = {
 
     OrderStatus.CANCELED: [],
 
-    OrderStatus.EXPIRED: [
-        OrderStatus.CREATED,
-    ],
+    OrderStatus.EXPIRED: [],
 }

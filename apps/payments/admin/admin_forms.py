@@ -29,10 +29,4 @@ class PaymentRejectForm(forms.Form):
     )
 
 
-class PaymentReopenForm(forms.Form):
-    reason = forms.CharField(
-        required=True,
-        widget=forms.Textarea(attrs={"rows": 5}),
-        label="Reopen reason",
-        help_text="Explain why this expired/rejected payment is being reopened.",
-    )
+

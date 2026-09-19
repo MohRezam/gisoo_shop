@@ -4,7 +4,7 @@ from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import format_html_join
 
-from apps.payments.admin.admin_forms import PaymentRejectForm, PaymentReopenForm, PaymentApproveForm
+from apps.payments.admin.admin_forms import PaymentRejectForm, PaymentApproveForm
 from apps.payments.models import (
     DestinationCard,
     PaymentIntent,
@@ -14,7 +14,6 @@ from apps.payments.models import (
 from apps.payments.services.review_payment import (
     approve_payment,
     reject_payment,
-    reopen_payment,
 )
 from django.utils.html import format_html
 
@@ -198,20 +197,6 @@ class PaymentIntentAdmin(admin.ModelAdmin):
                 (reject_url, "Reject")
             )
 
-        if obj.status in {
-            "expired",
-            "rejected",
-            "manual_review",
-        }:
-            reopen_url = reverse(
-                "admin:payments_paymentintent_reopen",
-                args=[obj.pk],
-            )
-
-            links.append(
-                (reopen_url, "Reopen")
-            )
-
         if not links:
             return "-"
 
@@ -239,13 +224,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
                 ),
                 name="payments_paymentintent_reject",
             ),
-            path(
-                "<int:payment_intent_id>/reopen/",
-                self.admin_site.admin_view(
-                    self.reopen_view
-                ),
-                name="payments_paymentintent_reopen",
-            ),
+
         ]
 
         return custom_urls + urls
@@ -363,69 +342,6 @@ class PaymentIntentAdmin(admin.ModelAdmin):
         context = {
             **self.admin_site.each_context(request),
             "title": "Reject payment",
-            "form": form,
-            "payment_intent": payment_intent,
-            "opts": self.model._meta,
-            "has_view_permission": self.has_view_permission(
-                request,
-                payment_intent,
-            ),
-        }
-
-        return TemplateResponse(
-            request,
-            "admin/payments/paymentintent/action_form.html",
-            context,
-        )
-
-    def reopen_view(self, request, payment_intent_id):
-        payment_intent = self.get_object(request, payment_intent_id)
-
-        if payment_intent is None:
-            self.message_user(
-                request,
-                "Payment intent not found.",
-                level=messages.ERROR,
-            )
-            return HttpResponseRedirect(
-                reverse("admin:payments_paymentintent_changelist")
-            )
-
-        if request.method == "POST":
-            form = PaymentReopenForm(request.POST)
-
-            if form.is_valid():
-                try:
-                    reopen_payment(
-                        payment_intent_id=payment_intent.pk,
-                        admin=request.user,
-                        reason=form.cleaned_data["reason"],
-                    )
-
-                except Exception as exc:
-                    form.add_error(
-                        None,
-                        str(exc),
-                    )
-                else:
-                    self.message_user(
-                        request,
-                        "Payment reopened successfully.",
-                        level=messages.SUCCESS,
-                    )
-
-                    return HttpResponseRedirect(
-                        reverse(
-                            "admin:payments_paymentintent_change",
-                            args=[payment_intent.pk],
-                        )
-                    )
-        else:
-            form = PaymentReopenForm()
-
-        context = {
-            **self.admin_site.each_context(request),
-            "title": "Reopen payment",
             "form": form,
             "payment_intent": payment_intent,
             "opts": self.model._meta,
