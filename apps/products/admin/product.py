@@ -8,10 +8,10 @@ from apps.products.models import (
     ProductAttribute,
     ProductImage,
     ProductVariant,
-    VariantAttribute, ProductRelatedProduct,
+    VariantAttribute, ProductRelatedProduct, DiscountCampaign,
 )
 import nested_admin
-
+from django.db.models import F
 
 class ProductImageInline(nested_admin.NestedTabularInline):
     model = ProductImage
@@ -274,3 +274,110 @@ class VariantAttributeAdmin(admin.ModelAdmin):
 
     exclude = ("creator", "archived")
     raw_id_fields = ("variant", "value")
+
+
+
+@admin.register(DiscountCampaign)
+class DiscountCampaignAdmin(admin.ModelAdmin):
+    list_display = (
+        "title",
+        "starts_at",
+        "ends_at",
+        "is_active",
+        "status",
+    )
+
+    list_filter = (
+        "is_active",
+    )
+
+    search_fields = (
+        "title",
+    )
+
+    filter_horizontal = (
+        "products",
+    )
+
+    readonly_fields = (
+        "created_at",
+        "updated_at",
+        "status",
+    )
+
+    fieldsets = (
+        (
+            "اطلاعات کمپین",
+            {
+                "fields": (
+                    "title",
+                    "is_active",
+                    "products",
+                )
+            },
+        ),
+        (
+            "زمان‌بندی",
+            {
+                "fields": (
+                    "starts_at",
+                    "ends_at",
+                )
+            },
+        ),
+        (
+            "وضعیت",
+            {
+                "fields": (
+                    "status",
+                )
+            },
+        ),
+        (
+            "اطلاعات سیستم",
+            {
+                "fields": (
+                    "created_at",
+                    "updated_at",
+                )
+            },
+        ),
+    )
+
+    def formfield_for_manytomany(
+        self,
+        db_field,
+        request,
+        **kwargs,
+    ):
+        if db_field.name == "products":
+            kwargs["queryset"] = Product.objects.filter(
+                is_available=True,
+                variants__is_active=True,
+                variants__discounted_price__isnull=False,
+                variants__discounted_price__lt=F(
+                    "variants__price"
+                ),
+            ).distinct()
+
+        return super().formfield_for_manytomany(
+            db_field,
+            request,
+            **kwargs,
+        )
+
+    @admin.display(description="وضعیت")
+    def status(self, obj):
+        if obj.is_expired:
+            return "منقضی شده"
+
+        if obj.is_upcoming:
+            return "در انتظار شروع"
+
+        if obj.is_running:
+            return "فعال"
+
+        return "غیرفعال"
+
+    def has_add_permission(self, request):
+        return not DiscountCampaign.objects.exists()

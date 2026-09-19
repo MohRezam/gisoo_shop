@@ -5,6 +5,7 @@ from apps.products.apis import (
     CategoryListAPIView, ProductListAPIView, ProductDetailAPIView, HairProblemAPIView, SpecialOfferProductListAPIView,
     ProductRelatedProductsAPIView, ProductViewerAPIView,
 )
+from apps.products.apis.discount_campaign import ActiveDiscountCampaignView
 from apps.products.apis.wishlist import WishlistListAPIView, WishlistToggleAPIView, WishlistItemDeleteAPIView
 
 app_name = "apps.products"
@@ -67,5 +68,10 @@ urlpatterns = [
         "products/<slug:slug>/viewers/",
         ProductViewerAPIView.as_view(),
         name="product-viewers",
+    ),
+    path(
+        "discount-campaigns/",
+        ActiveDiscountCampaignView.as_view(),
+        name="active-discount-campaigns",
     ),
 ]

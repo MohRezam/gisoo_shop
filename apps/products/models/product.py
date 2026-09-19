@@ -7,6 +7,7 @@ from django.db.models import Q
 from apps.shared.models.base import BaseModel
 from core_gisoo_backend.storage_backends.locations import product_image_path
 from django.db.models import F
+from django.utils import timezone
 
 
 class Product(BaseModel):
@@ -407,3 +408,87 @@ class ProductAttribute(BaseModel):
 
     def __str__(self):
         return f"{self.product.title} - {self.attribute.name}"
+
+
+
+class DiscountCampaign(BaseModel):
+    title = models.CharField(
+        max_length=255,
+        verbose_name=_("title"),
+    )
+
+    starts_at = models.DateTimeField(
+        verbose_name=_("starts_at"),
+    )
+
+    ends_at = models.DateTimeField(
+        verbose_name=_("ends_at"),
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_("is_active"),
+    )
+
+    singleton_key = models.BooleanField(
+        default=True,
+        unique=True,
+        editable=False,
+    )
+
+    products = models.ManyToManyField(
+        Product,
+        related_name="discount_campaigns",
+        blank=True,
+        verbose_name=_("products"),
+    )
+
+    class Meta:
+        verbose_name = _("Discount Campaign")
+        verbose_name_plural = _("Discount Campaigns")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
+
+    def clean(self):
+        super().clean()
+
+        if self.starts_at and self.ends_at:
+            if self.ends_at <= self.starts_at:
+                raise ValidationError({
+                    "ends_at": _(
+                        "End time must be after start time."
+                    )
+                })
+
+    @property
+    def is_running(self):
+        if not self.starts_at or not self.ends_at:
+            return False
+
+        now = timezone.now()
+
+        return (
+            self.is_active
+            and self.starts_at <= now < self.ends_at
+        )
+
+    @property
+    def is_expired(self):
+        if not self.ends_at:
+            return False
+
+        return timezone.now() >= self.ends_at
+
+    @property
+    def is_upcoming(self):
+        if not self.starts_at:
+            return False
+
+        now = timezone.now()
+
+        return (
+            self.is_active
+            and now < self.starts_at
+        )

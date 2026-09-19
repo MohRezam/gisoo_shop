@@ -5,10 +5,10 @@ from apps.products.models import (
     Product,
     ProductImage,
     ProductVariant,
-    VariantAttribute, ProductAttribute
+    VariantAttribute, ProductAttribute, DiscountCampaign
 )
 from apps.reviews.serializers import ProductReviewPublicSerializer
-
+from django.db import models
 
 class AttributeValueSerializer(
     serializers.ModelSerializer,
@@ -537,7 +537,7 @@ class ProductAttributeSerializer(serializers.ModelSerializer):
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
-    brand = brand = serializers.CharField(
+    brand = serializers.CharField(
         source="brand.title",
         read_only=True,
     )
@@ -737,3 +737,90 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             many=True,
             context=self.context,
         ).data
+
+
+
+class DiscountCampaignVariantSerializer(serializers.ModelSerializer):
+    discount_percent = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductVariant
+        fields = (
+            "id",
+            "sku",
+            "volume",
+            "price",
+            "discounted_price",
+            "stock",
+            "discount_percent",
+        )
+
+    def get_discount_percent(self, obj):
+        if (
+            obj.discounted_price is None
+            or obj.price <= 0
+            or obj.discounted_price >= obj.price
+        ):
+            return 0
+
+        discount = (
+            (obj.price - obj.discounted_price)
+            / obj.price
+        ) * 100
+
+        return round(discount)
+
+
+class DiscountCampaignProductSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    variants = DiscountCampaignVariantSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+        model = Product
+        fields = (
+            "id",
+            "title",
+            "slug",
+            "image",
+            "variants",
+        )
+
+    def get_image(self, obj):
+        images = obj.images.all()
+
+        if not images:
+            return None
+
+        image = images[0]
+
+        if not image.image:
+            return None
+
+        request = self.context.get("request")
+
+        if request:
+            return request.build_absolute_uri(
+                image.image.url
+            )
+
+        return image.image.url
+
+
+class DiscountCampaignSerializer(serializers.ModelSerializer):
+    products = DiscountCampaignProductSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+        model = DiscountCampaign
+        fields = (
+            "id",
+            "title",
+            "starts_at",
+            "ends_at",
+            "products",
+        )
