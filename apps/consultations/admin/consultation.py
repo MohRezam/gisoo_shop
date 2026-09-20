@@ -7,6 +7,11 @@ from apps.consultations.models.consultation import (
     ConsultationRecommendation,
     ConsultationRequest,
 )
+from apps.shared.admin_filters import (
+    PersianBooleanFilter,
+    PersianChoicesFilter,
+    PersianRelatedFilter,
+)
 
 
 class ConsultationRecommendationInline(
@@ -25,6 +30,8 @@ class ConsultationRecommendationInline(
         "display_order",
     )
     raw_id_fields = ("variant",)
+    verbose_name = "پیشنهاد محصول"
+    verbose_name_plural = "پیشنهادهای محصول"
 
 
 @admin.register(ConsultationRequest)
@@ -44,11 +51,11 @@ class ConsultationRequestAdmin(
     )
 
     list_filter = (
-        "status",
-        "gender",
-        "duration",
-        "hair_problem",
-        "request_phone_consultation",
+        ("status", PersianChoicesFilter),
+        ("gender", PersianChoicesFilter),
+        ("duration", PersianChoicesFilter),
+        ("hair_problem", PersianRelatedFilter),
+        ("request_phone_consultation", PersianBooleanFilter),
     )
 
     search_fields = (
@@ -69,14 +76,50 @@ class ConsultationRequestAdmin(
         ConsultationRecommendationInline,
     )
 
+    fieldsets = (
+        (
+            "اطلاعات درخواست",
+            {
+                "fields": (
+                    "full_name",
+                    "phone_number",
+                    "gender",
+                    "hair_problem",
+                    "duration",
+                    "status",
+                    "request_phone_consultation",
+                ),
+            },
+        ),
+        (
+            "مالک",
+            {
+                "fields": (
+                    "user",
+                    "guest",
+                ),
+            },
+        ),
+        (
+            "سیستم",
+            {
+                "fields": (
+                    "id",
+                    "created_at",
+                    "updated_at",
+                ),
+            },
+        ),
+    )
+
     @admin.display(
-        description="Owner"
+        description="مالک"
     )
     def owner(self, obj):
         if obj.user_id:
             return str(obj.user)
 
         if obj.guest_id:
-            return f"Guest ({obj.phone_number})"
+            return f"مهمان ({obj.phone_number})"
 
         return "-"

@@ -1,18 +1,18 @@
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
+
 from apps.shared.models.base import BaseModel
 from core_gisoo_backend.storage_backends.locations import magazine_thumbnail_path
 
 
 class MagazineCategory(BaseModel):
     name = models.CharField(
-        _("name"),
+        "نام",
         max_length=100,
     )
     slug = models.SlugField(
-        _("slug"),
+        "اسلاگ",
         max_length=120,
         unique=True,
     )
@@ -31,39 +31,39 @@ class Magazine(BaseModel):
         MagazineCategory,
         on_delete=models.PROTECT,
         related_name="magazines",
-        verbose_name=_("category"),
+        verbose_name="دسته‌بندی",
     )
 
     title = models.CharField(
-        _("title"),
+        "عنوان",
         max_length=255,
     )
 
     slug = models.SlugField(
-        _("slug"),
+        "اسلاگ",
         max_length=300,
         unique=True,
     )
 
     short_description = models.TextField(
-        _("short description"),
+        "توضیح کوتاه",
     )
 
     content = models.TextField(
-        _("content"),
+        "محتوا",
     )
 
     thumbnail = models.ImageField(
-        _("thumbnail"),
+        "تصویر شاخص",
         upload_to=magazine_thumbnail_path(),
     )
 
     published_at = models.DateTimeField(
-        _("published at"),
+        "تاریخ انتشار",
     )
 
     is_published = models.BooleanField(
-        _("is published"),
+        "منتشر شده",
         default=False,
     )
 
@@ -71,23 +71,24 @@ class Magazine(BaseModel):
         "products.Product",
         blank=True,
         related_name="related_magazines",
-        verbose_name=_("related products"),
+        verbose_name="محصولات مرتبط",
     )
     related_articles = models.ManyToManyField(
         "self",
         blank=True,
         symmetrical=False,
         related_name="related_to",
-        verbose_name=_("related articles"),
+        verbose_name="مقالات مرتبط",
     )
     is_featured = models.BooleanField(
         default=False,
-        verbose_name=_("is_featured"),
+        verbose_name="مقاله ویژه",
     )
 
     reading_time = models.PositiveSmallIntegerField(
-        verbose_name=_("reading_time"),
+        verbose_name="زمان مطالعه (دقیقه)",
         help_text="زمان تقریبی مطالعه بر حسب دقیقه",
+        default=3,
     )
 
     class Meta:

@@ -2,29 +2,16 @@ from datetime import timedelta
 
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
-from django.contrib.admin.filters import AllValuesFieldListFilter, ChoicesFieldListFilter
 from django.utils import timezone
 
 from apps.orders.models import (
     Order,
     OrderItem,
 )
-
-
-class PersianChoicesFilter(ChoicesFieldListFilter):
-    def choices(self, changelist):
-        for index, choice in enumerate(super().choices(changelist)):
-            if index == 0:
-                choice = {**choice, "display": "همه"}
-            yield choice
-
-
-class PersianAllValuesFilter(AllValuesFieldListFilter):
-    def choices(self, changelist):
-        for index, choice in enumerate(super().choices(changelist)):
-            if index == 0:
-                choice = {**choice, "display": "همه"}
-            yield choice
+from apps.shared.admin_filters import (
+    PersianAllValuesFilter,
+    PersianChoicesFilter,
+)
 
 
 class OrderCreatedAtFilter(SimpleListFilter):

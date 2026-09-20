@@ -15,6 +15,7 @@ from apps.payments.services.review_payment import (
     approve_payment,
     reject_payment,
 )
+from apps.shared.admin_filters import PersianChoicesFilter
 from django.utils.html import format_html
 
 
@@ -84,7 +85,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
     )
 
     list_filter = (
-        "status",
+        ("status", PersianChoicesFilter),
     )
 
     search_fields = (

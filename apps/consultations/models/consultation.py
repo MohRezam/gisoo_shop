@@ -89,28 +89,28 @@ class GuestDeviceAccess(models.Model):
 
 class ConsultationRequest(models.Model):
     class Gender(models.TextChoices):
-        FEMALE = "female", _("Female")
-        MALE = "male", _("Male")
+        FEMALE = "female", "زن"
+        MALE = "male", "مرد"
 
     class Duration(models.TextChoices):
         LESS_THAN_MONTH = (
             "less_than_month",
-            _("Less than a month"),
+            "کمتر از یک ماه",
         )
 
         ONE_TO_THREE_MONTHS = (
             "one_to_three_months",
-            _("One to three months"),
+            "یک تا سه ماه",
         )
 
         MORE_THAN_THREE_MONTHS = (
             "more_than_three_months",
-            _("More than three months"),
+            "بیشتر از سه ماه",
         )
 
     class Status(models.TextChoices):
-        PENDING = "pending", _("Pending")
-        COMPLETED = "completed", _("Completed")
+        PENDING = "pending", "در انتظار"
+        COMPLETED = "completed", "تکمیل‌شده"
 
     id = models.UUIDField(
         primary_key=True,
@@ -124,7 +124,7 @@ class ConsultationRequest(models.Model):
         related_name="consultation_requests",
         null=True,
         blank=True,
-        verbose_name=_("user"),
+        verbose_name="کاربر",
     )
 
     guest = models.ForeignKey(
@@ -133,58 +133,58 @@ class ConsultationRequest(models.Model):
         related_name="consultation_requests",
         null=True,
         blank=True,
-        verbose_name=_("guest"),
+        verbose_name="مهمان",
     )
 
     full_name = models.CharField(
         max_length=150,
-        verbose_name=_("full name"),
+        verbose_name="نام کامل",
     )
 
     phone_number = models.CharField(
         max_length=20,
-        verbose_name=_("phone number"),
+        verbose_name="شماره موبایل",
     )
 
     gender = models.CharField(
         max_length=20,
         choices=Gender.choices,
-        verbose_name=_("gender"),
+        verbose_name="جنسیت",
     )
 
     hair_problem = models.ForeignKey(
         "products.HairProblem",
         on_delete=models.PROTECT,
         related_name="consultation_requests",
-        verbose_name=_("hair problem"),
+        verbose_name="مشکل مو",
     )
 
     duration = models.CharField(
         max_length=50,
         choices=Duration.choices,
-        verbose_name=_("duration"),
+        verbose_name="مدت مشکل",
     )
 
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
         default=Status.PENDING,
-        verbose_name=_("status"),
+        verbose_name="وضعیت",
     )
 
     request_phone_consultation = models.BooleanField(
         default=False,
-        verbose_name=_("phone consultation"),
+        verbose_name="درخواست مشاوره تلفنی",
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
+        verbose_name="تاریخ ایجاد",
     )
 
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name=_("updated at"),
+        verbose_name="آخرین به‌روزرسانی",
     )
 
     class Meta:

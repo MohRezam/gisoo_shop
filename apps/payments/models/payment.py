@@ -9,42 +9,42 @@ from apps.shared.models.base import BaseModel
 class PaymentIntentStatus(models.TextChoices):
     PENDING_PAYMENT = (
         "pending_payment",
-        _("Pending payment"),
+        "در انتظار پرداخت",
     )
 
     RECEIPT_SUBMITTED = (
         "receipt_submitted",
-        _("Receipt submitted"),
+        "رسید ارسال‌شده",
     )
 
     UNDER_REVIEW = (
         "under_review",
-        _("Under review"),
+        "در حال بررسی",
     )
 
     MANUAL_REVIEW = (
         "manual_review",
-        _("Manual review"),
+        "بررسی دستی",
     )
 
     PAID = (
         "paid",
-        _("Paid"),
+        "پرداخت‌شده",
     )
 
     REJECTED = (
         "rejected",
-        _("Rejected"),
+        "رد شده",
     )
 
     EXPIRED = (
         "expired",
-        _("Expired"),
+        "منقضی‌شده",
     )
 
     REFUNDED = (
         "refunded",
-        _("Refunded"),
+        "بازگشت وجه",
     )
 
 
@@ -171,7 +171,7 @@ class PaymentIntent(BaseModel):
         max_length=32,
         choices=PaymentIntentStatus.choices,
         default=PaymentIntentStatus.PENDING_PAYMENT,
-        verbose_name=_("status"),
+        verbose_name="وضعیت",
     )
 
     expires_at = models.DateTimeField(
