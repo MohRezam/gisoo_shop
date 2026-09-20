@@ -8,7 +8,11 @@ if config("REDIS_MODE", "default") == "gitlab_ci":
         "default": {
             "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
             "LOCATION": "unique-snowflake",
-        }
+        },
+        "redis": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "local-redis-fallback",
+        },
     }
 
 if config("REDIS_MODE", "default") == "default":

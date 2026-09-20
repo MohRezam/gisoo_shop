@@ -29,6 +29,14 @@
   box-shadow: 0 10px 24px rgba(23, 61, 237, 0.28);
 }
 
+.gisoo-login-intro .gisoo-logo {
+  margin: 0 auto 14px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  box-shadow: 0 10px 24px rgba(23, 61, 237, 0.22);
+}
+
 .gisoo-login-intro h1 {
   margin: 0 0 6px !important;
   font-family: "Kook", "IranSans", Tahoma, sans-serif !important;

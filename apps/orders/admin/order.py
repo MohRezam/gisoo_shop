@@ -1,9 +1,78 @@
+from datetime import timedelta
+
 from django.contrib import admin
+from django.contrib.admin import SimpleListFilter
+from django.contrib.admin.filters import AllValuesFieldListFilter, ChoicesFieldListFilter
+from django.utils import timezone
 
 from apps.orders.models import (
     Order,
     OrderItem,
 )
+
+
+class PersianChoicesFilter(ChoicesFieldListFilter):
+    def choices(self, changelist):
+        for index, choice in enumerate(super().choices(changelist)):
+            if index == 0:
+                choice = {**choice, "display": "همه"}
+            yield choice
+
+
+class PersianAllValuesFilter(AllValuesFieldListFilter):
+    def choices(self, changelist):
+        for index, choice in enumerate(super().choices(changelist)):
+            if index == 0:
+                choice = {**choice, "display": "همه"}
+            yield choice
+
+
+class OrderCreatedAtFilter(SimpleListFilter):
+    title = "تاریخ ایجاد"
+    parameter_name = "created_range"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("today", "امروز"),
+            ("7days", "۷ روز گذشته"),
+            ("month", "این ماه"),
+            ("year", "امسال"),
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if not value:
+            return queryset
+
+        today = timezone.localdate()
+
+        if value == "today":
+            return queryset.filter(created_at__date=today)
+        if value == "7days":
+            return queryset.filter(created_at__date__gte=today - timedelta(days=7))
+        if value == "month":
+            return queryset.filter(
+                created_at__year=today.year,
+                created_at__month=today.month,
+            )
+        if value == "year":
+            return queryset.filter(created_at__year=today.year)
+        return queryset
+
+    def choices(self, changelist):
+        yield {
+            "selected": self.value() is None,
+            "query_string": changelist.get_query_string(remove=[self.parameter_name]),
+            "display": "همه",
+        }
+        for lookup, title in self.lookup_choices:
+            yield {
+                "selected": self.value() == str(lookup),
+                "query_string": changelist.get_query_string(
+                    {self.parameter_name: lookup}
+                ),
+                "display": title,
+            }
 
 
 class OrderItemInline(admin.TabularInline):
@@ -35,10 +104,10 @@ class OrderAdmin(admin.ModelAdmin):
     ]
 
     list_filter = [
-        "status",
-        "created_at",
-        "province",
-        "city",
+        ("status", PersianChoicesFilter),
+        OrderCreatedAtFilter,
+        ("province", PersianAllValuesFilter),
+        ("city", PersianAllValuesFilter),
     ]
 
     search_fields = [

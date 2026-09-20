@@ -40,3 +40,50 @@
     <strong class="gisoo-stat-value">{{ stats.unread_inbox }}</strong>
   </div>
 </div>
+
+<section class="gisoo-charts">
+  <article class="gisoo-chart-card">
+    <header class="gisoo-chart-head">
+      <h3>وضعیت سفارش‌ها</h3>
+      <span>{{ status_total }} مورد فعال</span>
+    </header>
+    <div class="gisoo-chart-body">
+      <div class="gisoo-donut" style="--donut: conic-gradient({{ donut_gradient }});" aria-hidden="true">
+        <div class="gisoo-donut-hole">
+          <strong>{{ status_total }}</strong>
+          <span>کل</span>
+        </div>
+      </div>
+      <ul class="gisoo-chart-legend">
+        {% for row in status_chart %}
+        <li>
+          <span class="gisoo-dot" style="background: {{ row.color }}"></span>
+          <span class="gisoo-legend-label">{{ row.label }}</span>
+          <strong>{{ row.value }}</strong>
+          <em>{{ row.pct }}٪</em>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </article>
+
+  <article class="gisoo-chart-card">
+    <header class="gisoo-chart-head">
+      <h3>نمای مقایسه‌ای</h3>
+      <span>شاخص‌های اصلی</span>
+    </header>
+    <div class="gisoo-bars">
+      {% for row in bar_chart %}
+      <div class="gisoo-bar-row">
+        <div class="gisoo-bar-meta">
+          <span>{{ row.label }}</span>
+          <strong>{{ row.value }}</strong>
+        </div>
+        <div class="gisoo-bar-track">
+          <div class="gisoo-bar-fill" style="width: {{ row.pct }}%; background: {{ row.color }};"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>

@@ -5,9 +5,15 @@ from django.utils import timezone
 register = template.Library()
 
 
+def _pct(part, total):
+    if not total:
+        return 0
+    return round((part / total) * 100)
+
+
 @register.inclusion_tag("admin/gisoo_stats.html", takes_context=True)
 def gisoo_dashboard_stats(context):
-    """Aggregate shop KPIs for the admin index."""
+    """Aggregate shop KPIs and chart series for the admin index."""
     today = timezone.localdate()
     stats = {
         "orders_today": 0,
@@ -16,6 +22,7 @@ def gisoo_dashboard_stats(context):
         "payment_review": 0,
         "preparing": 0,
         "shipped": 0,
+        "delivered": 0,
         "revenue_today": 0,
         "users_total": 0,
         "products_total": 0,
@@ -32,6 +39,7 @@ def gisoo_dashboard_stats(context):
         ).count()
         stats["preparing"] = Order.objects.filter(status=OrderStatus.PREPARING).count()
         stats["shipped"] = Order.objects.filter(status=OrderStatus.SHIPPED).count()
+        stats["delivered"] = Order.objects.filter(status=OrderStatus.DELIVERED).count()
         stats["revenue_today"] = (
             Order.objects.filter(
                 created_at__date=today,
@@ -80,4 +88,60 @@ def gisoo_dashboard_stats(context):
     except Exception:
         pass
 
-    return {"stats": stats, "request": context.get("request")}
+    status_rows = [
+        ("در انتظار پرداخت", stats["waiting_payment"], "#f59e0b"),
+        ("آماده‌سازی", stats["preparing"], "#173ded"),
+        ("ارسال‌شده", stats["shipped"], "#0ea5e9"),
+        ("تحویل‌شده", stats["delivered"], "#10b981"),
+        ("رسید در بررسی", stats["payment_review"], "#ef4444"),
+    ]
+    status_total = sum(v for _, v, _ in status_rows) or 1
+    status_chart = [
+        {
+            "label": label,
+            "value": value,
+            "color": color,
+            "pct": _pct(value, status_total),
+        }
+        for label, value, color in status_rows
+    ]
+
+    bar_rows = [
+        ("سفارش امروز", stats["orders_today"], "#173ded"),
+        ("کل سفارش", stats["orders_total"], "#0f2fb8"),
+        ("کاربران", stats["users_total"], "#6366f1"),
+        ("محصول فعال", stats["products_total"], "#8b5cf6"),
+        ("اعلان نخوانده", stats["unread_inbox"], "#f43f5e"),
+    ]
+    bar_max = max((v for _, v, _ in bar_rows), default=1) or 1
+    bar_chart = [
+        {
+            "label": label,
+            "value": value,
+            "color": color,
+            "pct": max(_pct(value, bar_max), 4 if value else 0),
+        }
+        for label, value, color in bar_rows
+    ]
+
+    # Conic-gradient stops for donut (RTL-friendly visual)
+    cursor = 0
+    gradient_parts = []
+    for row in status_chart:
+        start = cursor
+        cursor += row["pct"]
+        gradient_parts.append(f"{row['color']} {start}% {cursor}%")
+    donut_gradient = (
+        ", ".join(gradient_parts)
+        if any(r["value"] for r in status_chart)
+        else "#e5e7eb 0% 100%"
+    )
+
+    return {
+        "stats": stats,
+        "status_chart": status_chart,
+        "bar_chart": bar_chart,
+        "donut_gradient": donut_gradient,
+        "status_total": sum(r["value"] for r in status_chart),
+        "request": context.get("request"),
+    }

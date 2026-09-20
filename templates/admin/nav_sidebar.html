@@ -1,7 +1,7 @@
-{% load i18n %}
+{% load i18n static %}
 <nav class="sticky" id="nav-sidebar" aria-label="{% translate 'Sidebar' %}">
   <div class="gisoo-side-brand">
-    <span class="gisoo-side-mark" aria-hidden="true">✦</span>
+    <img class="gisoo-side-logo" src="{% static 'admin/img/gisoo-logo.svg' %}" alt="گیسو سنتر" width="40" height="40">
     <div>
       <strong>گیسو سنتر</strong>
       <span>پنل مدیریت</span>
@@ -10,15 +10,33 @@
 
   <div class="gisoo-side-quick">
     <p class="gisoo-side-quick-title">میانبرها</p>
-    <a href="{% url 'admin:index' %}">پیشخوان آماری</a>
-    <a href="{% url 'admin:orders_order_changelist' %}">سفارش‌ها</a>
-    <a href="{% url 'admin:payments_paymentintent_changelist' %}">پرداخت‌ها / رسیدها</a>
-    <a href="{% url 'admin:products_product_changelist' %}">محصولات</a>
-    <a href="{% url 'admin:home_banner_changelist' %}">بنرها</a>
-    <a href="{% url 'admin:magazine_magazine_changelist' %}">مجله</a>
-    <a href="{% url 'admin:notifications_inappnotification_changelist' %}">اعلان‌های درون‌برنامه‌ای</a>
-    <a href="{% url 'admin:consultations_consultationrequest_changelist' %}">مشاوره‌ها</a>
-    <a href="{% url 'admin:users_user_changelist' %}">کاربران</a>
+
+    <div class="gisoo-quick-group">
+      <p class="gisoo-quick-label">عملیات روزانه</p>
+      <div class="gisoo-quick-grid">
+        <a href="{% url 'admin:index' %}">پیشخوان</a>
+        <a href="{% url 'admin:orders_order_changelist' %}">سفارش‌ها</a>
+        <a href="{% url 'admin:payments_paymentintent_changelist' %}">رسیدها</a>
+        <a href="{% url 'admin:consultations_consultationrequest_changelist' %}">مشاوره</a>
+      </div>
+    </div>
+
+    <div class="gisoo-quick-group">
+      <p class="gisoo-quick-label">کاتالوگ و محتوا</p>
+      <div class="gisoo-quick-grid">
+        <a href="{% url 'admin:products_product_changelist' %}">محصولات</a>
+        <a href="{% url 'admin:home_banner_changelist' %}">بنرها</a>
+        <a href="{% url 'admin:magazine_magazine_changelist' %}">مجله</a>
+      </div>
+    </div>
+
+    <div class="gisoo-quick-group">
+      <p class="gisoo-quick-label">کاربران و پیام‌ها</p>
+      <div class="gisoo-quick-grid">
+        <a href="{% url 'admin:users_user_changelist' %}">کاربران</a>
+        <a href="{% url 'admin:notifications_inappnotification_changelist' %}">اعلان‌ها</a>
+      </div>
+    </div>
   </div>
 
   <input type="search" id="nav-filter"
