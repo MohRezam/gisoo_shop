@@ -37,8 +37,8 @@ class Cart(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("cart")
-        verbose_name_plural = _("carts")
+        verbose_name = "سبد خرید"
+        verbose_name_plural = "سبدهای خرید"
 
 
 class CartItem(BaseModel):
@@ -72,8 +72,8 @@ class CartItem(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("cart item")
-        verbose_name_plural = _("cart items")
+        verbose_name = "آیتم سبد خرید"
+        verbose_name_plural = "آیتم‌های سبد خرید"
 
         constraints = [
             models.UniqueConstraint(

@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
 
-from apps.addresses.services.address import create_address
+from apps.addresses.tests.factories import create_address
 from apps.orders.models import OrderStatus
 from apps.orders.services.create_order import create_order
 from apps.orders.tests.factories import create_shipping_method, create_cart, create_cart_item
@@ -109,7 +109,7 @@ class CreateOrderTests(TestCase):
 
         self.assertEqual(
             order.status,
-            OrderStatus.CREATED,
+            OrderStatus.WAITING_PAYMENT,
         )
 
         self.assertEqual(
@@ -119,6 +119,14 @@ class CreateOrderTests(TestCase):
 
         self.assertIsNotNone(
             order.payment,
+        )
+
+        self.assertTrue(
+            order.payment_intents.exists(),
+        )
+
+        self.assertIsNotNone(
+            order.public_number,
         )
 
         variant.refresh_from_db()

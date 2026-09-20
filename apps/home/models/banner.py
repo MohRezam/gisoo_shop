@@ -9,20 +9,25 @@ from core_gisoo_backend.storage_backends.locations import banner_image_path, sli
 
 class Banner(BaseModel):
     class LinkType(models.TextChoices):
-        PRODUCT = "product", _("Product")
-        CATEGORY = "category", _("Category")
-        CUSTOM = "custom", _("Custom URL")
-        NONE = "none", _("No link")
+        PRODUCT = "product", "محصول"
+        CATEGORY = "category", "دسته‌بندی"
+        CUSTOM = "custom", "لینک سفارشی"
+        NONE = "none", "بدون لینک"
+
+    title = models.CharField(
+        max_length=255,
+        verbose_name="عنوان",
+    )
 
     image = models.ImageField(
         upload_to=banner_image_path(),
-        verbose_name=_("image"),
+        verbose_name="تصویر",
     )
 
     link_type = models.CharField(
         max_length=20,
         choices=LinkType.choices,
-        verbose_name=_("link type"),
+        verbose_name="نوع لینک",
     )
 
     product = models.ForeignKey(
@@ -31,7 +36,7 @@ class Banner(BaseModel):
         null=True,
         blank=True,
         related_name="banners",
-        verbose_name=_("product"),
+        verbose_name="محصول",
     )
 
     category = models.ForeignKey(
@@ -40,33 +45,28 @@ class Banner(BaseModel):
         null=True,
         blank=True,
         related_name="banners",
-        verbose_name=_("category"),
+        verbose_name="دسته‌بندی",
     )
 
     custom_url = models.URLField(
         max_length=500,
         blank=True,
-        verbose_name=_("custom URL"),
+        verbose_name="لینک سفارشی",
     )
 
     display_order = models.PositiveIntegerField(
-        default=1,
-        validators=[
-            MinValueValidator(1),
-            MaxValueValidator(5),
-        ],
-        verbose_name=_("hero position"),
-        help_text=_("1 = first hero, 2 = second hero, 3 = third hero, 4 = fourth hero, 5 = fifth hero"),
+        default=0,
+        verbose_name="ترتیب نمایش",
     )
 
     is_active = models.BooleanField(
         default=True,
-        verbose_name=_("is active"),
+        verbose_name="فعال",
     )
 
     class Meta:
-        verbose_name = _("banner")
-        verbose_name_plural = _("banners")
+        verbose_name = "بنر"
+        verbose_name_plural = "بنرها"
         ordering = ["display_order", "-created_at"]
 
         constraints = [
@@ -84,17 +84,17 @@ class Banner(BaseModel):
 
         if self.link_type == self.LinkType.PRODUCT and not self.product:
             raise ValidationError({
-                "product": _("Product is required for product link.")
+                "product": "برای لینک محصول، انتخاب محصول الزامی است."
             })
 
         if self.link_type == self.LinkType.CATEGORY and not self.category:
             raise ValidationError({
-                "category": _("Category is required for category link.")
+                "category": "برای لینک دسته، انتخاب دسته‌بندی الزامی است."
             })
 
         if self.link_type == self.LinkType.CUSTOM and not self.custom_url:
             raise ValidationError({
-                "custom_url": _("Custom URL is required for custom link.")
+                "custom_url": "برای لینک سفارشی، آدرس الزامی است."
             })
 
         if self.link_type != self.LinkType.PRODUCT:
@@ -109,18 +109,18 @@ class Banner(BaseModel):
 
 class Slider(BaseModel):
     class LinkType(models.TextChoices):
-        PRODUCT = "product", _("Product")
-        CATEGORY = "category", _("Category")
+        PRODUCT = "product", "محصول"
+        CATEGORY = "category", "دسته‌بندی"
 
     image = models.ImageField(
         upload_to=slider_image_path(),
-        verbose_name=_("image"),
+        verbose_name="تصویر",
     )
 
     link_type = models.CharField(
         max_length=20,
         choices=LinkType.choices,
-        verbose_name=_("link type"),
+        verbose_name="نوع لینک",
     )
 
     product = models.ForeignKey(
@@ -129,7 +129,7 @@ class Slider(BaseModel):
         null=True,
         blank=True,
         related_name="sliders",
-        verbose_name=_("product"),
+        verbose_name="محصول",
     )
 
     category = models.ForeignKey(
@@ -138,22 +138,22 @@ class Slider(BaseModel):
         null=True,
         blank=True,
         related_name="sliders",
-        verbose_name=_("category"),
+        verbose_name="دسته‌بندی",
     )
 
     display_order = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("display order"),
+        verbose_name="ترتیب نمایش",
     )
 
     is_active = models.BooleanField(
         default=True,
-        verbose_name=_("is active"),
+        verbose_name="فعال",
     )
 
     class Meta:
-        verbose_name = _("Slider")
-        verbose_name_plural = _("Sliders")
+        verbose_name = "اسلایدر"
+        verbose_name_plural = "اسلایدرها"
         ordering = ["display_order", "-created_at"]
 
     def clean(self):
@@ -161,12 +161,12 @@ class Slider(BaseModel):
 
         if self.link_type == self.LinkType.PRODUCT and not self.product:
             raise ValidationError({
-                "product": _("Product is required for product link.")
+                "product": "برای لینک محصول، انتخاب محصول الزامی است."
             })
 
         if self.link_type == self.LinkType.CATEGORY and not self.category:
             raise ValidationError({
-                "category": _("Category is required for category link.")
+                "category": "برای لینک دسته، انتخاب دسته‌بندی الزامی است."
             })
 
         if self.link_type != self.LinkType.PRODUCT:

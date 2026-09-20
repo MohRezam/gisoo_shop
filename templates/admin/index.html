@@ -1,0 +1,46 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div id="content-main">
+  <div class="gisoo-dashboard">
+    <section class="gisoo-hero">
+      <h2>به پنل گیسو سنتر خوش آمدید</h2>
+      <p>
+        مدیریت سفارش‌ها، پرداخت کارت‌به‌کارت، محصولات مراقبت مو و محتوای
+        فروشگاه تخصصی مراقبت مو — هم‌راستا با
+        <a href="https://gisoocenter.ir/" target="_blank" rel="noopener" style="color:#fff;text-decoration:underline;">gisoocenter.ir</a>
+      </p>
+    </section>
+
+    <div class="gisoo-quick-grid">
+      <a class="gisoo-quick-card" href="{% url 'admin:orders_order_changelist' %}">
+        <strong>سفارش‌ها</strong>
+        <span>پیگیری و تغییر وضعیت</span>
+      </a>
+      <a class="gisoo-quick-card" href="{% url 'admin:payments_paymentintent_changelist' %}">
+        <strong>پرداخت‌ها</strong>
+        <span>بررسی رسید کارت‌به‌کارت</span>
+      </a>
+      <a class="gisoo-quick-card" href="{% url 'admin:products_product_changelist' %}">
+        <strong>محصولات</strong>
+        <span>کاتالوگ و موجودی</span>
+      </a>
+      <a class="gisoo-quick-card" href="{% url 'admin:home_banner_changelist' %}">
+        <strong>بنرها</strong>
+        <span>صفحه اصلی فروشگاه</span>
+      </a>
+      <a class="gisoo-quick-card" href="{% url 'admin:magazine_magazine_changelist' %}">
+        <strong>مجله</strong>
+        <span>مقالات و دسته‌ها</span>
+      </a>
+      <a class="gisoo-quick-card" href="{% url 'admin:notifications_inappnotification_changelist' %}">
+        <strong>اعلان‌ها</strong>
+        <span>اینباکس کاربران</span>
+      </a>
+    </div>
+  </div>
+
+  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+</div>
+{% endblock %}

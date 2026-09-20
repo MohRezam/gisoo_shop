@@ -18,8 +18,8 @@ class MagazineCategory(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("Magazine Category")
-        verbose_name_plural = _("Magazine Categories")
+        verbose_name = "دسته‌بندی مجله"
+        verbose_name_plural = "دسته‌بندی‌های مجله"
         ordering = ("name",)
 
     def __str__(self):
@@ -91,8 +91,8 @@ class Magazine(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("Magazine")
-        verbose_name_plural = _("Magazines")
+        verbose_name = "مجله"
+        verbose_name_plural = "مجلات"
         ordering = ("-published_at",)
         constraints = [
             models.UniqueConstraint(

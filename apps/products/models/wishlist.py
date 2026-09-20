@@ -29,8 +29,8 @@ class Wishlist(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("wishlist")
-        verbose_name_plural = _("wishlists")
+        verbose_name = "علاقه‌مندی"
+        verbose_name_plural = "علاقه‌مندی‌ها"
 
         constraints = [
             models.CheckConstraint(
@@ -72,8 +72,8 @@ class WishlistItem(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("wishlist item")
-        verbose_name_plural = _("wishlist items")
+        verbose_name = "آیتم علاقه‌مندی"
+        verbose_name_plural = "آیتم‌های علاقه‌مندی"
 
         constraints = [
             models.UniqueConstraint(

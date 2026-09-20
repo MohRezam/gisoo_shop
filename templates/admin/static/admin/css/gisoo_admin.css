@@ -1,0 +1,634 @@
+/* Gisoo Center admin — https://gisoocenter.ir/ */
+
+/* Brand tokens — do NOT put white in --header-color (sidebar reuses it) */
+:root,
+html[data-theme="light"],
+html[data-theme="dark"],
+html[data-theme="auto"] {
+  --gisoo-blue: #173ded;
+  --gisoo-blue-dark: #0f2fb8;
+  --gisoo-blue-soft: #eef3ff;
+  --gisoo-cream: #fcfbf8;
+  --gisoo-ink: #111827;
+  --gisoo-muted: #6b7280;
+  --gisoo-line: #e5e7eb;
+
+  --primary: #173ded !important;
+  --secondary: #0f2fb8 !important;
+  --accent: #173ded !important;
+  --primary-fg: #ffffff !important;
+
+  --body-fg: #111827 !important;
+  --body-bg: #fcfbf8 !important;
+  --body-quiet-color: #6b7280 !important;
+  --body-medium-color: #374151 !important;
+  --body-loud-color: #111827 !important;
+
+  /* Used by sidebar section titles — must stay dark */
+  --header-color: #0f2fb8 !important;
+  --header-branding-color: #ffffff !important;
+  --header-bg: #173ded !important;
+  --header-link-color: #0f2fb8 !important;
+
+  --breadcrumbs-fg: #eef3ff !important;
+  --breadcrumbs-link-fg: #ffffff !important;
+  --breadcrumbs-bg: #0f2fb8 !important;
+
+  --link-fg: #0f2fb8 !important;
+  --link-hover-color: #173ded !important;
+  --link-selected-fg: #0f2fb8 !important;
+
+  --hairline-color: #e5e7eb !important;
+  --border-color: #e5e7eb !important;
+  --darkened-bg: #f3f4f6 !important;
+  --selected-bg: #eef3ff !important;
+  --selected-row: #e8eeff !important;
+
+  --button-fg: #ffffff !important;
+  --button-bg: #173ded !important;
+  --button-hover-bg: #0f2fb8 !important;
+  --default-button-bg: #0f2fb8 !important;
+  --default-button-hover-bg: #0c2494 !important;
+  --close-button-bg: #6b7280 !important;
+  --close-button-hover-bg: #4b5563 !important;
+  --delete-button-bg: #dc2626 !important;
+
+  --object-tools-fg: #ffffff !important;
+  --object-tools-bg: #173ded !important;
+  --object-tools-hover-bg: #0f2fb8 !important;
+
+  --font-family-primary: "IranSans", "Vazirmatn", Tahoma, sans-serif;
+  color-scheme: light !important;
+}
+
+html {
+  direction: rtl;
+  color-scheme: light !important;
+}
+
+body {
+  font-family: var(--font-family-primary) !important;
+  background: #fcfbf8 !important;
+  color: #111827 !important;
+}
+
+/* Kill OS dark-scheme bleed even if dark_mode.css loads */
+@media (prefers-color-scheme: dark) {
+  :root,
+  html {
+    --body-fg: #111827 !important;
+    --body-bg: #fcfbf8 !important;
+    --body-quiet-color: #6b7280 !important;
+    --body-medium-color: #374151 !important;
+    --body-loud-color: #111827 !important;
+    --darkened-bg: #f3f4f6 !important;
+    --selected-bg: #eef3ff !important;
+    --selected-row: #e8eeff !important;
+    --hairline-color: #e5e7eb !important;
+    --border-color: #e5e7eb !important;
+    --header-color: #0f2fb8 !important;
+    --header-link-color: #0f2fb8 !important;
+    color-scheme: light !important;
+  }
+}
+
+/* ========== Top header (white text only here) ========== */
+#header {
+  background: linear-gradient(115deg, #0f2fb8 0%, #173ded 70%) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 8px 28px rgba(23, 61, 237, 0.22);
+  padding: 14px 24px !important;
+  align-items: center;
+}
+
+#header #branding,
+#header #branding a,
+#header #user-tools,
+#header #user-tools a,
+#header #user-tools strong,
+#header #logout-form button {
+  color: #ffffff !important;
+}
+
+#gisoo-brand { display: flex; align-items: center; }
+
+.gisoo-brand-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none !important;
+  color: #fff !important;
+}
+
+.gisoo-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: 18px;
+}
+
+.gisoo-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.25;
+}
+
+.gisoo-name {
+  font-family: "Kook", "IranSans", Tahoma, sans-serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff !important;
+}
+
+.gisoo-tagline {
+  font-size: 0.78rem;
+  opacity: 0.9;
+  color: #fff !important;
+}
+
+#logout-form button {
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+/* Hide theme toggle — panel is always light */
+.theme-toggle {
+  display: none !important;
+}
+
+/* ========== Breadcrumbs ========== */
+div.breadcrumbs {
+  background: #0f2fb8 !important;
+  color: #eef3ff !important;
+  padding: 10px 24px !important;
+}
+
+div.breadcrumbs a { color: #fff !important; }
+
+/* ========== Content contrast ========== */
+#content,
+#content-main,
+.main .content,
+.form-row,
+.aligned label,
+label,
+th,
+td,
+p,
+li,
+caption,
+h1, h2, h3,
+.help,
+.helptext,
+.paginator,
+.datetime,
+.timezonewarning,
+.selector .selector-available h2,
+.selector .selector-chosen h2 {
+  color: #111827 !important;
+}
+
+#content h1 {
+  font-family: "Kook", "IranSans", Tahoma, sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+}
+
+a:link, a:visited { color: #0f2fb8 !important; }
+a:hover { color: #173ded !important; }
+
+/* ========== Modules ========== */
+.module,
+#content-main .module {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(17, 24, 39, 0.04);
+}
+
+.module h2,
+.module caption,
+.inline-group h2 {
+  background: #eef3ff !important;
+  color: #111827 !important;
+  border: none !important;
+  font-family: "Kook", "IranSans", Tahoma, sans-serif;
+  font-weight: 500;
+  padding: 12px 16px !important;
+  text-align: right !important;
+}
+
+.module h2 a,
+.module caption a,
+a.section:link,
+a.section:visited {
+  color: #0f2fb8 !important;
+}
+
+/* ========== Tables ========== */
+#result_list thead th,
+.results thead th {
+  background: #f3f4f6 !important;
+  color: #111827 !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  text-align: right !important;
+}
+
+#result_list tbody td,
+.results tbody td {
+  color: #111827 !important;
+  text-align: right !important;
+}
+
+#result_list tbody tr:nth-child(odd) { background: #fcfbf8; }
+#result_list tbody tr:hover { background: #eef3ff !important; }
+
+/* ========== Buttons ========== */
+.button,
+input[type="submit"],
+input[type="button"],
+.submit-row input,
+a.button {
+  border-radius: 10px !important;
+  font-family: inherit !important;
+  border: none !important;
+  color: #fff !important;
+  background: #173ded !important;
+  box-shadow: 0 4px 14px rgba(23, 61, 237, 0.22);
+}
+
+.button:hover,
+input[type="submit"]:hover,
+a.button:hover {
+  background: #0f2fb8 !important;
+  color: #fff !important;
+}
+
+.object-tools a {
+  border-radius: 999px !important;
+  background: #173ded !important;
+  color: #fff !important;
+  padding: 8px 16px !important;
+}
+
+.deletelink,
+.deletelink-box a.deletelink {
+  background: #dc2626 !important;
+  color: #fff !important;
+}
+
+/* ========== Forms ========== */
+input, textarea, select,
+.vTextField, .vLargeTextField {
+  border-radius: 10px !important;
+  border: 1px solid #d1d5db !important;
+  color: #111827 !important;
+  background: #fff !important;
+  font-family: inherit !important;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: #173ded !important;
+  box-shadow: 0 0 0 3px rgba(23, 61, 237, 0.15) !important;
+  outline: none;
+}
+
+.form-row label,
+.aligned label {
+  color: #111827 !important;
+  float: right !important;
+  text-align: right !important;
+}
+
+.submit-row {
+  background: #f9fafb !important;
+  border-top: 1px solid #e5e7eb !important;
+}
+
+/* ========== NAV SIDEBAR — keep Django table layout, fix RTL ========== */
+.main {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+}
+
+.toggle-nav-sidebar {
+  flex: 0 0 28px !important;
+  width: 28px !important;
+  background: #173ded !important;
+  color: #fff !important;
+  border: none !important;
+  border-left: 1px solid #0f2fb8 !important;
+  align-self: stretch;
+}
+
+#nav-sidebar {
+  background: #ffffff !important;
+  border-left: 1px solid #e5e7eb !important;
+  border-right: none !important;
+  text-align: right !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  position: relative !important;
+  z-index: 15;
+  flex: 0 0 275px;
+  box-sizing: border-box;
+}
+
+/* Restore Django's open/closed behavior for RTL without overlap */
+[dir="rtl"] #nav-sidebar {
+  left: auto !important;
+  right: auto !important;
+  margin-left: 0 !important;
+  margin-right: -276px !important;
+}
+
+[dir="rtl"] .main.shifted > #nav-sidebar {
+  margin-right: 0 !important;
+  visibility: visible !important;
+}
+
+.main > #nav-sidebar {
+  visibility: hidden;
+}
+
+.main.shifted > #nav-sidebar {
+  visibility: visible !important;
+}
+
+.main > #nav-sidebar + .content {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: calc(100% - 28px) !important;
+}
+
+.main.shifted > #nav-sidebar + .content {
+  max-width: calc(100% - 303px) !important;
+}
+
+#nav-sidebar .module {
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 0 0 8px !important;
+  background: transparent !important;
+  overflow: visible !important;
+}
+
+#nav-sidebar table {
+  width: 100% !important;
+  margin: 0 !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+#nav-sidebar caption {
+  display: table-caption !important;
+  caption-side: top;
+  padding: 12px 14px 6px !important;
+  font-weight: 700;
+  color: #111827 !important;
+  background: transparent !important;
+  text-align: right !important;
+}
+
+#nav-sidebar caption a,
+#nav-sidebar .section:link,
+#nav-sidebar .section:visited,
+#nav-sidebar .current-app .section:link,
+#nav-sidebar .current-app .section:visited {
+  color: #0f2fb8 !important;
+  font-weight: 700 !important;
+}
+
+/* Keep th/td as table cells — prevents stacked/overlapping items */
+#nav-sidebar th,
+#nav-sidebar td {
+  display: table-cell !important;
+  float: none !important;
+  vertical-align: middle !important;
+  padding: 6px 12px !important;
+  border: none !important;
+  background: transparent !important;
+  color: #111827 !important;
+  text-align: right !important;
+}
+
+#nav-sidebar th {
+  width: auto !important;
+  overflow-wrap: anywhere;
+}
+
+#nav-sidebar td {
+  width: 52px !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+}
+
+#nav-sidebar a {
+  color: #111827 !important;
+  text-decoration: none !important;
+  line-height: 1.45;
+  display: inline !important;
+  width: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  white-space: normal !important;
+}
+
+#nav-sidebar th a {
+  display: block !important;
+  padding: 4px 0 !important;
+}
+
+#nav-sidebar a:hover {
+  color: #173ded !important;
+}
+
+#nav-sidebar .current-model {
+  background: #e8eeff !important;
+}
+
+#nav-sidebar .current-model a {
+  color: #0f2fb8 !important;
+  font-weight: 600;
+}
+
+#nav-filter {
+  width: calc(100% - 16px) !important;
+  margin: 10px 8px !important;
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid #d1d5db !important;
+  color: #111827 !important;
+  background: #fff !important;
+  text-align: right !important;
+  box-sizing: border-box;
+}
+
+/* ========== Changelist filter ========== */
+#changelist-filter {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 14px !important;
+  text-align: right !important;
+  float: left !important;
+  margin: 0 0 0 16px !important;
+}
+
+#changelist-filter h2,
+#changelist-filter h3 {
+  background: #eef3ff !important;
+  color: #111827 !important;
+  text-align: right !important;
+  padding: 10px 12px !important;
+}
+
+#changelist-filter li,
+#changelist-filter a,
+#changelist-filter summary {
+  color: #111827 !important;
+  text-align: right !important;
+}
+
+#changelist-filter li.selected a {
+  color: #0f2fb8 !important;
+  font-weight: 700;
+}
+
+#changelist {
+  text-align: right !important;
+}
+
+#changelist .actions {
+  color: #111827 !important;
+}
+
+/* ========== Dashboard ========== */
+.gisoo-dashboard {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.gisoo-hero {
+  background: linear-gradient(120deg, #0f2fb8 0%, #173ded 65%, #3b82f6 100%);
+  color: #fff !important;
+  border-radius: 20px;
+  padding: 26px 28px;
+  box-shadow: 0 14px 36px rgba(23, 61, 237, 0.22);
+}
+
+.gisoo-hero h2,
+.gisoo-hero p {
+  color: #ffffff !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.gisoo-hero h2 {
+  margin: 0 0 8px;
+  font-family: "Kook", "IranSans", Tahoma, sans-serif;
+  font-size: 1.55rem;
+  font-weight: 700;
+}
+
+.gisoo-hero p {
+  margin: 0;
+  opacity: 0.95;
+  line-height: 1.75;
+  max-width: 54ch;
+}
+
+.gisoo-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.gisoo-quick-card {
+  display: block;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  text-decoration: none !important;
+  color: #111827 !important;
+  box-shadow: 0 4px 14px rgba(17, 24, 39, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gisoo-quick-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(23, 61, 237, 0.12);
+  border-color: #c7d2fe;
+}
+
+.gisoo-quick-card strong {
+  display: block;
+  color: #111827 !important;
+  font-family: "Kook", "IranSans", Tahoma, sans-serif;
+  margin-bottom: 4px;
+}
+
+.gisoo-quick-card span {
+  color: #6b7280 !important;
+  font-size: 0.85rem;
+}
+
+.gisoo-footer {
+  text-align: center;
+  color: #6b7280 !important;
+  font-size: 0.82rem;
+  padding: 18px 12px 28px;
+}
+
+/* ========== Messages ========== */
+.messagelist li {
+  border-radius: 12px;
+  color: #111827 !important;
+}
+
+.messagelist li.success { background: #ecfdf5 !important; }
+.messagelist li.error { background: #fef2f2 !important; }
+.messagelist li.warning { background: #fffbeb !important; }
+
+.dashboard .module table th,
+.dashboard .module table td {
+  text-align: right !important;
+  color: #111827 !important;
+}
+
+.dashboard .module caption,
+.dashboard .module th {
+  text-align: right !important;
+}
+
+@media (max-width: 767px) {
+  #header { padding: 12px 14px !important; }
+  .gisoo-name { font-size: 1.1rem; }
+  #nav-sidebar,
+  .toggle-nav-sidebar {
+    display: none !important;
+  }
+  .main > #nav-sidebar + .content,
+  .main.shifted > #nav-sidebar + .content {
+    max-width: 100% !important;
+  }
+  #changelist-filter {
+    float: none !important;
+    margin: 0 0 16px !important;
+    width: 100% !important;
+  }
+}

@@ -15,7 +15,7 @@ class Product(BaseModel):
         "products.Category",
         on_delete=models.PROTECT,
         related_name="products",
-        verbose_name=_("category"),
+        verbose_name="دسته‌بندی",
     )
 
     brand = models.ForeignKey(
@@ -24,7 +24,7 @@ class Product(BaseModel):
         related_name="products",
         blank=True,
         null=True,
-        verbose_name=_("brand"),
+        verbose_name="برند",
     )
 
     related_products = models.ManyToManyField(
@@ -33,50 +33,50 @@ class Product(BaseModel):
         symmetrical=False,
         related_name="related_from_products",
         blank=True,
-        verbose_name=_("related products"),
+        verbose_name="محصولات مرتبط",
     )
 
     title = models.CharField(
         max_length=255,
-        verbose_name=_("title"),
+        verbose_name="عنوان",
     )
 
     slug = models.SlugField(
         unique=True,
-        verbose_name=_("slug"),
+        verbose_name="اسلاگ",
     )
 
     short_description = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name=_("short_description"),
+        verbose_name="توضیحات کوتاه",
     )
 
     description = models.TextField(
-        verbose_name=_("description"),
+        verbose_name="توضیحات",
     )
 
     is_available = models.BooleanField(
         default=True,
-        verbose_name=_("is_available"),
+        verbose_name="موجود",
     )
     hair_problems = models.ManyToManyField(
         "products.HairProblem",
         blank=True,
         related_name="products",
-        verbose_name=_("hair_problem"),
+        verbose_name="مشکل مو",
     )
 
     hair_types = models.ManyToManyField(
         "products.HairType",
         blank=True,
         related_name="products",
-        verbose_name=_("hair_types"),
+        verbose_name="نوع مو",
     )
 
     class Meta:
-        verbose_name = _("product")
-        verbose_name_plural = _("products")
+        verbose_name = "محصول"
+        verbose_name_plural = "محصولات"
         ordering = ["-created_at"]
 
     def __str__(self):
@@ -104,8 +104,8 @@ class ProductRelatedProduct(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("product related product")
-        verbose_name_plural = _("product related products")
+        verbose_name = "محصول مرتبط"
+        verbose_name_plural = "محصولات مرتبط"
 
         ordering = [
             "display_order",
@@ -160,8 +160,8 @@ class ProductImage(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("product_image")
-        verbose_name_plural = _("products_images")
+        verbose_name = "تصویر محصول"
+        verbose_name_plural = "تصاویر محصول"
         ordering = ["-created_at"]
 
         constraints = [
@@ -207,52 +207,55 @@ class ProductVariant(BaseModel):
         Product,
         on_delete=models.CASCADE,
         related_name="variants",
+        verbose_name="محصول",
     )
 
     sku = models.CharField(
         max_length=100,
         unique=True,
-        verbose_name=_("sku"),
+        verbose_name="کد کالا",
     )
 
     price = models.PositiveBigIntegerField(
-        verbose_name=_("price"),
+        verbose_name="قیمت",
         default=0
     )
 
     discounted_price = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        verbose_name=_("discounted_price"),
+        verbose_name="قیمت تخفیف‌خورده",
     )
 
     stock = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("stock"),
+        verbose_name="موجودی",
     )
 
     volume = models.PositiveIntegerField(
-        verbose_name=_("Volume (ml)"),
+        verbose_name="حجم (میلی‌لیتر)",
+        default=0,
         help_text=_("Volume in milliliter."),
     )
 
     expiration_date = models.DateField(
         blank=True,
         null=True,
-        verbose_name=_("expiration_date"),
+        verbose_name="تاریخ انقضا",
     )
     display_order = models.PositiveIntegerField(
         default=0,
+        verbose_name="ترتیب نمایش",
     )
 
     is_active = models.BooleanField(
         default=True,
-        verbose_name=_("is_active"),
+        verbose_name="فعال",
     )
 
     class Meta:
-        verbose_name = _("product_variant")
-        verbose_name_plural = _("product_variants")
+        verbose_name = "تنوع محصول"
+        verbose_name_plural = "تنوع‌های محصول"
         ordering = ["-created_at"]
         constraints = [
             models.CheckConstraint(
@@ -290,8 +293,8 @@ class Attribute(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("attribute")
-        verbose_name_plural = _("attributes")
+        verbose_name = "ویژگی"
+        verbose_name_plural = "ویژگی‌ها"
         ordering = ["-created_at"]
 
     def __str__(self):
@@ -315,8 +318,8 @@ class AttributeValue(BaseModel):
         return f"{self.attribute.name}: {self.value}"
 
     class Meta:
-        verbose_name = _("attribute_value")
-        verbose_name_plural = _("attributes_values")
+        verbose_name = "مقدار ویژگی"
+        verbose_name_plural = "مقادیر ویژگی"
         ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(
@@ -364,8 +367,8 @@ class VariantAttribute(BaseModel):
             )
 
     class Meta:
-        verbose_name = _("variant_attribute")
-        verbose_name_plural = _("variant_attributes")
+        verbose_name = "ویژگی تنوع"
+        verbose_name_plural = "ویژگی‌های تنوع"
         ordering = ["-created_at"]
 
 
@@ -395,8 +398,8 @@ class ProductAttribute(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("product attribute")
-        verbose_name_plural = _("product attributes")
+        verbose_name = "ویژگی محصول"
+        verbose_name_plural = "ویژگی‌های محصول"
         ordering = ["display_order", "-created_at"]
 
         constraints = [

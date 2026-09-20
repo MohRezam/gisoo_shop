@@ -8,8 +8,21 @@ MAX_ORDER_DESCRIPTION_LENGTH = 500
 MAX_PAYMENT_RETRY = 3
 
 
+ORDER_STATUS_LABELS = {
+    OrderStatus.CREATED: "ثبت شده",
+    OrderStatus.WAITING_PAYMENT: "در انتظار پرداخت",
+    OrderStatus.PAYMENT_REJECTED: "پرداخت رد شده",
+    OrderStatus.PREPARING: "در حال آماده‌سازی",
+    OrderStatus.SHIPPED: "ارسال شده",
+    OrderStatus.DELIVERED: "تحویل شده",
+    OrderStatus.CANCELED: "لغو شده",
+    OrderStatus.EXPIRED: "منقضی شده",
+}
+
+
 ALLOWED_TRANSITIONS = {
     OrderStatus.CREATED: [
+        OrderStatus.WAITING_PAYMENT,
         OrderStatus.PREPARING,
         OrderStatus.CANCELED,
         OrderStatus.EXPIRED,
@@ -18,6 +31,19 @@ ALLOWED_TRANSITIONS = {
 
     OrderStatus.PAYMENT_REJECTED: [
         OrderStatus.CREATED,
+        OrderStatus.CANCELED,
+        OrderStatus.EXPIRED,
+    ],
+
+    OrderStatus.WAITING_PAYMENT: [
+        OrderStatus.PREPARING,
+        OrderStatus.PAYMENT_REJECTED,
+        OrderStatus.CANCELED,
+        OrderStatus.EXPIRED,
+    ],
+
+    OrderStatus.PAYMENT_REJECTED: [
+        OrderStatus.WAITING_PAYMENT,
         OrderStatus.CANCELED,
         OrderStatus.EXPIRED,
     ],

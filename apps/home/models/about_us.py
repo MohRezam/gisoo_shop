@@ -31,8 +31,8 @@ class HomeAbout(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("home about")
-        verbose_name_plural = _("home abouts")
+        verbose_name = "درباره ما"
+        verbose_name_plural = "درباره ما"
         ordering = ["display_order", "-created_at"]
 
     def __str__(self):

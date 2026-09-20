@@ -1,0 +1,33 @@
+@font-face {
+  font-family: "IranSans";
+  src: url("../fonts/iransansweb.woff2") format("woff2"),
+       url("../fonts/iransansweb.woff") format("woff"),
+       url("../fonts/iransansweb.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kook";
+  src: url("../fonts/Kook-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kook";
+  src: url("../fonts/Kook-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kook";
+  src: url("../fonts/Kook-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}

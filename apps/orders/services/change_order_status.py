@@ -29,7 +29,6 @@ def change_order_status(
 
     current_status = order.status
 
-    # اگر وضعیت تغییری نکرده، کاری انجام نده
     if current_status == new_status:
         return order
 
@@ -89,5 +88,35 @@ def change_order_status(
         changed_by=changed_by,
         reason=reason,
     )
+
+    if new_status == OrderStatus.SHIPPED:
+        from apps.notifications.services.inbox import notify_user
+        from apps.orders.cache import invalidate_track_order_cache
+
+        tracking = order.tracking_code or ""
+        body = f"سفارش {order.public_number or order.id} ارسال شد."
+        if tracking:
+            body = f"{body} کد رهگیری: {tracking}"
+        notify_user(
+            user=order.user,
+            title="مرسوله ارسال شد",
+            body=body,
+            type="order",
+            link=f"/account/orders/{order.id}",
+            order_id=order.id,
+        )
+        invalidate_track_order_cache(order.public_number, order.phone_number)
+
+    elif new_status in (
+        OrderStatus.PREPARING,
+        OrderStatus.DELIVERED,
+        OrderStatus.CANCELED,
+        OrderStatus.EXPIRED,
+        OrderStatus.PAYMENT_REJECTED,
+        OrderStatus.WAITING_PAYMENT,
+    ):
+        from apps.orders.cache import invalidate_track_order_cache
+
+        invalidate_track_order_cache(order.public_number, order.phone_number)
 
     return order

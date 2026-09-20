@@ -2,11 +2,22 @@ from django.urls import path
 
 from apps.products.apis import (
     BrandListAPIView,
-    CategoryListAPIView, ProductListAPIView, ProductDetailAPIView, HairProblemAPIView, SpecialOfferProductListAPIView,
-    ProductRelatedProductsAPIView, ProductViewerAPIView,
+    CategoryListAPIView,
+    ProductListAPIView,
+    ProductDetailAPIView,
+    HairProblemAPIView,
+    SpecialOfferProductListAPIView,
 )
-from apps.products.apis.discount_campaign import ActiveDiscountCampaignView
-from apps.products.apis.wishlist import WishlistListAPIView, WishlistToggleAPIView, WishlistItemDeleteAPIView
+from apps.products.apis.wishlist import (
+    WishlistListAPIView,
+    WishlistToggleAPIView,
+    WishlistItemDeleteAPIView,
+)
+from apps.products.apis.stock_notify import WishlistStockNotifyAPIView
+from apps.products.apis.consultation import (
+    ConsultationRecommendationsAPIView,
+    DiscountCampaignsAPIView,
+)
 
 app_name = "apps.products"
 
@@ -16,21 +27,10 @@ urlpatterns = [
         CategoryListAPIView.as_view(),
         name="category-list",
     ),
-
     path(
         "v1/brands/",
         BrandListAPIView.as_view(),
         name="brand-list",
-    ),
-    path(
-        "v1/",
-        ProductListAPIView.as_view(),
-        name="product-list"
-    ),
-    path(
-        "v1/<slug:slug>/",
-        ProductDetailAPIView.as_view(),
-        name="product-detail",
     ),
     path(
         "v1/hair/problems/",
@@ -43,17 +43,40 @@ urlpatterns = [
         name="special-offers",
     ),
     path(
+        "v1/discount-campaigns/",
+        DiscountCampaignsAPIView.as_view(),
+        name="discount-campaigns",
+    ),
+    path(
+        "v1/consultation/recommendations/",
+        ConsultationRecommendationsAPIView.as_view(),
+        name="consultation-recommendations",
+    ),
+    path(
+        "v1/",
+        ProductListAPIView.as_view(),
+        name="product-list",
+    ),
+    path(
+        "v1/<slug:slug>/",
+        ProductDetailAPIView.as_view(),
+        name="product-detail",
+    ),
+    path(
         "wishlist/",
         WishlistListAPIView.as_view(),
         name="wishlist-list",
     ),
-
     path(
         "wishlist/toggle/",
         WishlistToggleAPIView.as_view(),
         name="wishlist-toggle",
     ),
-
+    path(
+        "wishlist/notify-stock/",
+        WishlistStockNotifyAPIView.as_view(),
+        name="wishlist-notify-stock",
+    ),
     path(
         "wishlist/items/<int:product_id>/",
         WishlistItemDeleteAPIView.as_view(),

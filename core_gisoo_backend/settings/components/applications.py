@@ -3,20 +3,18 @@ from core_gisoo_backend import settings
 from core_gisoo_backend.settings.components.common import DEBUG
 
 LOCAL_APPS = [
-    "apps.users",
-    "apps.addresses",
-    "apps.cart",
-    "apps.discounts",
-    "apps.notifications",
-    "apps.orders",
-    "apps.payments",
-    "apps.products",
-    "apps.shipping",
-    "apps.home",
-    "apps.magazine",
-    "apps.marketing",
-    "apps.consultations",
-    "apps.reviews"
+    "apps.users.apps.UsersConfig",
+    "apps.addresses.apps.AddressesConfig",
+    "apps.cart.apps.CartConfig",
+    "apps.discounts.apps.DiscountsConfig",
+    "apps.notifications.apps.NotificationsConfig",
+    "apps.orders.apps.OrdersConfig",
+    "apps.payments.apps.PaymentsConfig",
+    "apps.products.apps.ProductsConfig",
+    "apps.shipping.apps.ShippingConfig",
+    "apps.home.apps.HomeConfig",
+    "apps.magazine.apps.MagazineConfig",
+    "apps.marketing.apps.MarketingConfig",
 ]
 
 THIRD_PARTY_APPS = [

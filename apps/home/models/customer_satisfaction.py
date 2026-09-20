@@ -11,6 +11,8 @@ class CustomerSatisfaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created_at"))
 
     class Meta:
+        verbose_name = "رضایت مشتری"
+        verbose_name_plural = "رضایت مشتریان"
         ordering = ["-created_at"]
 
     def __str__(self):

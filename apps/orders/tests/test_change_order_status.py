@@ -101,14 +101,14 @@ class ChangeOrderStatusTests(TestCase):
 
         order = change_order_status(
             order=self.order,
-            new_status=OrderStatus.CREATED,
+            new_status=OrderStatus.WAITING_PAYMENT,
         )
 
         order.refresh_from_db()
 
         self.assertEqual(
             order.status,
-            OrderStatus.CREATED,
+            OrderStatus.WAITING_PAYMENT,
         )
 
         self.assertEqual(

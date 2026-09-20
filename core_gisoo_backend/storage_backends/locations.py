@@ -38,3 +38,7 @@ def customer_satisfaction_path():
 
 def magazine_thumbnail_path():
     return f"{BASE_MEDIA_LOCATION}/magazines/thumbnails"
+
+
+def payment_receipt_path():
+    return f"{BASE_MEDIA_LOCATION}/payments/receipts"

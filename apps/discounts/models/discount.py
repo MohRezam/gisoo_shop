@@ -1,41 +1,40 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 
 from apps.shared.models.base import BaseModel
 
 
 class DiscountType(models.TextChoices):
-    PERCENTAGE = "percentage", _("Percentage")
-    FIXED = "fixed", _("Fixed amount")
+    PERCENTAGE = "percentage", "درصدی"
+    FIXED = "fixed", "مبلغ ثابت"
 
 
 class Discount(BaseModel):
     code = models.CharField(
-        verbose_name=_("Code"),
+        verbose_name="کد",
         max_length=50,
         unique=True,
     )
 
     discount_type = models.CharField(
-        verbose_name=_("Discount type"),
+        verbose_name="نوع تخفیف",
         max_length=20,
         choices=DiscountType.choices,
     )
 
     value = models.PositiveBigIntegerField(
-        verbose_name=_("Value"),
+        verbose_name="مقدار",
         default=0,
     )
 
     minimum_order_amount = models.PositiveBigIntegerField(
-        verbose_name=_("Minimum order amount"),
+        verbose_name="حداقل مبلغ سفارش",
         default=0,
     )
 
     maximum_discount_amount = models.PositiveBigIntegerField(
-        verbose_name=_("Maximum discount amount"),
+        verbose_name="حداکثر مبلغ تخفیف",
         null=True,
         blank=True,
     )
@@ -50,37 +49,37 @@ class Discount(BaseModel):
     )
 
     usage_limit = models.PositiveIntegerField(
-        verbose_name=_("Usage limit"),
+        verbose_name="سقف استفاده",
         default=0,
-        help_text=_("0 means unlimited."),
+        help_text="۰ یعنی نامحدود.",
     )
 
     used_count = models.PositiveIntegerField(
-        verbose_name=_("Used count"),
+        verbose_name="تعداد استفاده‌شده",
         default=0,
     )
 
     per_user_limit = models.PositiveIntegerField(
-        verbose_name=_("Per user limit"),
+        verbose_name="سقف هر کاربر",
         default=1,
     )
 
     starts_at = models.DateTimeField(
-        verbose_name=_("Starts at"),
+        verbose_name="شروع",
     )
 
     expires_at = models.DateTimeField(
-        verbose_name=_("Expires at"),
+        verbose_name="انقضا",
     )
 
     is_active = models.BooleanField(
-        verbose_name=_("Is active"),
+        verbose_name="فعال",
         default=True,
     )
 
     class Meta:
-        verbose_name = _("Discount")
-        verbose_name_plural = _("Discounts")
+        verbose_name = "تخفیف"
+        verbose_name_plural = "تخفیف‌ها"
         ordering = [
             "-created_at",
         ]
@@ -103,26 +102,26 @@ class DiscountUsage(BaseModel):
         Discount,
         on_delete=models.CASCADE,
         related_name="usages",
-        verbose_name=_("Discount"),
+        verbose_name="تخفیف",
     )
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="discount_usages",
-        verbose_name=_("User"),
+        verbose_name="کاربر",
     )
 
     order = models.ForeignKey(
         "orders.Order",
         on_delete=models.CASCADE,
         related_name="discount_usages",
-        verbose_name=_("Order"),
+        verbose_name="سفارش",
     )
 
     class Meta:
-        verbose_name = _("Discount usage")
-        verbose_name_plural = _("Discount usages")
+        verbose_name = "استفاده از تخفیف"
+        verbose_name_plural = "استفاده‌های تخفیف"
 
         constraints = [
             models.UniqueConstraint(

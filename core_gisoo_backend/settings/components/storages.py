@@ -18,8 +18,8 @@ from decouple import config
 # Media
 
 if DEBUG:
-    MEDIA_URL = config("MEDIA_URL", default="")
-    MEDIA_ROOT = os.path.join(BASE_DIR, "")
+    MEDIA_URL = config("MEDIA_URL", default="/media/")
+    MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 else:
     STORAGES = {

@@ -12,12 +12,12 @@ class Address(BaseModel):
         "users.User",
         on_delete=models.CASCADE,
         related_name="addresses",
-        verbose_name=_("user"),
+        verbose_name="کاربر",
     )
 
     title = models.CharField(
         max_length=100,
-        verbose_name=_("title"),
+        verbose_name="عنوان",
         help_text=_(
             "For example: home, work, parents"
         ),
@@ -25,43 +25,43 @@ class Address(BaseModel):
 
     receiver_name = models.CharField(
         max_length=255,
-        verbose_name=_("receiver name"),
+        verbose_name="نام گیرنده",
     )
 
     phone_number = models.CharField(
         max_length=11,
-        verbose_name=_("phone number"),
+        verbose_name="شماره تلفن",
     )
 
     province = models.CharField(
         max_length=100,
-        verbose_name=_("province"),
+        verbose_name="استان",
     )
 
     city = models.CharField(
         max_length=100,
-        verbose_name=_("city"),
+        verbose_name="شهر",
     )
 
     postal_code = models.CharField(
         null=True,
         blank=True,
         max_length=20,
-        verbose_name=_("postal code"),
+        verbose_name="کد پستی",
     )
 
     address = models.TextField(
-        verbose_name=_("address"),
+        verbose_name="آدرس",
     )
 
     is_default = models.BooleanField(
         default=False,
-        verbose_name=_("is default"),
+        verbose_name="پیش‌فرض",
     )
 
     class Meta:
-        verbose_name = _("address")
-        verbose_name_plural = _("addresses")
+        verbose_name = "آدرس"
+        verbose_name_plural = "آدرس‌ها"
         constraints = [
             models.UniqueConstraint(
                 fields=["user"],

@@ -1,8 +1,12 @@
-from django.apps import AppConfig
+﻿from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
 
 class ShippingConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.shipping"
-    verbose_name = _("Shipping App")
+    verbose_name = "ارسال"
+
+    def ready(self):
+        from apps.shipping import signals  # noqa: F401
+

@@ -2,14 +2,30 @@ from django.urls import path
 
 from apps.orders.apis import (
     CreateOrderAPIView,
-    LatestOrderAPIView,
     OrderDetailAPIView,
-    OrderListAPIView,
+    MyOrdersListAPIView,
+    MyLatestOrderAPIView,
+    TrackOrderAPIView,
 )
 
 app_name = "apps.orders"
 
 urlpatterns = [
+    path(
+        "v1/my/",
+        MyOrdersListAPIView.as_view(),
+        name="my-orders",
+    ),
+    path(
+        "v1/my/latest/",
+        MyLatestOrderAPIView.as_view(),
+        name="my-latest-order",
+    ),
+    path(
+        "v1/track/",
+        TrackOrderAPIView.as_view(),
+        name="track-order",
+    ),
     path(
         "v1/",
         CreateOrderAPIView.as_view(),

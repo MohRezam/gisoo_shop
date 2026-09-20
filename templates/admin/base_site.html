@@ -1,0 +1,75 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | گیسو سنتر{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/fonts.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin.css' %}">
+<script>
+  (function () {
+    try {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    } catch (e) {}
+  })();
+</script>
+{% endblock %}
+
+{% block dark-mode-vars %}
+{# تم تاریک غیرفعال — فقط تم روشن گیسو #}
+<script>
+  (function () {
+    try {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    } catch (e) {}
+  })();
+</script>
+{% endblock %}
+
+{% block branding %}
+<div id="gisoo-brand">
+  <a href="{% url 'admin:index' %}" class="gisoo-brand-link">
+    <span class="gisoo-mark" aria-hidden="true">✦</span>
+    <span class="gisoo-brand-text">
+      <strong class="gisoo-name">گیسو سنتر</strong>
+      <span class="gisoo-tagline">فروشگاه تخصصی مراقبت مو</span>
+    </span>
+  </a>
+</div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">خانه</a>
+    {% if title %} &rsaquo; {{ title }}{% endif %}
+  </div>
+{% endblock %}
+
+{% block welcome-msg %}
+  خوش آمدید،
+  <strong>{% firstof user.get_short_name user.get_username %}</strong>
+{% endblock %}
+
+{% block userlinks %}
+  {% if site_url %}
+    <a href="{{ site_url }}" target="_blank" rel="noopener">مشاهده سایت</a> /
+  {% endif %}
+  {% if user.has_usable_password %}
+    <a href="{% url 'admin:password_change' %}">تغییر رمز عبور</a> /
+  {% endif %}
+  <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
+    {% csrf_token %}
+    <button type="submit">خروج</button>
+  </form>
+{% endblock %}
+
+{% block footer %}
+<div id="footer" class="gisoo-footer">
+  <span>گیسو سنتر · فروشگاه تخصصی مراقبت مو</span>
+</div>
+{% endblock %}

@@ -8,36 +8,34 @@ from apps.shared.models.base import BaseModel
 
 class ShippingMethod(BaseModel):
     title = models.CharField(
-        verbose_name=_("Title"),
+        verbose_name="عنوان",
         max_length=255,
         unique=True,
     )
 
     price = models.PositiveBigIntegerField(
-        verbose_name=_("Price"),
+        verbose_name="قیمت",
         default=0
     )
 
     free_shipping_minimum = models.PositiveBigIntegerField(
-        verbose_name=_("Free shipping minimum"),
+        verbose_name="حداقل ارسال رایگان",
         default=0,
     )
 
     estimated_days = models.PositiveSmallIntegerField(
-        verbose_name=_("Estimated days"),
+        verbose_name="روزهای تخمینی",
         default=3,
     )
 
     is_active = models.BooleanField(
-        verbose_name=_("Is active"),
+        verbose_name="فعال",
         default=True,
     )
 
     class Meta:
-        verbose_name = _("Shipping Method")
-        verbose_name_plural = _(
-            "Shipping Methods"
-        )
+        verbose_name = "روش ارسال"
+        verbose_name_plural = "روش‌های ارسال"
         ordering = [
             "price",
         ]
@@ -53,22 +51,22 @@ class ShipmentStatus(
 ):
     PENDING = (
         "pending",
-        _("Pending"),
+        "در انتظار",
     )
 
     SHIPPED = (
         "shipped",
-        _("Shipped"),
+        "ارسال شده",
     )
 
     DELIVERED = (
         "delivered",
-        _("Delivered"),
+        "تحویل شده",
     )
 
     RETURNED = (
         "returned",
-        _("Returned"),
+        "مرجوع شده",
     )
 
 
@@ -80,27 +78,32 @@ class Shipment(BaseModel):
         "orders.Order",
         on_delete=models.CASCADE,
         related_name="shipments",
+        verbose_name="سفارش",
     )
 
     status = models.CharField(
         max_length=20,
         choices=ShipmentStatus.choices,
         default=ShipmentStatus.PENDING,
+        verbose_name="وضعیت",
     )
 
     tracking_code = models.CharField(
         max_length=255,
         blank=True,
+        verbose_name="کد پیگیری",
     )
 
     shipped_at = models.DateTimeField(
         null=True,
         blank=True,
+        verbose_name="زمان ارسال",
     )
 
     delivered_at = models.DateTimeField(
         null=True,
         blank=True,
+        verbose_name="زمان تحویل",
     )
 
     created_by = models.ForeignKey(
@@ -109,9 +112,12 @@ class Shipment(BaseModel):
         null=True,
         blank=True,
         related_name="created_shipments",
+        verbose_name="ایجادکننده",
     )
 
     class Meta:
+        verbose_name = "محموله"
+        verbose_name_plural = "محموله‌ها"
         ordering = [
             "-created_at",
         ]
