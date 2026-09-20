@@ -106,14 +106,24 @@ def create_order(
     discount_amount = 0
 
     if cart.discount_id is not None:
-        discount_result = calculate_discount(
-            user=user,
-            code=cart.discount.code,
-            products_price=products_total,
-        )
+        try:
+            discount_result = calculate_discount(
+                user=user,
+                code=cart.discount.code,
+                products_price=products_total,
+            )
 
-        discount = discount_result["discount"]
-        discount_amount = discount_result["discount_amount"]
+            discount = discount_result["discount"]
+            discount_amount = discount_result["discount_amount"]
+
+        except ValidationError:
+            cart.discount = None
+            cart.save(
+                update_fields=["discount"]
+            )
+
+            discount = None
+            discount_amount = 0
 
     order.products_price = products_total
     order.shipping_price = shipping_price

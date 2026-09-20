@@ -148,6 +148,9 @@ class CartSerializer(serializers.ModelSerializer):
     total_price = serializers.SerializerMethodField()
     discount = serializers.SerializerMethodField()
 
+    discount_removed = serializers.SerializerMethodField()
+    discount_message = serializers.SerializerMethodField()
+
     total_items = serializers.SerializerMethodField()
     total_products = serializers.SerializerMethodField()
 
@@ -164,6 +167,8 @@ class CartSerializer(serializers.ModelSerializer):
             "coupon_discount",
             "total_price",
             "discount",
+            "discount_removed",
+            "discount_message",
             "items",
         )
 
@@ -203,10 +208,30 @@ class CartSerializer(serializers.ModelSerializer):
         return self.get_totals(obj)["total"]
 
     def get_discount(self, obj):
-        if obj.discount_id:
-            return obj.discount.code
+        discount = self.get_totals(obj)["discount"]
+
+        if discount is not None:
+            return discount.code
 
         return None
+
+    def get_discount_removed(self, obj):
+        self.get_totals(obj)
+
+        return getattr(
+            obj,
+            "_discount_removed",
+            False,
+        )
+
+    def get_discount_message(self, obj):
+        self.get_totals(obj)
+
+        return getattr(
+            obj,
+            "_discount_removed_message",
+            None,
+        )
 
     def get_total_items(self, obj):
         return sum(
@@ -220,8 +245,8 @@ class CartSerializer(serializers.ModelSerializer):
         for item in obj.items.all():
             if item.bundle_id:
                 total += (
-                        item.quantity
-                        * item.bundle.quantity
+                    item.quantity
+                    * item.bundle.quantity
                 )
             else:
                 total += item.quantity
