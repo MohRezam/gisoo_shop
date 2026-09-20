@@ -112,7 +112,11 @@ def calculate_cart(
 
     if missing_variant_ids:
         raise ValidationError(
-            _("One or more product variants do not exist.")
+            {
+                "detail": _(
+                    "One or more product variants do not exist."
+                ),
+            }
         )
 
     # ---------------------------------------------------------
@@ -125,10 +129,13 @@ def calculate_cart(
 
         if quantity > variant.stock:
             raise ValidationError(
-                _(
-                    "Not enough stock for '%(product)s'."
-                ) % {
-                    "product": variant.product.title,
+                {
+                    "detail": _(
+                        "Not enough stock for '%(product)s'."
+                    ) % {
+                        "product": variant.product.title,
+                    },
+                    "available_quantity": variant.stock,
                 }
             )
 

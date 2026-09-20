@@ -68,9 +68,11 @@ def reserve_stock(
     variant_ids = list(quantities.keys())
 
     with transaction.atomic():
+
         locked_variants = list(
             ProductVariant.objects
             .select_for_update()
+            .select_related("product")
             .filter(id__in=variant_ids)
         )
 
@@ -86,22 +88,36 @@ def reserve_stock(
 
         if missing_variant_ids:
             raise ValidationError(
-                _("One or more product variants do not exist.")
+                {
+                    "detail": _(
+                        "One or more product variants do not exist."
+                    ),
+                }
             )
 
         # Validate ALL stock before changing ANY variant.
         # This prevents a partial inventory update.
         for variant in locked_variants:
+
             quantity = quantities[variant.id]
 
             if variant.stock < quantity:
                 raise ValidationError(
-                    _("Not enough stock.")
+                    {
+                        "detail": _(
+                            "Not enough stock for '%(product)s'."
+                        ) % {
+                            "product": variant.product.title,
+                        },
+                        "available_quantity": variant.stock,
+                    }
                 )
 
         # All variants have enough stock.
         for variant in locked_variants:
+
             quantity = quantities[variant.id]
+
             variant.stock -= quantity
 
         ProductVariant.objects.bulk_update(
@@ -138,6 +154,7 @@ def release_stock(
     variant_ids = list(quantities.keys())
 
     with transaction.atomic():
+
         locked_variants = list(
             ProductVariant.objects
             .select_for_update()
@@ -156,11 +173,17 @@ def release_stock(
 
         if missing_variant_ids:
             raise ValidationError(
-                _("One or more product variants do not exist.")
+                {
+                    "detail": _(
+                        "One or more product variants do not exist."
+                    ),
+                }
             )
 
         for variant in locked_variants:
+
             quantity = quantities[variant.id]
+
             variant.stock += quantity
 
         ProductVariant.objects.bulk_update(

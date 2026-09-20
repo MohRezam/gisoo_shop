@@ -45,7 +45,10 @@ def add_to_cart(
 
         if required_stock > variant.stock:
             raise ValidationError(
-                "Not enough stock."
+                {
+                    "detail": "Not enough stock.",
+                    "available_quantity": variant.stock,
+                }
             )
 
     else:
@@ -71,7 +74,12 @@ def add_to_cart(
 
         if required_stock > variant.stock:
             raise ValidationError(
-                "Not enough stock for this bundle."
+                {
+                    "detail": "Not enough stock for this bundle.",
+                    "available_quantity": (
+                        variant.stock // bundle.quantity
+                    ),
+                }
             )
 
     # ---------------------------------
@@ -167,8 +175,25 @@ def add_to_cart(
             )
 
         if required_stock > variant.stock:
+
+            if variant_id is not None:
+
+                raise ValidationError(
+                    {
+                        "detail": "Not enough stock.",
+                        "available_quantity": variant.stock,
+                    }
+                )
+
+            available_quantity = (
+                variant.stock // bundle.quantity
+            )
+
             raise ValidationError(
-                "Not enough stock."
+                {
+                    "detail": "Not enough stock for this bundle.",
+                    "available_quantity": available_quantity,
+                }
             )
 
         cart_item.quantity = new_quantity
@@ -225,7 +250,10 @@ def update_cart_item(
 
         if required_stock > item.variant.stock:
             raise ValidationError(
-                "Not enough stock."
+                {
+                    "detail": "Not enough stock.",
+                    "available_quantity": item.variant.stock,
+                }
             )
 
     # -----------------------------------------
@@ -247,10 +275,17 @@ def update_cart_item(
             quantity * item.bundle.quantity
         )
 
-
         if required_stock > variant.stock:
+
+            available_quantity = (
+                variant.stock // item.bundle.quantity
+            )
+
             raise ValidationError(
-                "Not enough stock for this bundle."
+                {
+                    "detail": "Not enough stock for this bundle.",
+                    "available_quantity": available_quantity,
+                }
             )
 
     # -----------------------------------------
