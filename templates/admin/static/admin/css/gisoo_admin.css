@@ -316,72 +316,173 @@ input:focus, textarea:focus, select:focus {
   border-top: 1px solid #e5e7eb !important;
 }
 
-/* ========== NAV SIDEBAR — keep Django table layout, fix RTL ========== */
-.main {
+/* ========== PROFESSIONAL FIXED LAYOUT ========== */
+#container {
+  min-height: 100vh !important;
   display: flex !important;
-  flex-direction: row !important;
-  align-items: stretch !important;
+  flex-direction: column !important;
 }
 
+#header {
+  position: sticky !important;
+  top: 0;
+  z-index: 40;
+}
+
+.main,
+#main {
+  display: flex !important;
+  flex-direction: row !important;
+  flex: 1 1 auto !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Hide Django's collapse toggle — sidebar is always fixed */
 .toggle-nav-sidebar {
-  flex: 0 0 28px !important;
-  width: 28px !important;
-  background: #173ded !important;
-  color: #fff !important;
-  border: none !important;
-  border-left: 1px solid #0f2fb8 !important;
-  align-self: stretch;
+  display: none !important;
 }
 
 #nav-sidebar {
+  position: sticky !important;
+  top: 0 !important;
+  align-self: flex-start !important;
+  flex: 0 0 280px !important;
+  width: 280px !important;
+  max-width: 280px !important;
+  height: calc(100vh - 64px) !important;
+  margin: 0 !important;
+  padding: 0 !important;
   background: #ffffff !important;
   border-left: 1px solid #e5e7eb !important;
   border-right: none !important;
+  box-shadow: -8px 0 24px rgba(15, 23, 42, 0.04);
   text-align: right !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
-  position: relative !important;
-  z-index: 15;
-  flex: 0 0 275px;
+  visibility: visible !important;
+  z-index: 20 !important;
+  box-sizing: border-box !important;
+}
+
+[dir="rtl"] #nav-sidebar,
+[dir="rtl"] .main.shifted > #nav-sidebar,
+.main > #nav-sidebar,
+.main.shifted > #nav-sidebar {
+  margin: 0 !important;
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  left: auto !important;
+  right: auto !important;
+  visibility: visible !important;
+  transform: none !important;
+}
+
+.main > #nav-sidebar + .content,
+.main.shifted > #nav-sidebar + .content,
+#nav-sidebar + .content {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  width: auto !important;
+  padding: 20px 24px 40px !important;
+  background: #f3f5f9 !important;
+  overflow-x: auto !important;
+}
+
+.gisoo-side-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 14px;
+  border-bottom: 1px solid #eef2f7;
+  background: linear-gradient(180deg, #eef3ff 0%, #ffffff 100%);
+}
+
+.gisoo-side-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: #173ded;
+  color: #fff;
+  font-size: 14px;
+}
+
+.gisoo-side-brand strong {
+  display: block;
+  color: #0f2fb8 !important;
+  font-family: "Kook", "IranSans", Tahoma, sans-serif;
+  font-size: 0.98rem;
+}
+
+.gisoo-side-brand span {
+  display: block;
+  color: #6b7280 !important;
+  font-size: 0.75rem;
+}
+
+.gisoo-side-quick {
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid #eef2f7;
+  background: #fafbfd;
+}
+
+.gisoo-side-quick-title {
+  margin: 0 0 8px;
+  padding: 0 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #64748b !important;
+  text-transform: none;
+}
+
+.gisoo-side-quick a {
+  display: block !important;
+  padding: 9px 11px !important;
+  margin: 0 0 4px !important;
+  border-radius: 10px;
+  color: #1f2937 !important;
+  text-decoration: none !important;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.gisoo-side-quick a:hover {
+  background: #eef3ff !important;
+  color: #0f2fb8 !important;
+  border-color: #dbe4ff;
+}
+
+#nav-filter {
+  width: calc(100% - 20px) !important;
+  margin: 12px 10px !important;
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid #dbe1ea !important;
+  color: #111827 !important;
+  background: #fff !important;
+  text-align: right !important;
   box-sizing: border-box;
 }
 
-/* Restore Django's open/closed behavior for RTL without overlap */
-[dir="rtl"] #nav-sidebar {
-  left: auto !important;
-  right: auto !important;
-  margin-left: 0 !important;
-  margin-right: -276px !important;
-}
-
-[dir="rtl"] .main.shifted > #nav-sidebar {
-  margin-right: 0 !important;
-  visibility: visible !important;
-}
-
-.main > #nav-sidebar {
-  visibility: hidden;
-}
-
-.main.shifted > #nav-sidebar {
-  visibility: visible !important;
-}
-
-.main > #nav-sidebar + .content {
-  flex: 1 1 auto !important;
-  min-width: 0 !important;
-  max-width: calc(100% - 28px) !important;
-}
-
-.main.shifted > #nav-sidebar + .content {
-  max-width: calc(100% - 303px) !important;
+.gisoo-side-apps {
+  padding-bottom: 24px;
 }
 
 #nav-sidebar .module {
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  margin: 0 0 8px !important;
+  margin: 0 0 4px !important;
   background: transparent !important;
   overflow: visible !important;
 }
@@ -396,9 +497,10 @@ input:focus, textarea:focus, select:focus {
 #nav-sidebar caption {
   display: table-caption !important;
   caption-side: top;
-  padding: 12px 14px 6px !important;
+  padding: 12px 14px 4px !important;
   font-weight: 700;
-  color: #111827 !important;
+  font-size: 0.78rem;
+  color: #64748b !important;
   background: transparent !important;
   text-align: right !important;
 }
@@ -410,15 +512,15 @@ input:focus, textarea:focus, select:focus {
 #nav-sidebar .current-app .section:visited {
   color: #0f2fb8 !important;
   font-weight: 700 !important;
+  font-size: 0.82rem;
 }
 
-/* Keep th/td as table cells — prevents stacked/overlapping items */
 #nav-sidebar th,
 #nav-sidebar td {
   display: table-cell !important;
   float: none !important;
   vertical-align: middle !important;
-  padding: 6px 12px !important;
+  padding: 5px 12px !important;
   border: none !important;
   background: transparent !important;
   color: #111827 !important;
@@ -431,13 +533,13 @@ input:focus, textarea:focus, select:focus {
 }
 
 #nav-sidebar td {
-  width: 52px !important;
+  width: 48px !important;
   white-space: nowrap !important;
   text-align: left !important;
 }
 
 #nav-sidebar a {
-  color: #111827 !important;
+  color: #1f2937 !important;
   text-decoration: none !important;
   line-height: 1.45;
   display: inline !important;
@@ -445,6 +547,7 @@ input:focus, textarea:focus, select:focus {
   padding: 0 !important;
   margin: 0 !important;
   white-space: normal !important;
+  font-size: 0.86rem;
 }
 
 #nav-sidebar th a {
@@ -458,23 +561,12 @@ input:focus, textarea:focus, select:focus {
 
 #nav-sidebar .current-model {
   background: #e8eeff !important;
+  border-radius: 8px;
 }
 
 #nav-sidebar .current-model a {
   color: #0f2fb8 !important;
   font-weight: 600;
-}
-
-#nav-filter {
-  width: calc(100% - 16px) !important;
-  margin: 10px 8px !important;
-  padding: 10px 12px !important;
-  border-radius: 10px !important;
-  border: 1px solid #d1d5db !important;
-  color: #111827 !important;
-  background: #fff !important;
-  text-align: right !important;
-  box-sizing: border-box;
 }
 
 /* ========== Changelist filter ========== */
@@ -515,150 +607,183 @@ input:focus, textarea:focus, select:focus {
   color: #111827 !important;
 }
 
-/* ========== Dashboard ========== */
-.gisoo-dashboard {
+/* ========== Professional dashboard ========== */
+.gisoo-dash {
   display: grid;
+  gap: 22px;
+}
+
+.gisoo-dash-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
   gap: 16px;
-  margin-bottom: 20px;
+  flex-wrap: wrap;
+  padding: 4px 2px 0;
 }
 
-.gisoo-hero {
-  background: linear-gradient(120deg, #0f2fb8 0%, #173ded 65%, #3b82f6 100%);
-  color: #fff !important;
-  border-radius: 20px;
-  padding: 26px 28px;
-  box-shadow: 0 14px 36px rgba(23, 61, 237, 0.22);
+.gisoo-eyebrow {
+  margin: 0 0 6px;
+  color: #64748b !important;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
-.gisoo-hero h2,
-.gisoo-hero p {
-  color: #ffffff !important;
-  background: transparent !important;
-  padding: 0 !important;
-}
-
-.gisoo-hero h2 {
-  margin: 0 0 8px;
+.gisoo-dash-head h1 {
+  margin: 0 0 6px !important;
   font-family: "Kook", "IranSans", Tahoma, sans-serif;
   font-size: 1.55rem;
-  font-weight: 700;
+  color: #0f172a !important;
 }
 
-.gisoo-hero p {
+.gisoo-dash-sub {
   margin: 0;
-  opacity: 0.95;
-  line-height: 1.75;
-  max-width: 54ch;
+  color: #64748b !important;
+  font-size: 0.92rem;
 }
 
-.gisoo-quick-grid {
-  display: none !important;
+.gisoo-dash-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.gisoo-side-quick {
-  padding: 12px 12px 8px;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 4px;
-  background: #f8fafc;
-}
-
-.gisoo-side-quick-title {
-  margin: 0 0 8px;
-  padding: 0 4px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #0f2fb8 !important;
-  font-family: "Kook", "IranSans", Tahoma, sans-serif;
-}
-
-.gisoo-side-quick a {
-  display: block !important;
-  padding: 8px 10px !important;
-  margin: 0 0 4px !important;
-  border-radius: 10px;
-  color: #111827 !important;
+.gisoo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 11px;
+  background: #173ded !important;
+  color: #fff !important;
   text-decoration: none !important;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  background: #fff;
-  border: 1px solid #eef2f7;
+  font-size: 0.88rem;
+  font-weight: 600;
+  box-shadow: 0 8px 18px rgba(23, 61, 237, 0.18);
 }
 
-.gisoo-side-quick a:hover {
+.gisoo-btn:hover {
+  background: #0f2fb8 !important;
+  color: #fff !important;
+}
+
+.gisoo-btn-ghost {
+  background: #fff !important;
+  color: #0f2fb8 !important;
+  border: 1px solid #dbe4ff;
+  box-shadow: none;
+}
+
+.gisoo-btn-ghost:hover {
   background: #eef3ff !important;
   color: #0f2fb8 !important;
-  border-color: #c7d2fe;
 }
 
 .gisoo-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
-  margin-bottom: 8px;
 }
 
 .gisoo-stat-card {
   background: #fff;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e6ebf2;
   border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 4px 14px rgba(17, 24, 39, 0.04);
+  padding: 16px 16px 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  min-height: 96px;
 }
 
 .gisoo-stat-card.warn {
   border-color: #fde68a;
-  background: #fffbeb;
+  background: linear-gradient(180deg, #fffbeb 0%, #ffffff 70%);
 }
 
 .gisoo-stat-card.accent {
   border-color: #c7d2fe;
-  background: #eef3ff;
+  background: linear-gradient(180deg, #eef3ff 0%, #ffffff 70%);
 }
 
 .gisoo-stat-label {
   display: block;
-  color: #6b7280 !important;
-  font-size: 0.82rem;
-  margin-bottom: 8px;
+  color: #64748b !important;
+  font-size: 0.8rem;
+  margin-bottom: 10px;
 }
 
 .gisoo-stat-value {
   display: block;
-  color: #111827 !important;
+  color: #0f172a !important;
   font-family: "Kook", "IranSans", Tahoma, sans-serif;
-  font-size: 1.45rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
-.gisoo-quick-card {
-  display: block;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 16px;
-  text-decoration: none !important;
-  color: #111827 !important;
-  box-shadow: 0 4px 14px rgba(17, 24, 39, 0.04);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.gisoo-quick-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(23, 61, 237, 0.12);
-  border-color: #c7d2fe;
-}
-
-.gisoo-quick-card strong {
-  display: block;
-  color: #111827 !important;
+.gisoo-dash-section h2 {
+  margin: 8px 0 12px !important;
+  font-size: 1.05rem;
+  color: #0f172a !important;
   font-family: "Kook", "IranSans", Tahoma, sans-serif;
-  margin-bottom: 4px;
 }
 
-.gisoo-quick-card span {
-  color: #6b7280 !important;
-  font-size: 0.85rem;
+.gisoo-app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.gisoo-app-card {
+  background: #fff;
+  border: 1px solid #e6ebf2;
+  border-radius: 16px;
+  padding: 14px 14px 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.gisoo-app-card h3 {
+  margin: 0 0 8px !important;
+  padding: 0 2px 8px;
+  border-bottom: 1px solid #eef2f7;
+  font-size: 0.92rem;
+  color: #0f2fb8 !important;
+  font-family: "Kook", "IranSans", Tahoma, sans-serif;
+}
+
+.gisoo-app-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gisoo-app-card li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 2px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.gisoo-app-card li:last-child {
+  border-bottom: none;
+}
+
+.gisoo-app-card a {
+  color: #1f2937 !important;
+  text-decoration: none !important;
+  font-size: 0.88rem;
+}
+
+.gisoo-app-card a:hover {
+  color: #173ded !important;
+}
+
+.gisoo-add {
+  color: #0f2fb8 !important;
+  font-size: 0.78rem !important;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .gisoo-footer {
@@ -678,27 +803,31 @@ input:focus, textarea:focus, select:focus {
 .messagelist li.error { background: #fef2f2 !important; }
 .messagelist li.warning { background: #fffbeb !important; }
 
-.dashboard .module table th,
-.dashboard .module table td {
-  text-align: right !important;
-  color: #111827 !important;
+@media (max-width: 1200px) {
+  .gisoo-stats-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
-.dashboard .module caption,
-.dashboard .module th {
-  text-align: right !important;
-}
-
-@media (max-width: 767px) {
-  #header { padding: 12px 14px !important; }
-  .gisoo-name { font-size: 1.1rem; }
-  #nav-sidebar,
-  .toggle-nav-sidebar {
+@media (max-width: 900px) {
+  #nav-sidebar {
     display: none !important;
   }
   .main > #nav-sidebar + .content,
   .main.shifted > #nav-sidebar + .content {
     max-width: 100% !important;
+    padding: 16px !important;
+  }
+  .gisoo-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  #header { padding: 12px 14px !important; }
+  .gisoo-name { font-size: 1.1rem; }
+  .gisoo-stats-grid {
+    grid-template-columns: 1fr 1fr;
   }
   #changelist-filter {
     float: none !important;

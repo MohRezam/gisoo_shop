@@ -1,19 +1,48 @@
 {% extends "admin/base_site.html" %}
 {% load i18n gisoo_admin %}
 
+{% block coltype %}{% endblock %}
+{% block bodyclass %}{{ block.super }} dashboard gisoo-dashboard-page{% endblock %}
+
 {% block content %}
-<div id="content-main">
-  <div class="gisoo-dashboard">
-    <section class="gisoo-hero">
-      <h2>پیشخوان آماری گیسو سنتر</h2>
-      <p>
-        نمای کلی سفارش‌ها، پرداخت‌ها و وضعیت فروشگاه — میانبرها در نوار کناری سمت راست هستند.
-      </p>
-    </section>
+<div id="content-main" class="gisoo-dash">
+  <header class="gisoo-dash-head">
+    <div>
+      <p class="gisoo-eyebrow">پیشخوان مدیریت</p>
+      <h1>آمار فروشگاه گیسو سنتر</h1>
+      <p class="gisoo-dash-sub">وضعیت لحظه‌ای سفارش‌ها، پرداخت‌ها و موجودی</p>
+    </div>
+    <div class="gisoo-dash-actions">
+      <a class="gisoo-btn" href="{% url 'admin:orders_order_changelist' %}">مدیریت سفارش‌ها</a>
+      <a class="gisoo-btn gisoo-btn-ghost" href="{% url 'admin:payments_paymentintent_changelist' %}">بررسی رسیدها</a>
+    </div>
+  </header>
 
-    {% gisoo_dashboard_stats %}
-  </div>
+  {% gisoo_dashboard_stats %}
 
-  {% include "admin/app_list.html" with app_list=app_list show_changelinks=True %}
+  <section class="gisoo-dash-section">
+    <h2>بخش‌های سیستم</h2>
+    <div class="gisoo-app-grid">
+      {% for app in app_list %}
+      <article class="gisoo-app-card">
+        <h3>{{ app.name }}</h3>
+        <ul>
+          {% for model in app.models %}
+          <li>
+            {% if model.admin_url %}
+            <a href="{{ model.admin_url }}">{{ model.name }}</a>
+            {% else %}
+            <span>{{ model.name }}</span>
+            {% endif %}
+            {% if model.add_url %}
+            <a class="gisoo-add" href="{{ model.add_url }}">افزودن</a>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
 </div>
 {% endblock %}
