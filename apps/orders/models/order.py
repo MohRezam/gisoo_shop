@@ -90,13 +90,6 @@ class Order(BaseModel):
         verbose_name="توضیحات",
     )
 
-    tracking_code = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        verbose_name=_("tracking code")
-    )
-
     expires_at = models.DateTimeField(
         null=True,
         blank=True,
