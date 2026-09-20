@@ -27,11 +27,9 @@ def has_valid_payment_receipt(
     expires_at,
 ):
     """
-    A receipt submitted before the original deadline
-    protects the order from automatic expiration.
-
-    Once the customer has submitted a receipt,
-    expiration is no longer based on the customer.
+    If the customer submitted a receipt before the
+    original payment deadline, the order must not
+    expire while the payment is waiting for review.
     """
 
     return PaymentIntent.objects.filter(
@@ -46,6 +44,68 @@ def has_valid_payment_receipt(
     ).exists()
 
 
+def get_order_reserved_variants(*, order):
+    """
+    Return all product variants whose stock was reserved
+    by this order.
+
+    Includes:
+    - normal OrderItems
+    - products contained inside OrderBundles
+    """
+
+    variants = []
+
+    # ---------------------------------------------------------
+    # Normal products
+    # ---------------------------------------------------------
+
+    for item in order.items.all():
+        variants.append(
+            (
+                item.variant,
+                item.quantity,
+            )
+        )
+
+    # ---------------------------------------------------------
+    # Bundle products
+    # ---------------------------------------------------------
+    #
+    # OrderBundle.quantity = number of bundles purchased
+    #
+    # OrderBundle.bundle_quantity = number of product units
+    # contained in one bundle.
+    #
+    # Therefore:
+    #
+    # reserved_quantity =
+    #     bundle_quantity * quantity
+    #
+    # Example:
+    #
+    # Bundle contains 3 shampoos
+    # Customer buys 2 bundles
+    #
+    # reserved stock = 3 * 2 = 6
+    #
+
+    for bundle in order.bundles.all():
+        reserved_quantity = (
+            bundle.bundle_quantity
+            * bundle.quantity
+        )
+
+        variants.append(
+            (
+                bundle.variant,
+                reserved_quantity,
+            )
+        )
+
+    return variants
+
+
 @shared_task
 @transaction.atomic
 def expire_order(order_id: int):
@@ -54,6 +114,7 @@ def expire_order(order_id: int):
         .select_for_update()
         .prefetch_related(
             "items__variant",
+            "bundles",
         )
         .filter(id=order_id)
         .first()
@@ -77,9 +138,13 @@ def expire_order(order_id: int):
     # CREATED
     # ---------------------------------------------------------
     #
-    # If the customer submitted a valid receipt before
-    # the deadline, don't expire the order.
+    # If a receipt was submitted before the deadline,
+    # the customer has completed their part.
     #
+    # Therefore the order must remain active while
+    # admin reviews the payment.
+    #
+
     if order.status == OrderStatus.CREATED:
 
         if has_valid_payment_receipt(
@@ -92,13 +157,8 @@ def expire_order(order_id: int):
     # PAYMENT_REJECTED
     # ---------------------------------------------------------
     #
-    # Here we intentionally DO NOT check for a receipt.
-    #
-    # If the order is still PAYMENT_REJECTED when its
-    # retry deadline passes, it means the customer didn't
-    # submit a new receipt.
-    #
-    # Therefore the order must expire.
+    # If the customer did not submit a new receipt during
+    # the retry window, the order expires.
     #
 
     payment_intent = (
@@ -118,7 +178,6 @@ def expire_order(order_id: int):
     )
 
     if payment_intent is not None:
-
         payment_intent.status = (
             PaymentIntentStatus.EXPIRED
         )
@@ -130,18 +189,27 @@ def expire_order(order_id: int):
             ]
         )
 
-    # Release the stock reserved for this order.
-    variants = [
-        (
-            item.variant,
-            item.quantity,
-        )
-        for item in order.items.all()
-    ]
+    # ---------------------------------------------------------
+    # RELEASE STOCK
+    # ---------------------------------------------------------
+    #
+    # This now includes BOTH:
+    #
+    # 1. normal products
+    # 2. products contained inside bundles
+    #
+
+    variants = get_order_reserved_variants(
+        order=order
+    )
 
     release_stock(
-        variants=variants,
+        variants=variants
     )
+
+    # ---------------------------------------------------------
+    # EXPIRE ORDER
+    # ---------------------------------------------------------
 
     change_order_status(
         order=order,
