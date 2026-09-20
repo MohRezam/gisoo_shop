@@ -1,7 +1,40 @@
+from collections import defaultdict
+
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
 from apps.products.models import ProductVariant
+
+
+def _aggregate_variants(*, variants):
+    """
+    Aggregate quantities for the same ProductVariant.
+
+    Example:
+
+        [
+            (variant, 3),
+            (variant, 3),
+            (variant, 2),
+        ]
+
+    becomes:
+
+        {
+            variant_id: 8,
+        }
+    """
+
+    quantities = defaultdict(int)
+
+    for variant, quantity in variants:
+        if quantity <= 0:
+            continue
+
+        quantities[variant.id] += quantity
+
+    return quantities
 
 
 def reserve_stock(
@@ -16,26 +49,65 @@ def reserve_stock(
             (variant, quantity),
             ...
         ]
+
+    The same ProductVariant may appear multiple times.
+    Its quantities are aggregated before changing stock.
+
+    The affected ProductVariant rows are locked with
+    select_for_update() to prevent concurrent orders from
+    consuming the same stock.
     """
 
-    updated_variants = []
+    quantities = _aggregate_variants(
+        variants=variants,
+    )
 
-    for variant, quantity in variants:
-        if quantity <= 0:
-            continue
+    if not quantities:
+        return
 
-        if variant.stock < quantity:
+    variant_ids = list(quantities.keys())
+
+    with transaction.atomic():
+        locked_variants = list(
+            ProductVariant.objects
+            .select_for_update()
+            .filter(id__in=variant_ids)
+        )
+
+        # Make sure all requested variants still exist.
+        locked_variant_ids = {
+            variant.id
+            for variant in locked_variants
+        }
+
+        missing_variant_ids = (
+            set(variant_ids) - locked_variant_ids
+        )
+
+        if missing_variant_ids:
             raise ValidationError(
-                _("Not enough stock.")
+                _("One or more product variants do not exist.")
             )
 
-        variant.stock -= quantity
-        updated_variants.append(variant)
+        # Validate ALL stock before changing ANY variant.
+        # This prevents a partial inventory update.
+        for variant in locked_variants:
+            quantity = quantities[variant.id]
 
-    ProductVariant.objects.bulk_update(
-        updated_variants,
-        ["stock"],
-    )
+            if variant.stock < quantity:
+                raise ValidationError(
+                    _("Not enough stock.")
+                )
+
+        # All variants have enough stock.
+        for variant in locked_variants:
+            quantity = quantities[variant.id]
+            variant.stock -= quantity
+
+        ProductVariant.objects.bulk_update(
+            locked_variants,
+            ["stock"],
+        )
 
 
 def release_stock(
@@ -51,18 +123,47 @@ def release_stock(
             (variant, quantity),
             ...
         ]
+
+    The same ProductVariant may appear multiple times.
+    Its quantities are aggregated before changing stock.
     """
 
-    updated_variants = []
-
-    for variant, quantity in variants:
-        if quantity <= 0:
-            continue
-
-        variant.stock += quantity
-        updated_variants.append(variant)
-
-    ProductVariant.objects.bulk_update(
-        updated_variants,
-        ["stock"],
+    quantities = _aggregate_variants(
+        variants=variants,
     )
+
+    if not quantities:
+        return
+
+    variant_ids = list(quantities.keys())
+
+    with transaction.atomic():
+        locked_variants = list(
+            ProductVariant.objects
+            .select_for_update()
+            .filter(id__in=variant_ids)
+        )
+
+        # Make sure all requested variants still exist.
+        locked_variant_ids = {
+            variant.id
+            for variant in locked_variants
+        }
+
+        missing_variant_ids = (
+            set(variant_ids) - locked_variant_ids
+        )
+
+        if missing_variant_ids:
+            raise ValidationError(
+                _("One or more product variants do not exist.")
+            )
+
+        for variant in locked_variants:
+            quantity = quantities[variant.id]
+            variant.stock += quantity
+
+        ProductVariant.objects.bulk_update(
+            locked_variants,
+            ["stock"],
+        )

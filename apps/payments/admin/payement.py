@@ -100,6 +100,8 @@ class PaymentIntentAdmin(admin.ModelAdmin):
         "admin_action_links",
     )
 
+    raw_id_fields = ("order", "destination_card")
+
     fieldsets = (
         (
             "Payment",

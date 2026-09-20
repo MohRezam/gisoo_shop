@@ -60,7 +60,7 @@ LATE_LOAD_THIRD_PARTY_APPS = []
 
 if DEBUG:
     THIRD_PARTY_APPS.insert(0, "debug_toolbar")
-    THIRD_PARTY_APPS.insert(0, "silk")
+    # THIRD_PARTY_APPS.insert(0, "silk")
 
 INSTALLED_APPS = (
         DEFAULT_APPS + THIRD_PARTY_APPS + LOCAL_APPS + LATE_LOAD_THIRD_PARTY_APPS
