@@ -15,6 +15,8 @@ LOCAL_APPS = [
     "apps.home.apps.HomeConfig",
     "apps.magazine.apps.MagazineConfig",
     "apps.marketing.apps.MarketingConfig",
+    "apps.consultations.apps.ConsultationsConfig",
+    "apps.reviews.apps.ReviewsConfig",
 ]
 
 THIRD_PARTY_APPS = [
