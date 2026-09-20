@@ -145,39 +145,21 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
         )
 
     def get_type(self, obj):
-        if obj.variant_id:
-            return "product"
-
-        return "bundle"
+        return "product"
 
     def get_product_id(self, obj):
-        if obj.variant_id:
-            return obj.variant.product_id
-
-        if obj.bundle_id:
-            return obj.bundle.variant.product_id
-
-        return None
+        return obj.variant.product_id
 
     def get_title(self, obj):
-        if obj.variant_id:
-            return obj.variant.product.title
-
-        return obj.bundle.title
+        return obj.variant.product.title
 
     def get_brand(self, obj):
-        if obj.variant_id:
-            brand = obj.variant.product.brand
-        else:
-            brand = obj.bundle.variant.product.brand
+        brand = obj.variant.product.brand
 
         return str(brand) if brand else None
 
     def get_image(self, obj):
-        if obj.variant_id:
-            product = obj.variant.product
-        else:
-            product = obj.bundle.variant.product
+        product = obj.variant.product
 
         image = product.images.filter(
             is_primary=True
@@ -189,31 +171,10 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
         return image.image.url
 
     def get_price(self, obj):
-        if obj.variant_id:
-            return obj.variant.price
-
-        bundle = obj.bundle
-
-        return (
-            bundle.variant.price
-            * bundle.quantity
-        )
+        return obj.variant.price
 
     def get_discounted_price(self, obj):
-        if obj.variant_id:
-            return obj.variant.discounted_price
-
-        bundle = obj.bundle
-
-        original_price = (
-            bundle.variant.price
-            * bundle.quantity
-        )
-
-        if bundle.price < original_price:
-            return bundle.price
-
-        return None
+        return obj.variant.discounted_price
 
     def get_discount_percent(self, obj):
         price = self.get_price(obj)
@@ -233,10 +194,7 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
         )
 
     def get_quantity(self, obj):
-        if obj.bundle_id:
-            return obj.bundle.quantity
-
-        return None
+        return 1
 
 
 class ConsultationListSerializer(
