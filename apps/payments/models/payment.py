@@ -141,6 +141,7 @@ class PaymentIntent(BaseModel):
 
     base_amount_rial = models.PositiveBigIntegerField(
         verbose_name=_("base amount rial"),
+        help_text="مبلغ پایه به ریال"
     )
 
     unique_suffix = models.PositiveSmallIntegerField(
@@ -154,6 +155,7 @@ class PaymentIntent(BaseModel):
 
     payable_amount_rial = models.PositiveBigIntegerField(
         verbose_name=_("payable amount rial"),
+        help_text="مبلغ پرداختی به ریال"
     )
 
     destination_card = models.ForeignKey(

@@ -120,6 +120,7 @@ class Order(BaseModel):
     total_price = models.PositiveBigIntegerField(
         default=0,
         verbose_name=_("total price"),
+        help_text="مبلغ کل سفارش به تومان",
     )
 
     class Meta:
@@ -162,6 +163,7 @@ class OrderBundle(BaseModel):
 
     total_price = models.PositiveBigIntegerField(
         verbose_name=_("total price"),
+        help_text="مبلغ کل سفارش به تومان",
     )
 
     class Meta:
