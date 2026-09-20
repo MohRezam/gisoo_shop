@@ -28,38 +28,26 @@ ALLOWED_TRANSITIONS = {
         OrderStatus.EXPIRED,
         OrderStatus.PAYMENT_REJECTED,
     ],
-
-    OrderStatus.PAYMENT_REJECTED: [
-        OrderStatus.CREATED,
-        OrderStatus.CANCELED,
-        OrderStatus.EXPIRED,
-    ],
-
     OrderStatus.WAITING_PAYMENT: [
         OrderStatus.PREPARING,
         OrderStatus.PAYMENT_REJECTED,
         OrderStatus.CANCELED,
         OrderStatus.EXPIRED,
     ],
-
     OrderStatus.PAYMENT_REJECTED: [
+        OrderStatus.CREATED,
         OrderStatus.WAITING_PAYMENT,
         OrderStatus.CANCELED,
         OrderStatus.EXPIRED,
     ],
-
     OrderStatus.PREPARING: [
         OrderStatus.SHIPPED,
         OrderStatus.CANCELED,
     ],
-
     OrderStatus.SHIPPED: [
         OrderStatus.DELIVERED,
     ],
-
     OrderStatus.DELIVERED: [],
-
     OrderStatus.CANCELED: [],
-
     OrderStatus.EXPIRED: [],
 }

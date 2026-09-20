@@ -119,6 +119,7 @@ def approve_payment(
             new_status=OrderStatus.PREPARING,
             changed_by=admin,
             reason="Payment approved.",
+            send_notification=False,
         )
 
     order_label = order.public_number or order.id
@@ -238,6 +239,7 @@ def reject_payment(
                 new_status=OrderStatus.PAYMENT_REJECTED,
                 changed_by=admin,
                 reason="Payment receipt rejected.",
+                send_notification=False,
             )
 
     order_label = order.public_number or order.id

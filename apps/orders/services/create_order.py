@@ -8,15 +8,20 @@ from rest_framework.exceptions import ValidationError
 from apps.addresses.models import Address
 from apps.cart.models import Cart
 from apps.discounts.services import calculate_discount
+from apps.notifications.services.inbox import notify_user
+from apps.notifications.tasks import send_order_created_sms
 from apps.orders.constants import ORDER_EXPIRATION_MINUTES
 from apps.orders.models import (
     Order,
     OrderItem,
-    OrderStatus, OrderBundle,
+    OrderStatus,
+    OrderBundle,
 )
 from apps.orders.services.cart_calculator import calculate_cart
 from apps.orders.services.expiration import schedule_order_expiration
 from apps.orders.services.inventory import reserve_stock
+from apps.orders.services.public_number import generate_order_public_number
+from apps.payments.services.create_payment_intent import create_payment_intent
 from apps.shipping.models import ShippingMethod
 from apps.shipping.services.shipping import calculate_shipping_price
 
@@ -86,6 +91,9 @@ def create_order(
         shipping_method=shipping_method,
     )
 
+    order.public_number = generate_order_public_number(order.id)
+    order.save(update_fields=["public_number"])
+
     cart_result = calculate_cart(
         cart=cart,
         order=order,
@@ -153,6 +161,8 @@ def create_order(
         cart_result["order_items"]
     )
 
+    create_payment_intent(order_id=order.id, user=user)
+
     cart.is_active = False
     cart.save(
         update_fields=[
@@ -165,5 +175,32 @@ def create_order(
     schedule_order_expiration(
         order=order,
     )
+
+    order_id = order.id
+    public_number = order.public_number
+    phone = order.phone_number
+    amount = order.total_price
+    user_id = user.id
+
+    def _notify_order_created():
+        notify_user(
+            user=user,
+            title="سفارش ثبت شد",
+            body=(
+                f"سفارش {public_number} ثبت شد. "
+                "لطفاً پرداخت کارت‌به‌کارت را انجام دهید."
+            ),
+            type="order",
+            link=f"/account/orders/{order_id}",
+            order_id=order_id,
+        )
+        send_order_created_sms.delay(
+            user_id=user_id,
+            recipient=phone,
+            order_id=order_id,
+            amount=amount,
+        )
+
+    transaction.on_commit(_notify_order_created)
 
     return order
