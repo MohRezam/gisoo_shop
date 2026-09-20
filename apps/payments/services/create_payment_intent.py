@@ -1,133 +1,254 @@
+import secrets
 from datetime import timedelta
 
-from django.db import transaction
+from django.conf import settings
+from django.db import IntegrityError, transaction
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
 from apps.orders.models import Order, OrderStatus
-from apps.orders.services.change_order_status import change_order_status
-from apps.payments.constants import (
-    PAYMENT_DESTINATION_CARD_ID,
-    PAYMENT_INTENT_EXPIRATION_MINUTES,
-    DEFAULT_DESTINATION_BANK_NAME,
-    DEFAULT_DESTINATION_CARD_NUMBER,
-    DEFAULT_DESTINATION_HOLDER_NAME,
-)
-from apps.payments.cache import (
-    get_cached_destination_card_id,
-    set_cached_destination_card_id,
-)
 from apps.payments.models import (
-    PaymentDestinationCard,
+    ACTIVE_PAYMENT_INTENT_STATUSES,
+    DestinationCard,
     PaymentIntent,
     PaymentIntentStatus,
-    ACTIVE_INTENT_STATUSES,
-    RECREATE_ALLOWED_STATUSES,
 )
 
 
-def get_active_destination_card():
-    cached_id = get_cached_destination_card_id()
-    if cached_id:
-        card = PaymentDestinationCard.objects.filter(
-            pk=cached_id,
-            is_active=True,
-        ).first()
-        if card:
-            return card
+TOMAN_TO_RIAL = 10
 
-    if PAYMENT_DESTINATION_CARD_ID:
-        card = PaymentDestinationCard.objects.filter(
-            pk=PAYMENT_DESTINATION_CARD_ID,
-            is_active=True,
-        ).first()
-        if card:
-            set_cached_destination_card_id(card.id)
-            return card
+MIN_SUFFIX = 100
+MAX_SUFFIX = 999
+MAX_SUFFIX_ATTEMPTS = 20
 
-    card = PaymentDestinationCard.objects.filter(is_active=True).order_by("-id").first()
-    if card:
-        set_cached_destination_card_id(card.id)
-        return card
 
-    card, _ = PaymentDestinationCard.objects.get_or_create(
-        card_number=DEFAULT_DESTINATION_CARD_NUMBER,
-        defaults={
-            "bank_name": DEFAULT_DESTINATION_BANK_NAME,
-            "holder_name": DEFAULT_DESTINATION_HOLDER_NAME,
-            "is_active": True,
-        },
+def get_payment_expiration(order: Order):
+    """
+    Returns the expiration time for the payment intent.
+
+    The order expiration is the source of truth when available.
+    Otherwise, ORDER_EXPIRATION_MINUTES is used.
+    """
+
+    if order.expires_at is not None:
+        return order.expires_at
+
+    expiration_minutes = getattr(
+        settings,
+        "ORDER_EXPIRATION_MINUTES",
+        60,
     )
-    if not card.is_active:
-        card.is_active = True
-        card.save(update_fields=["is_active"])
-    set_cached_destination_card_id(card.id)
+
+    return timezone.now() + timedelta(
+        minutes=expiration_minutes
+    )
+
+
+def get_destination_card():
+    """
+    Returns the currently active destination card for payments.
+    """
+
+    card = (
+        DestinationCard.objects
+        .filter(
+            is_active=True,
+        )
+        .order_by("id")
+        .first()
+    )
+
+    if card is None:
+        raise ValidationError(
+            "Payment destination card is not available."
+        )
+
     return card
 
 
+def generate_unique_amount(
+    *,
+    base_amount_rial: int,
+    destination_card: DestinationCard,
+):
+    if base_amount_rial <= 0:
+        raise ValidationError(
+            "Order amount must be greater than zero."
+        )
+
+    if base_amount_rial < MIN_SUFFIX:
+        raise ValidationError(
+            "Order amount is too small for unique payment amount generation."
+        )
+
+    # ---------------------------------------------------------
+    # Get all currently used active payment amounts
+    # ---------------------------------------------------------
+
+    used_amounts = set(
+        PaymentIntent.objects.filter(
+            destination_card=destination_card,
+            status__in=ACTIVE_PAYMENT_INTENT_STATUSES,
+        ).values_list(
+            "payable_amount_rial",
+            flat=True,
+        )
+    )
+
+    # ---------------------------------------------------------
+    # Generate all possible suffixes
+    # ---------------------------------------------------------
+
+    suffixes = list(
+        range(
+            MIN_SUFFIX,
+            MAX_SUFFIX + 1,
+        )
+    )
+
+    # Randomize candidates so payment amounts are not predictable.
+    secrets.SystemRandom().shuffle(suffixes)
+
+    # ---------------------------------------------------------
+    # Find an available amount
+    # ---------------------------------------------------------
+
+    for suffix in suffixes:
+        adjustment_discount = (
+            base_amount_rial - suffix
+        ) % 1000
+
+        payable_amount_rial = (
+            base_amount_rial
+            - adjustment_discount
+        )
+
+        if payable_amount_rial <= 0:
+            continue
+
+        if payable_amount_rial in used_amounts:
+            continue
+
+        return {
+            "unique_suffix": suffix,
+            "adjustment_discount": adjustment_discount,
+            "payable_amount_rial": payable_amount_rial,
+        }
+
+    raise ValidationError(
+        "Unable to generate a unique payment amount. "
+        "All available payment amounts are currently in use."
+    )
+
+
 @transaction.atomic
-def create_payment_intent(*, order: Order, user=None):
-    """
-    Create or resume a C2C payment intent.
-
-    - Returns existing active intent (pending / receipt / review).
-    - Allows a new intent when latest is rejected or expired.
-    - Rejects when already paid or order is not payable.
-    """
-    order = Order.objects.select_for_update().get(pk=order.pk)
-
-    if user is not None and order.user_id != user.id:
-        raise ValidationError(_("Order not found."))
-
-    if order.status in (
-        OrderStatus.CANCELED,
-        OrderStatus.EXPIRED,
-        OrderStatus.DELIVERED,
-        OrderStatus.SHIPPED,
-        OrderStatus.PREPARING,
-    ):
-        raise ValidationError(_("Cannot create payment intent for this order."))
-
-    active = (
-        order.payment_intents.filter(status__in=ACTIVE_INTENT_STATUSES)
-        .select_related("destination_card", "order")
-        .order_by("-created_at")
+def create_payment_intent(*, order_id: int, user):
+    order = (
+        Order.objects
+        .select_for_update()
+        .filter(
+            id=order_id,
+            user=user,
+        )
         .first()
     )
-    if active:
-        return active, False
 
-    latest = order.payment_intents.order_by("-created_at").first()
-    if latest and latest.status == PaymentIntentStatus.PAID:
-        raise ValidationError(_("Order is already paid."))
+    if order is None:
+        raise ValidationError("Order not found.")
 
-    if latest and latest.status not in RECREATE_ALLOWED_STATUSES:
+    if order.status != OrderStatus.CREATED:
         raise ValidationError(
-            _("Cannot recreate payment intent for status '%(status)s'.")
-            % {"status": latest.status}
+            "Payment is not available for this order."
         )
 
-    destination = get_active_destination_card()
-    intent = PaymentIntent.objects.create(
-        order=order,
-        destination_card=destination,
-        payable_amount=order.total_price,
-        status=PaymentIntentStatus.PENDING_PAYMENT,
-        expires_at=timezone.now()
-        + timedelta(minutes=PAYMENT_INTENT_EXPIRATION_MINUTES),
-    )
+    now = timezone.now()
 
-    if order.status != OrderStatus.WAITING_PAYMENT:
-        change_order_status(
+    existing_intent = (
+        PaymentIntent.objects
+        .select_related(
+            "destination_card",
+            "order",
+        )
+        .filter(
             order=order,
-            new_status=OrderStatus.WAITING_PAYMENT,
-            changed_by=user,
-            reason="Payment intent created.",
+            status__in=ACTIVE_PAYMENT_INTENT_STATUSES,
+        )
+        .first()
+    )
+
+    if existing_intent is not None:
+        if existing_intent.expires_at <= now:
+            existing_intent.status = PaymentIntentStatus.EXPIRED
+            existing_intent.save(
+                update_fields=["status"]
+            )
+
+        else:
+            return existing_intent
+
+    if order.expires_at is not None and order.expires_at <= now:
+        raise ValidationError(
+            "Order payment time has expired."
         )
 
-    intent = (
-        PaymentIntent.objects.select_related("destination_card", "order")
-        .get(pk=intent.pk)
+    destination_card = get_destination_card()
+
+    expiration = get_payment_expiration(order)
+
+    # ---------------------------------------------------------
+    # Order prices are stored in TOMAN.
+    # PaymentIntent amounts are stored in RIAL.
+    # ---------------------------------------------------------
+
+    base_amount_rial = order.total_price * TOMAN_TO_RIAL
+
+    amount_data = generate_unique_amount(
+        base_amount_rial=base_amount_rial,
+        destination_card=destination_card,
     )
-    return intent, True
+
+    for _ in range(MAX_SUFFIX_ATTEMPTS):
+        try:
+            with transaction.atomic():
+                payment_intent = PaymentIntent.objects.create(
+                    order=order,
+                    base_amount_rial=base_amount_rial,
+                    unique_suffix=amount_data["unique_suffix"],
+                    adjustment_discount=amount_data[
+                        "adjustment_discount"
+                    ],
+                    payable_amount_rial=amount_data[
+                        "payable_amount_rial"
+                    ],
+                    destination_card=destination_card,
+                    status=PaymentIntentStatus.PENDING_PAYMENT,
+                    expires_at=expiration,
+                )
+
+            return payment_intent
+
+        except IntegrityError:
+            existing_intent = (
+                PaymentIntent.objects
+                .select_related(
+                    "destination_card",
+                    "order",
+                )
+                .filter(
+                    order=order,
+                    status__in=ACTIVE_PAYMENT_INTENT_STATUSES,
+                )
+                .first()
+            )
+
+            if existing_intent is not None:
+                return existing_intent
+
+            amount_data = generate_unique_amount(
+                base_amount_rial=base_amount_rial,
+                destination_card=destination_card,
+            )
+
+    raise ValidationError(
+        "Unable to create payment intent. Please try again."
+    )
