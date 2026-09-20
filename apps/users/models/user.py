@@ -41,7 +41,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         default=True,
         verbose_name="فعال",
     )
-    birthdate = models.DateField(verbose_name=_("birthdate"), null=True, blank=True)
+    birthdate = models.DateField(verbose_name="تاریخ تولد", null=True, blank=True)
 
     created_at = models.DateTimeField(
         auto_now_add=True,

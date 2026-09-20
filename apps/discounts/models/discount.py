@@ -40,11 +40,11 @@ class Discount(BaseModel):
     )
 
     applies_to_discounted_products = models.BooleanField(
-        verbose_name=_("Applies to discounted products"),
+        verbose_name="اعمال روی محصولات تخفیف‌دار",
         default=True,
-        help_text=_(
-            "Whether this discount can be applied to products "
-            "that already have a product discount."
+        help_text=(
+            "آیا این تخفیف روی محصولاتی که از قبل تخفیف محصول دارند "
+            "هم قابل اعمال است."
         ),
     )
 
