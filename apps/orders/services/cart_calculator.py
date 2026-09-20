@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
@@ -16,6 +18,14 @@ def calculate_cart(
     """
     Calculates cart totals and prepares order items.
 
+    Stock is calculated per ProductVariant across the entire cart.
+
+    This is important because:
+    - A normal variant consumes ProductVariant.stock directly.
+    - A bundle also consumes the same ProductVariant.stock.
+    - Therefore, normal items and bundles must be aggregated
+      before checking stock.
+
     Returns:
         {
             "order_items": list[OrderItem],
@@ -33,10 +43,98 @@ def calculate_cart(
     order_bundles = []
     variants = []
 
-    cart_items = cart.items.select_related(
-        "variant__product",
-        "bundle",
+    cart_items = list(
+        cart.items.select_related(
+            "variant__product",
+            "bundle__variant__product",
+        )
     )
+
+    # ---------------------------------------------------------
+    # Collect all required stock per ProductVariant
+    # ---------------------------------------------------------
+
+    required_stock = defaultdict(int)
+
+    for cart_item in cart_items:
+
+        # -------------------------
+        # Normal Variant
+        # -------------------------
+        if cart_item.variant:
+
+            required_stock[
+                cart_item.variant_id
+            ] += cart_item.quantity
+
+        # -------------------------
+        # Bundle
+        # -------------------------
+        else:
+
+            bundle = cart_item.bundle
+
+            bundle_quantity = (
+                bundle.quantity *
+                cart_item.quantity
+            )
+
+            required_stock[
+                bundle.variant_id
+            ] += bundle_quantity
+
+    # ---------------------------------------------------------
+    # Lock all affected variants
+    # ---------------------------------------------------------
+
+    variant_ids = list(
+        required_stock.keys()
+    )
+
+    locked_variants = {
+        variant.id: variant
+        for variant in (
+            ProductVariant.objects
+            .select_for_update()
+            .select_related("product")
+            .filter(id__in=variant_ids)
+        )
+    }
+
+    # ---------------------------------------------------------
+    # Make sure all variants still exist
+    # ---------------------------------------------------------
+
+    missing_variant_ids = (
+        set(variant_ids)
+        - set(locked_variants.keys())
+    )
+
+    if missing_variant_ids:
+        raise ValidationError(
+            _("One or more product variants do not exist.")
+        )
+
+    # ---------------------------------------------------------
+    # Validate total stock
+    # ---------------------------------------------------------
+
+    for variant_id, quantity in required_stock.items():
+
+        variant = locked_variants[variant_id]
+
+        if quantity > variant.stock:
+            raise ValidationError(
+                _(
+                    "Not enough stock for '%(product)s'."
+                ) % {
+                    "product": variant.product.title,
+                }
+            )
+
+    # ---------------------------------------------------------
+    # Prepare order items / bundles
+    # ---------------------------------------------------------
 
     for cart_item in cart_items:
 
@@ -45,22 +143,9 @@ def calculate_cart(
         # -------------------------
         if cart_item.variant:
 
-            variant = (
-                ProductVariant.objects
-                .select_for_update()
-                .get(
-                    pk=cart_item.variant_id,
-                )
-            )
-
-            if cart_item.quantity > variant.stock:
-                raise ValidationError(
-                    _(
-                        "Not enough stock for '%(product)s'."
-                    ) % {
-                        "product": variant.product.title,
-                    }
-                )
+            variant = locked_variants[
+                cart_item.variant_id
+            ]
 
             # قیمت اصلی محصول
             original_unit_price = variant.price
@@ -116,31 +201,18 @@ def calculate_cart(
 
         bundle = cart_item.bundle
 
-        variant = (
-            ProductVariant.objects
-            .select_for_update()
-            .get(
-                pk=bundle.variant_id,
-            )
-        )
+        variant = locked_variants[
+            bundle.variant_id
+        ]
 
         bundle_quantity = (
-                bundle.quantity *
-                cart_item.quantity
+            bundle.quantity *
+            cart_item.quantity
         )
 
-        if bundle_quantity > variant.stock:
-            raise ValidationError(
-                _(
-                    "Not enough stock for '%(product)s'."
-                ) % {
-                    "product": variant.product.title,
-                }
-            )
-
         bundle_total = (
-                bundle.price *
-                cart_item.quantity
+            bundle.price *
+            cart_item.quantity
         )
 
         order_bundle = OrderBundle(
