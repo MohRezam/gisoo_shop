@@ -113,7 +113,9 @@ class CartDiscountAPIView(APIView):
             200: inline_serializer(
                 name="CartDiscountResponse",
                 fields={
-                    "discount": serializers.CharField(),
+                    "discount": serializers.CharField(
+                        allow_null=True
+                    ),
                     "original_subtotal": serializers.IntegerField(),
                     "product_discount": serializers.IntegerField(),
                     "subtotal": serializers.IntegerField(),
@@ -153,8 +155,10 @@ class CartDiscountAPIView(APIView):
             code=serializer.validated_data["code"],
         )
 
+        discount = result["discount"]
+
         return Response({
-            "discount": result["discount"].code,
+            "discount": discount.code if discount else None,
             "original_subtotal": result["original_subtotal"],
             "product_discount": result["product_discount"],
             "subtotal": result["subtotal"],
