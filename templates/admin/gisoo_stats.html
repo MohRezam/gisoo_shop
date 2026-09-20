@@ -1,0 +1,42 @@
+<div class="gisoo-stats-grid">
+  <div class="gisoo-stat-card">
+    <span class="gisoo-stat-label">سفارش امروز</span>
+    <strong class="gisoo-stat-value">{{ stats.orders_today }}</strong>
+  </div>
+  <div class="gisoo-stat-card">
+    <span class="gisoo-stat-label">کل سفارش‌ها</span>
+    <strong class="gisoo-stat-value">{{ stats.orders_total }}</strong>
+  </div>
+  <div class="gisoo-stat-card warn">
+    <span class="gisoo-stat-label">در انتظار پرداخت</span>
+    <strong class="gisoo-stat-value">{{ stats.waiting_payment }}</strong>
+  </div>
+  <div class="gisoo-stat-card warn">
+    <span class="gisoo-stat-label">رسید در حال بررسی</span>
+    <strong class="gisoo-stat-value">{{ stats.payment_review }}</strong>
+  </div>
+  <div class="gisoo-stat-card">
+    <span class="gisoo-stat-label">در حال آماده‌سازی</span>
+    <strong class="gisoo-stat-value">{{ stats.preparing }}</strong>
+  </div>
+  <div class="gisoo-stat-card">
+    <span class="gisoo-stat-label">ارسال‌شده</span>
+    <strong class="gisoo-stat-value">{{ stats.shipped }}</strong>
+  </div>
+  <div class="gisoo-stat-card accent">
+    <span class="gisoo-stat-label">فروش امروز (تومان)</span>
+    <strong class="gisoo-stat-value">{{ stats.revenue_today }}</strong>
+  </div>
+  <div class="gisoo-stat-card">
+    <span class="gisoo-stat-label">کاربران</span>
+    <strong class="gisoo-stat-value">{{ stats.users_total }}</strong>
+  </div>
+  <div class="gisoo-stat-card">
+    <span class="gisoo-stat-label">محصولات فعال</span>
+    <strong class="gisoo-stat-value">{{ stats.products_total }}</strong>
+  </div>
+  <div class="gisoo-stat-card">
+    <span class="gisoo-stat-label">اعلان خوانده‌نشده</span>
+    <strong class="gisoo-stat-value">{{ stats.unread_inbox }}</strong>
+  </div>
+</div>

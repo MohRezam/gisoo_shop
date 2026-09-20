@@ -1,0 +1,21 @@
+{% load i18n %}
+<button class="sticky toggle-nav-sidebar" id="toggle-nav-sidebar" aria-label="{% translate 'Toggle navigation' %}"></button>
+<nav class="sticky" id="nav-sidebar" aria-label="{% translate 'Sidebar' %}">
+  <div class="gisoo-side-quick">
+    <p class="gisoo-side-quick-title">میانبرها</p>
+    <a href="{% url 'admin:index' %}">پیشخوان آماری</a>
+    <a href="{% url 'admin:orders_order_changelist' %}">سفارش‌ها</a>
+    <a href="{% url 'admin:payments_paymentintent_changelist' %}">پرداخت‌ها / رسیدها</a>
+    <a href="{% url 'admin:products_product_changelist' %}">محصولات</a>
+    <a href="{% url 'admin:home_banner_changelist' %}">بنرها</a>
+    <a href="{% url 'admin:magazine_magazine_changelist' %}">مجله</a>
+    <a href="{% url 'admin:notifications_inappnotification_changelist' %}">اعلان‌ها</a>
+    <a href="{% url 'admin:consultations_consultationrequest_changelist' %}">مشاوره‌ها</a>
+    <a href="{% url 'admin:users_user_changelist' %}">کاربران</a>
+  </div>
+
+  <input type="search" id="nav-filter"
+         placeholder="جستجو در منو…"
+         aria-label="{% translate 'Filter navigation items' %}">
+  {% include 'admin/app_list.html' with app_list=available_apps show_changelinks=False %}
+</nav>

@@ -552,9 +552,83 @@ input:focus, textarea:focus, select:focus {
 }
 
 .gisoo-quick-grid {
+  display: none !important;
+}
+
+.gisoo-side-quick {
+  padding: 12px 12px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 4px;
+  background: #f8fafc;
+}
+
+.gisoo-side-quick-title {
+  margin: 0 0 8px;
+  padding: 0 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #0f2fb8 !important;
+  font-family: "Kook", "IranSans", Tahoma, sans-serif;
+}
+
+.gisoo-side-quick a {
+  display: block !important;
+  padding: 8px 10px !important;
+  margin: 0 0 4px !important;
+  border-radius: 10px;
+  color: #111827 !important;
+  text-decoration: none !important;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  background: #fff;
+  border: 1px solid #eef2f7;
+}
+
+.gisoo-side-quick a:hover {
+  background: #eef3ff !important;
+  color: #0f2fb8 !important;
+  border-color: #c7d2fe;
+}
+
+.gisoo-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
+  margin-bottom: 8px;
+}
+
+.gisoo-stat-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(17, 24, 39, 0.04);
+}
+
+.gisoo-stat-card.warn {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.gisoo-stat-card.accent {
+  border-color: #c7d2fe;
+  background: #eef3ff;
+}
+
+.gisoo-stat-label {
+  display: block;
+  color: #6b7280 !important;
+  font-size: 0.82rem;
+  margin-bottom: 8px;
+}
+
+.gisoo-stat-value {
+  display: block;
+  color: #111827 !important;
+  font-family: "Kook", "IranSans", Tahoma, sans-serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .gisoo-quick-card {

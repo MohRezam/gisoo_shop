@@ -72,4 +72,16 @@
 <div id="footer" class="gisoo-footer">
   <span>گیسو سنتر · فروشگاه تخصصی مراقبت مو</span>
 </div>
+<script>
+  (function () {
+    try {
+      // Open the admin sidebar by default (RTL uses .main.shifted)
+      var main = document.querySelector("#main") || document.querySelector(".main");
+      if (main && !main.classList.contains("shifted")) {
+        main.classList.add("shifted");
+        localStorage.setItem("django.admin.navSidebarIsOpen", "true");
+      }
+    } catch (e) {}
+  })();
+</script>
 {% endblock %}

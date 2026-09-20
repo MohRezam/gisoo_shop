@@ -188,8 +188,8 @@ class ConsultationRequest(models.Model):
     )
 
     class Meta:
-        verbose_name = _("consultation request")
-        verbose_name_plural = _("consultation requests")
+        verbose_name = "درخواست مشاوره"
+        verbose_name_plural = "درخواست‌های مشاوره"
 
         ordering = [
             "-created_at",

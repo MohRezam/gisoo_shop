@@ -106,6 +106,8 @@ class PaymentReceipt(BaseModel):
     )
 
     class Meta:
+        verbose_name = "رسید پرداخت"
+        verbose_name_plural = "رسیدهای پرداخت"
         constraints = [
             models.UniqueConstraint(
                 fields=["payment_intent", "idempotency_key"],
@@ -215,8 +217,8 @@ class PaymentIntent(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("payment intent")
-        verbose_name_plural = _("payment intents")
+        verbose_name = "درخواست پرداخت"
+        verbose_name_plural = "درخواست‌های پرداخت"
         constraints = [
             models.UniqueConstraint(
                 fields=[
@@ -309,8 +311,8 @@ class PaymentReview(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("payment review")
-        verbose_name_plural = _("payment reviews")
+        verbose_name = "بررسی پرداخت"
+        verbose_name_plural = "بررسی‌های پرداخت"
         ordering = ["-created_at"]
 
     def __str__(self):
@@ -348,8 +350,8 @@ class DestinationCard(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("destination card")
-        verbose_name_plural = _("destination cards")
+        verbose_name = "کارت مقصد"
+        verbose_name_plural = "کارت‌های مقصد"
 
     def __str__(self):
         return self.display_pan

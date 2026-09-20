@@ -3,6 +3,7 @@ from core_gisoo_backend import settings
 from core_gisoo_backend.settings.components.common import DEBUG
 
 LOCAL_APPS = [
+    "apps.shared.apps.SharedConfig",
     "apps.users.apps.UsersConfig",
     "apps.addresses.apps.AddressesConfig",
     "apps.cart.apps.CartConfig",
