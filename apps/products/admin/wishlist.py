@@ -9,6 +9,7 @@ class WishlistItemInline(admin.TabularInline):
     model = WishlistItem
     extra = 0
     exclude = ("creator",)
+    raw_id_fields = ("product",)
 
 
 @admin.register(Wishlist)
