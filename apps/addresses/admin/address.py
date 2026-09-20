@@ -28,3 +28,4 @@ class AddressAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("user",)
     list_per_page = 15
+    list_display_links = ("user", )

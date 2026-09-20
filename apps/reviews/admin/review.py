@@ -46,3 +46,4 @@ class ProductReviewAdmin(admin.ModelAdmin):
 
     raw_id_fields = ("user", "product")
     list_per_page = 15
+    list_display_links = ("product",)

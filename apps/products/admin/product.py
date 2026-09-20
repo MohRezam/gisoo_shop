@@ -13,6 +13,7 @@ from apps.products.models import (
 import nested_admin
 from django.db.models import F
 
+
 class ProductImageInline(nested_admin.NestedTabularInline):
     model = ProductImage
     extra = 0
@@ -104,6 +105,7 @@ class ProductAdmin(
     exclude = ("creator", "archived")
     raw_id_fields = ("category", "brand")
     list_per_page = 15
+    list_display_links = ("title",)
 
     inlines = [
         ProductImageInline,
@@ -116,6 +118,7 @@ class ProductAdmin(
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "sku",
         "product",
         "price",
@@ -152,11 +155,13 @@ class ProductVariantAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("product",)
     list_per_page = 15
+    list_display_links = ("sku", "product")
 
 
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "product",
         "alt_text",
         "created_at",
@@ -173,11 +178,13 @@ class ProductImageAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("product",)
     list_per_page = 15
+    list_display_links = ("product",)
 
 
 @admin.register(ProductAttribute)
 class ProductAttributeAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "product",
         "attribute",
         "value",
@@ -207,11 +214,13 @@ class ProductAttributeAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("product", "attribute")
     list_per_page = 15
+    list_display_links = ("product",)
 
 
 @admin.register(Attribute)
 class AttributeAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "name",
         "is_variant",
         "created_at",
@@ -225,11 +234,14 @@ class AttributeAdmin(admin.ModelAdmin):
         "name",
     )
     exclude = ("creator", "archived")
+    list_per_page = 15
+    list_display_links = ("name",)
 
 
 @admin.register(AttributeValue)
 class AttributeValueAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "attribute",
         "value",
         "created_at",
@@ -248,11 +260,14 @@ class AttributeValueAdmin(admin.ModelAdmin):
     )
 
     exclude = ("creator", "archived")
+    list_per_page = 15
+    list_display_links = ("attribute",)
 
 
 @admin.register(VariantAttribute)
 class VariantAttributeAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "variant",
         "value",
         "created_at",
@@ -274,12 +289,14 @@ class VariantAttributeAdmin(admin.ModelAdmin):
 
     exclude = ("creator", "archived")
     raw_id_fields = ("variant", "value")
-
+    list_per_page = 15
+    list_display_links = ("variant",)
 
 
 @admin.register(DiscountCampaign)
 class DiscountCampaignAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "title",
         "starts_at",
         "ends_at",
@@ -343,12 +360,14 @@ class DiscountCampaignAdmin(admin.ModelAdmin):
             },
         ),
     )
+    list_per_page = 15
+    list_display_links = ("title",)
 
     def formfield_for_manytomany(
-        self,
-        db_field,
-        request,
-        **kwargs,
+            self,
+            db_field,
+            request,
+            **kwargs,
     ):
         if db_field.name == "products":
             kwargs["queryset"] = Product.objects.filter(

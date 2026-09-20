@@ -11,6 +11,7 @@ class ShippingMethodAdmin(
     admin.ModelAdmin
 ):
     list_display = [
+        "id",
         "title",
         "price",
         "free_shipping_minimum",
@@ -37,6 +38,7 @@ class ShippingMethodAdmin(
     ]
     exclude = ("creator", "archived")
     list_per_page = 15
+    list_display_links = ("title",)
 
 
 @admin.register(Shipment)
@@ -71,3 +73,4 @@ class ShipmentAdmin(
     exclude = ("creator", "archived")
     raw_id_fields = ("order", "created_by")
     list_per_page = 15
+    list_display_links = ("order",)

@@ -46,4 +46,5 @@ class NotificationAdmin(admin.ModelAdmin):
 
     ordering = ("-created_at",)
 
-    list_per_page = 50
+    list_per_page = 15
+    list_display_links = ("notification_type",)

@@ -6,6 +6,7 @@ from apps.home.models import Banner, Slider
 @admin.register(Banner)
 class BannerAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "link_type",
         "display_order",
         "is_active",
@@ -30,11 +31,13 @@ class BannerAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("product", "category")
     list_per_page = 15
+    list_display_links = ("link_type",)
 
 
 @admin.register(Slider)
 class SliderAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "link_type",
         "display_order",
         "is_active",
@@ -58,3 +61,5 @@ class SliderAdmin(admin.ModelAdmin):
 
     exclude = ("creator", "archived")
     raw_id_fields = ("product", "category")
+    list_per_page = 15
+    list_display_links = ("link_type",)

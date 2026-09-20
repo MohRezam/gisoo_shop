@@ -15,3 +15,4 @@ class CustomerSatisfactionAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at",)
 
     exclude = ("creator",)
+    list_per_page = 15

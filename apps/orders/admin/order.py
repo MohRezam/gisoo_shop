@@ -66,4 +66,4 @@ class OrderAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("user", "discount", "shipping_method")
     list_per_page = 15
-
+    list_display_links = ("user",)

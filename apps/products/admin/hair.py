@@ -5,6 +5,7 @@ from django.contrib import admin
 @admin.register(HairProblem)
 class HairProblemAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "title",
         "slug",
         "is_active",
@@ -21,11 +22,13 @@ class HairProblemAdmin(admin.ModelAdmin):
     }
     exclude = ("creator", "archived")
     list_per_page = 15
+    list_display_links = ("title",)
 
 
 @admin.register(HairType)
 class HairTypeAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "title",
         "slug",
         "is_active",
@@ -42,3 +45,4 @@ class HairTypeAdmin(admin.ModelAdmin):
     }
     exclude = ("creator", "archived")
     list_per_page = 15
+    list_display_links = ("title",)

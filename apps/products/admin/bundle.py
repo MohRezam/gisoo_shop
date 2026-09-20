@@ -22,6 +22,7 @@ class BundleInline(nested_admin.NestedTabularInline):
 @admin.register(Bundle)
 class BundleAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "title",
         "variant",
         "quantity",
@@ -47,3 +48,4 @@ class BundleAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("variant",)
     list_per_page = 15
+    list_display_links = ("title",)

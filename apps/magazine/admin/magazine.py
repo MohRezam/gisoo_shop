@@ -6,6 +6,7 @@ from apps.magazine.models import MagazineCategory, Magazine
 @admin.register(MagazineCategory)
 class MagazineCategoryAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "name",
         "slug",
     )
@@ -17,10 +18,12 @@ class MagazineCategoryAdmin(admin.ModelAdmin):
     }
     exclude = ("creator", "archived")
     list_per_page = 15
+    list_display_links = ("name",)
 
 @admin.register(Magazine)
 class MagazineAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "title",
         "category",
         "published_at",
@@ -52,6 +55,7 @@ class MagazineAdmin(admin.ModelAdmin):
 
     exclude = ("creator", "archived")
     list_per_page = 15
+    list_display_links = ("title",)
     def save_model(self, request, obj, form, change):
         if obj.is_featured:
             Magazine.objects.exclude(

@@ -21,6 +21,7 @@ from django.utils.html import format_html
 @admin.register(DestinationCard)
 class DestinationCardAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "name",
         "masked_pan",
         "is_active",
@@ -42,7 +43,8 @@ class DestinationCardAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
-
+    list_per_page = 15
+    list_display_links = ("name",)
     fieldsets = (
         (
             "Card information",
@@ -73,6 +75,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "order",
+        "customer_phone",
         "payable_amount_rial",
         "status",
         "expires_at",
@@ -101,7 +104,8 @@ class PaymentIntentAdmin(admin.ModelAdmin):
     )
 
     raw_id_fields = ("order", "destination_card")
-
+    list_per_page = 15
+    list_display_links = ("order",)
     fieldsets = (
         (
             "Payment",
@@ -157,6 +161,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
             .get_queryset(request)
             .select_related(
                 "order",
+                "order__user",
                 "destination_card",
                 "reviewed_by",
             )
@@ -359,6 +364,13 @@ class PaymentIntentAdmin(admin.ModelAdmin):
             context,
         )
 
+    @admin.display(description="Phone", ordering="order__user__phone")
+    def customer_phone(self, obj):
+        if not obj.order or not obj.order.user:
+            return "-"
+
+        return obj.order.user.phone or "-"
+
 
 @admin.register(PaymentReceipt)
 class PaymentReceiptAdmin(admin.ModelAdmin):
@@ -390,6 +402,10 @@ class PaymentReceiptAdmin(admin.ModelAdmin):
         "updated_at",
         "uploaded_at",
     )
+    list_per_page = 15
+    exclude = ("creator", "archived")
+    raw_id_fields = ("payment_intent",)
+    list_display_links = ("payment_intent",)
 
 
 @admin.register(PaymentReview)
@@ -418,6 +434,8 @@ class PaymentReviewAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
+    list_per_page = 15
+    list_display_links = ("payment_intent",)
 
     def has_add_permission(self, request):
         return False

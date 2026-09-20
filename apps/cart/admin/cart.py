@@ -122,6 +122,7 @@ class CartItemAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("cart", "variant", "bundle")
     list_per_page = 15
+    list_display_links = ("cart",)
 
     def item_type(self, obj):
         if obj.bundle_id:

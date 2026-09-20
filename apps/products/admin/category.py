@@ -6,6 +6,7 @@ from apps.products.models import Category
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "title",
         "parent",
         "created_at",
@@ -26,3 +27,4 @@ class CategoryAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("parent",)
     list_per_page = 15
+    list_display_links = ("title",)
