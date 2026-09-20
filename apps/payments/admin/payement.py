@@ -369,7 +369,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
         if not obj.order or not obj.order.user:
             return "-"
 
-        return obj.order.user.phone or "-"
+        return obj.order.user.phone_number or "-"
 
 
 @admin.register(PaymentReceipt)
