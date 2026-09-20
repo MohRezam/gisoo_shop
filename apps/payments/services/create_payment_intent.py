@@ -15,6 +15,8 @@ from apps.payments.models import (
 )
 
 
+TOMAN_TO_RIAL = 10
+
 MIN_SUFFIX = 100
 MAX_SUFFIX = 999
 MAX_SUFFIX_ATTEMPTS = 20
@@ -62,7 +64,6 @@ def get_destination_card():
         )
 
     return card
-
 
 
 def generate_unique_amount(
@@ -194,8 +195,15 @@ def create_payment_intent(*, order_id: int, user):
 
     expiration = get_payment_expiration(order)
 
+    # ---------------------------------------------------------
+    # Order prices are stored in TOMAN.
+    # PaymentIntent amounts are stored in RIAL.
+    # ---------------------------------------------------------
+
+    base_amount_rial = order.total_price * TOMAN_TO_RIAL
+
     amount_data = generate_unique_amount(
-        base_amount_rial=order.total_price,
+        base_amount_rial=base_amount_rial,
         destination_card=destination_card,
     )
 
@@ -204,7 +212,7 @@ def create_payment_intent(*, order_id: int, user):
             with transaction.atomic():
                 payment_intent = PaymentIntent.objects.create(
                     order=order,
-                    base_amount_rial=order.total_price,
+                    base_amount_rial=base_amount_rial,
                     unique_suffix=amount_data["unique_suffix"],
                     adjustment_discount=amount_data[
                         "adjustment_discount"
@@ -237,7 +245,7 @@ def create_payment_intent(*, order_id: int, user):
                 return existing_intent
 
             amount_data = generate_unique_amount(
-                base_amount_rial=order.total_price,
+                base_amount_rial=base_amount_rial,
                 destination_card=destination_card,
             )
 
