@@ -32,12 +32,15 @@
 {% block branding %}
 <div id="gisoo-brand">
   <a href="{% url 'admin:index' %}" class="gisoo-brand-link">
-    <img class="gisoo-logo" src="{% static 'admin/img/gisoo-logo.svg' %}" alt="گیسو سنتر" width="44" height="44">
+    <span class="gisoo-logo-wrap">
+      <img class="gisoo-logo" src="{% static 'admin/img/gisoo-logo.svg' %}" alt="گیسو سنتر" width="48" height="48">
+    </span>
     <span class="gisoo-brand-text">
       <strong class="gisoo-name">گیسو سنتر</strong>
-      <span class="gisoo-tagline">فروشگاه تخصصی مراقبت مو · پنل مدیریت</span>
+      <span class="gisoo-tagline">فروشگاه تخصصی مراقبت مو</span>
     </span>
   </a>
+  <span class="gisoo-header-badge">پنل مدیریت</span>
 </div>
 {% endblock %}
 
@@ -46,26 +49,33 @@
 {% block breadcrumbs %}
   <div class="breadcrumbs">
     <a href="{% url 'admin:index' %}">خانه</a>
-    {% if title %} &rsaquo; {{ title }}{% endif %}
+    {% if title %} <span class="gisoo-bc-sep" aria-hidden="true">/</span> {{ title }}{% endif %}
   </div>
 {% endblock %}
 
 {% block welcome-msg %}
-  خوش آمدید،
-  <strong>{% firstof user.get_short_name user.get_username %}</strong>
+  <span class="gisoo-user-chip">
+    <span class="gisoo-user-avatar" aria-hidden="true">{% firstof user.get_short_name user.get_username|slice:":1" %}</span>
+    <span class="gisoo-user-meta">
+      <span class="gisoo-user-hello">خوش آمدید</span>
+      <strong class="gisoo-user-name">{% firstof user.get_short_name user.get_username %}</strong>
+    </span>
+  </span>
 {% endblock %}
 
 {% block userlinks %}
-  {% if site_url %}
-    <a href="{{ site_url }}" target="_blank" rel="noopener">مشاهده سایت</a> /
-  {% endif %}
-  {% if user.has_usable_password %}
-    <a href="{% url 'admin:password_change' %}">تغییر رمز عبور</a> /
-  {% endif %}
-  <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
-    {% csrf_token %}
-    <button type="submit">خروج</button>
-  </form>
+  <nav class="gisoo-user-actions" aria-label="ابزارهای کاربر">
+    {% if site_url %}
+      <a class="gisoo-header-link" href="{{ site_url }}" target="_blank" rel="noopener">مشاهده سایت</a>
+    {% endif %}
+    {% if user.has_usable_password %}
+      <a class="gisoo-header-link" href="{% url 'admin:password_change' %}">تغییر رمز</a>
+    {% endif %}
+    <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="gisoo-logout-btn">خروج</button>
+    </form>
+  </nav>
 {% endblock %}
 
 {% block footer %}

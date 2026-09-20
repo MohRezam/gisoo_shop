@@ -92,17 +92,35 @@ body {
   }
 }
 
-/* ========== Top header (white text only here) ========== */
+/* ========== Top header ========== */
 #header {
+  position: relative;
+  overflow: hidden;
+  display: flex !important;
+  justify-content: space-between;
+  flex-wrap: wrap;
   background:
-    radial-gradient(1200px 180px at 100% 0%, rgba(255, 255, 255, 0.18), transparent 55%),
-    linear-gradient(115deg, #0c2494 0%, #173ded 55%, #3b6bff 100%) !important;
+    radial-gradient(520px 220px at 8% 120%, rgba(139, 30, 63, 0.28), transparent 60%),
+    radial-gradient(640px 240px at 92% -20%, rgba(255, 255, 255, 0.22), transparent 55%),
+    linear-gradient(118deg, #122447 0%, #1a2e5a 38%, #173ded 78%, #3b6bff 100%) !important;
   color: #fff !important;
   border: none !important;
-  box-shadow: 0 10px 32px rgba(23, 61, 237, 0.28);
-  padding: 16px 28px !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 14px 36px rgba(18, 36, 71, 0.28);
+  padding: 14px 28px !important;
   align-items: center;
-  min-height: 72px;
+  gap: 18px;
+  min-height: 78px;
+}
+
+#header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  pointer-events: none;
 }
 
 #header #branding,
@@ -114,32 +132,64 @@ body {
   color: #ffffff !important;
 }
 
-#user-tools {
-  font-size: 0.86rem !important;
-  padding: 8px 12px !important;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+#header #branding {
+  position: relative;
+  z-index: 1;
+  float: none !important;
+  width: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
-#gisoo-brand { display: flex; align-items: center; }
+#user-tools {
+  position: relative;
+  z-index: 1;
+  float: none !important;
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  padding: 6px !important;
+  margin: 0 !important;
+  font-size: 0.86rem !important;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  text-align: left !important;
+}
+
+#gisoo-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
 .gisoo-brand-link {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   text-decoration: none !important;
   color: #fff !important;
 }
 
+.gisoo-logo-wrap {
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+}
+
 .gisoo-logo,
 .gisoo-side-logo {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
   display: block;
   object-fit: cover;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
   background: #1a2e5a;
 }
 
@@ -157,45 +207,163 @@ body {
 .gisoo-brand-text {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   line-height: 1.25;
 }
 
 .gisoo-name {
   font-family: "Kook", "IranSans", Tahoma, sans-serif;
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: #fff !important;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
 }
 
 .gisoo-tagline {
   font-size: 0.78rem;
-  opacity: 0.92;
+  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.gisoo-header-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  white-space: nowrap;
+}
+
+.gisoo-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.gisoo-user-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #f0c9d4, #8b1e3f);
+  color: #fff !important;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+}
+
+.gisoo-user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.2;
+  text-align: right;
+}
+
+.gisoo-user-hello {
+  font-size: 0.7rem;
+  opacity: 0.8;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.gisoo-user-name {
+  font-size: 0.86rem;
+  font-weight: 700;
   color: #fff !important;
 }
 
+.gisoo-user-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.gisoo-header-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  font-size: 0.8rem !important;
+  font-weight: 600;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.gisoo-header-link:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+}
+
+.gisoo-logout-btn,
+#logout-form button.gisoo-logout-btn,
 #logout-form button {
-  background: transparent !important;
+  background: #fff !important;
+  color: #122447 !important;
   border: none !important;
+  border-radius: 999px !important;
   cursor: pointer;
   font-family: inherit;
-  padding: 0;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  padding: 7px 14px !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.gisoo-logout-btn:hover,
+#logout-form button:hover {
+  filter: brightness(0.97);
+  transform: translateY(-1px);
+}
+
+#logout-form {
+  display: inline !important;
+  margin: 0 !important;
+}
+
+/* ========== Breadcrumbs ========== */
+div.breadcrumbs {
+  position: relative;
+  background: linear-gradient(90deg, #0c1f3f 0%, #122447 55%, #173087 100%) !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  padding: 11px 28px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.84rem;
+}
+
+div.breadcrumbs a {
+  color: #fff !important;
+  text-decoration: none !important;
+  font-weight: 600;
+}
+
+div.breadcrumbs a:hover {
+  text-decoration: underline !important;
+}
+
+.gisoo-bc-sep {
+  margin: 0 6px;
+  opacity: 0.45;
 }
 
 /* Hide theme toggle — panel is always light */
 .theme-toggle {
   display: none !important;
 }
-
-/* ========== Breadcrumbs ========== */
-div.breadcrumbs {
-  background: #0f2fb8 !important;
-  color: #eef3ff !important;
-  padding: 10px 24px !important;
-}
-
-div.breadcrumbs a { color: #fff !important; }
 
 /* ========== Content contrast ========== */
 #content,
@@ -470,7 +638,7 @@ input:focus, textarea:focus, select:focus {
   overflow: hidden !important;
 }
 
-/* Hide Django's collapse toggle — sidebar is always fixed */
+/* Sidebar toggle: hidden on desktop, shown on mobile overlay */
 .toggle-nav-sidebar {
   display: none !important;
 }
@@ -1391,22 +1559,88 @@ body .addlink::before {
 }
 
 @media (max-width: 900px) {
-  #nav-sidebar {
-    display: none !important;
+  .toggle-nav-sidebar {
+    display: flex !important;
+    position: fixed !important;
+    z-index: 50;
+    top: 76px;
+    left: 12px;
+    width: 42px !important;
+    height: 42px !important;
+    flex: none !important;
+    border-radius: 12px !important;
+    border: 1px solid #dbe4ff !important;
+    background: #fff !important;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+    color: #0f2fb8 !important;
   }
+
+  #nav-sidebar {
+    display: block !important;
+    position: fixed !important;
+    top: 64px !important;
+    right: 0 !important;
+    left: auto !important;
+    height: calc(100vh - 64px) !important;
+    width: min(300px, 86vw) !important;
+    max-width: min(300px, 86vw) !important;
+    flex: none !important;
+    z-index: 45 !important;
+    transform: translateX(110%) !important;
+    transition: transform 0.22s ease !important;
+    box-shadow: -12px 0 32px rgba(15, 23, 42, 0.18);
+    visibility: visible !important;
+  }
+
+  [dir="rtl"] #nav-sidebar,
+  .main > #nav-sidebar,
+  .main.shifted > #nav-sidebar {
+    transform: translateX(110%) !important;
+    margin: 0 !important;
+  }
+
+  .main.shifted > #nav-sidebar,
+  [dir="rtl"] .main.shifted > #nav-sidebar {
+    transform: translateX(0) !important;
+  }
+
   .main > #nav-sidebar + .content,
   .main.shifted > #nav-sidebar + .content {
     max-width: 100% !important;
+    width: 100% !important;
     padding: 16px !important;
   }
   .gisoo-stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .gisoo-quick-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .gisoo-app-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 767px) {
-  #header { padding: 12px 14px !important; }
-  .gisoo-name { font-size: 1.1rem; }
+  #header {
+    padding: 12px 14px !important;
+    min-height: auto;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .gisoo-name { font-size: 1.15rem; }
+  .gisoo-header-badge { display: none; }
+  .gisoo-tagline { display: none; }
+  #user-tools {
+    width: 100%;
+    border-radius: 16px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .gisoo-user-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
   .gisoo-stats-grid {
     grid-template-columns: 1fr 1fr;
   }

@@ -48,3 +48,31 @@ class SharedConfig(AppConfig):
             Token._meta.verbose_name_plural = "توکن‌ها"
         except LookupError:
             pass
+
+        celery_renames = {
+            "ClockedSchedule": ("زمان‌بندی ساعتی", "زمان‌بندی‌های ساعتی"),
+            "CrontabSchedule": ("زمان‌بندی کرontab", "زمان‌بندی‌های کرontab"),
+            "IntervalSchedule": ("بازه زمانی", "بازه‌های زمانی"),
+            "PeriodicTask": ("وظیفه دوره‌ای", "وظایف دوره‌ای"),
+            "PeriodicTasks": ("ردیابی وظیفه دوره‌ای", "ردیابی وظایف دوره‌ای"),
+            "SolarSchedule": ("رویداد خورشیدی", "رویدادهای خورشیدی"),
+        }
+        for model_name, (singular, plural) in celery_renames.items():
+            try:
+                model = apps.get_model("django_celery_beat", model_name)
+                model._meta.verbose_name = singular
+                model._meta.verbose_name_plural = plural
+            except LookupError:
+                pass
+
+        blacklist_renames = {
+            "BlacklistedToken": ("توکن مسدودشده", "توکن‌های مسدودشده"),
+            "OutstandingToken": ("توکن فعال", "توکن‌های فعال"),
+        }
+        for model_name, (singular, plural) in blacklist_renames.items():
+            try:
+                model = apps.get_model("token_blacklist", model_name)
+                model._meta.verbose_name = singular
+                model._meta.verbose_name_plural = plural
+            except LookupError:
+                pass

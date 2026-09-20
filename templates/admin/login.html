@@ -12,62 +12,117 @@
 
 {% block bodyclass %}{{ block.super }} login gisoo-login{% endblock %}
 
+{% block branding %}{% endblock %}
 {% block usertools %}{% endblock %}
 {% block nav-global %}{% endblock %}
 {% block nav-sidebar %}{% endblock %}
 {% block content_title %}{% endblock %}
 {% block nav-breadcrumbs %}{% endblock %}
+{% block footer %}{% endblock %}
 
 {% block content %}
-{% if form.errors and not form.non_field_errors %}
-<p class="errornote">لطفاً خطاهای زیر را برطرف کنید.</p>
-{% endif %}
-
-{% if form.non_field_errors %}
-{% for error in form.non_field_errors %}
-<p class="errornote">{{ error }}</p>
-{% endfor %}
-{% endif %}
-
-<div id="content-main" class="gisoo-login-wrap">
-  <div class="gisoo-login-card">
-    <div class="gisoo-login-intro">
-      <span class="gisoo-login-logo-wrap">
-        <img class="gisoo-logo" src="{% static 'admin/img/gisoo-logo.svg' %}" alt="گیسو سنتر" width="56" height="56">
-      </span>
-      <h1>گیسو سنتر</h1>
-      <p>ورود به پنل مدیریت فروشگاه</p>
+<div class="gisoo-login-shell">
+  <aside class="gisoo-login-brand" aria-hidden="true">
+    <div class="gisoo-login-brand-inner">
+      <img class="gisoo-login-brand-logo" src="{% static 'admin/img/gisoo-logo.svg' %}" alt="" width="72" height="72">
+      <p class="gisoo-login-kicker">فروشگاه تخصصی مراقبت مو</p>
+      <h2>گیسو سنتر</h2>
+      <p class="gisoo-login-brand-copy">
+        مدیریت سفارش‌ها، پرداخت‌ها و محتوای فروشگاه در یک پنل یکپارچه.
+      </p>
+      <ul class="gisoo-login-points">
+        <li>پیشخوان آماری لحظه‌ای</li>
+        <li>بررسی رسید و سفارش</li>
+        <li>مدیریت محصولات و مجله</li>
+      </ul>
     </div>
+    <div class="gisoo-login-orb gisoo-login-orb-a"></div>
+    <div class="gisoo-login-orb gisoo-login-orb-b"></div>
+  </aside>
 
-    {% if user.is_authenticated %}
-    <p class="errornote">
-      شما با حساب «{{ username }}» وارد شده‌اید، ولی به این صفحه دسترسی ندارید.
-      می‌توانید با حساب دیگری وارد شوید.
-    </p>
-    {% endif %}
+  <div class="gisoo-login-panel">
+    <div class="gisoo-login-card">
+      <div class="gisoo-login-intro">
+        <img class="gisoo-logo gisoo-login-mobile-logo" src="{% static 'admin/img/gisoo-logo.svg' %}" alt="گیسو سنتر" width="52" height="52">
+        <p class="gisoo-login-eyebrow">پنل مدیریت</p>
+        <h1>خوش آمدید</h1>
+        <p>برای ادامه، با شماره موبایل و رمز عبور وارد شوید.</p>
+      </div>
 
-    <form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %}
-      <div class="form-row">
-        {{ form.username.errors }}
-        <label for="id_username">شماره موبایل</label>
-        {{ form.username }}
-      </div>
-      <div class="form-row">
-        {{ form.password.errors }}
-        <label for="id_password">رمز عبور</label>
-        {{ form.password }}
-        <input type="hidden" name="next" value="{{ next }}">
-      </div>
-      {% url 'admin_password_reset' as password_reset_url %}
-      {% if password_reset_url %}
-      <div class="password-reset-link">
-        <a href="{{ password_reset_url }}">رمز عبور را فراموش کرده‌اید؟</a>
-      </div>
+      {% if form.errors and not form.non_field_errors %}
+      <p class="errornote">لطفاً خطاهای زیر را برطرف کنید.</p>
       {% endif %}
-      <div class="submit-row">
-        <input type="submit" value="ورود">
-      </div>
-    </form>
+
+      {% if form.non_field_errors %}
+      {% for error in form.non_field_errors %}
+      <p class="errornote">{{ error }}</p>
+      {% endfor %}
+      {% endif %}
+
+      {% if user.is_authenticated %}
+      <p class="errornote">
+        شما با حساب «{{ username }}» وارد شده‌اید، ولی به این صفحه دسترسی ندارید.
+        می‌توانید با حساب دیگری وارد شوید.
+      </p>
+      {% endif %}
+
+      <form action="{{ app_path }}" method="post" id="login-form" autocomplete="on">{% csrf_token %}
+        <div class="form-row">
+          {{ form.username.errors }}
+          <label for="id_username">شماره موبایل</label>
+          {{ form.username }}
+        </div>
+        <div class="form-row">
+          {{ form.password.errors }}
+          <label for="id_password">رمز عبور</label>
+          <div class="gisoo-password-field">
+            {{ form.password }}
+            <button type="button" class="gisoo-password-toggle" id="gisoo-password-toggle" aria-label="نمایش رمز عبور" aria-pressed="false" title="نمایش رمز عبور">
+              <svg class="gisoo-eye-open" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M2.062 12.348a1 1 0 0 1 0-.696C3.266 8.566 7.019 5.5 12 5.5s8.734 3.066 9.938 6.152a1 1 0 0 1 0 .696C20.734 15.434 16.981 18.5 12 18.5s-8.734-3.066-9.938-6.152Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/>
+              </svg>
+              <svg class="gisoo-eye-closed" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M10.733 5.076A10.6 10.6 0 0 1 12 5.5c4.981 0 8.734 3.066 9.938 6.152a1 1 0 0 1 0 .696 12.3 12.3 0 0 1-1.92 2.907" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 2l20 20" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                <path d="M6.06 6.06C3.9 7.73 2.45 10.5 2.062 11.652a1 1 0 0 0 0 .696C3.266 15.434 7.019 18.5 12 18.5c1.2 0 2.34-.18 3.39-.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+          <input type="hidden" name="next" value="{{ next }}">
+        </div>
+        {% url 'admin_password_reset' as password_reset_url %}
+        {% if password_reset_url %}
+        <div class="password-reset-link">
+          <a href="{{ password_reset_url }}">رمز عبور را فراموش کرده‌اید؟</a>
+        </div>
+        {% endif %}
+        <div class="submit-row">
+          <input type="submit" value="ورود به پنل">
+        </div>
+      </form>
+
+      <p class="gisoo-login-foot">گیسو سنتر · دسترسی فقط برای مدیران مجاز</p>
+    </div>
   </div>
 </div>
+<script>
+  (function () {
+    var u = document.getElementById('id_username');
+    var p = document.getElementById('id_password');
+    var btn = document.getElementById('gisoo-password-toggle');
+    if (u) { u.setAttribute('placeholder', '0912xxxxxxx'); u.setAttribute('inputmode', 'tel'); }
+    if (p) { p.setAttribute('placeholder', 'رمز عبور'); }
+    if (!p || !btn) return;
+
+    btn.addEventListener('click', function () {
+      var show = p.type === 'password';
+      p.type = show ? 'text' : 'password';
+      btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+      btn.setAttribute('aria-label', show ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور');
+      btn.setAttribute('title', show ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور');
+    });
+  })();
+</script>
 {% endblock %}
