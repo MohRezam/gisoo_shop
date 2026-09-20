@@ -7,7 +7,10 @@ from apps.products.apis import (
     ProductDetailAPIView,
     HairProblemAPIView,
     SpecialOfferProductListAPIView,
+    ProductRelatedProductsAPIView,
+    ProductViewerAPIView,
 )
+from apps.products.apis.discount_campaign import ActiveDiscountCampaignView
 from apps.products.apis.wishlist import (
     WishlistListAPIView,
     WishlistToggleAPIView,

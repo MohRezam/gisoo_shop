@@ -8,8 +8,8 @@ from apps.orders.services.change_order_status import (
 )
 from apps.orders.services.inventory import release_stock
 from apps.payments.models import (
+    PaymentIntent,
     PaymentIntentStatus,
-    PaymentStatus,
 )
 
 
@@ -110,9 +110,12 @@ def get_order_reserved_variants(*, order):
 @transaction.atomic
 def expire_order(order_id: int):
     order = (
-        Order.objects.select_for_update()
-        .select_related("payment")
-        .prefetch_related("items__variant", "payment_intents")
+        Order.objects
+        .select_for_update()
+        .prefetch_related(
+            "items__variant",
+            "bundles",
+        )
         .filter(id=order_id)
         .first()
     )
@@ -120,46 +123,71 @@ def expire_order(order_id: int):
     if order is None:
         return
 
-    if order.status not in (
+    if order.status not in {
         OrderStatus.CREATED,
-        OrderStatus.WAITING_PAYMENT,
         OrderStatus.PAYMENT_REJECTED,
-    ):
+    }:
         return
 
-    if order.expires_at and order.expires_at > timezone.now():
+    now = timezone.now()
+
+    if order.expires_at > now:
         return
 
-    # Don't expire if a receipt is already under review or paid
-    blocking = order.payment_intents.filter(
-        status__in=[
-            PaymentIntentStatus.RECEIPT_SUBMITTED,
-            PaymentIntentStatus.UNDER_REVIEW,
-            PaymentIntentStatus.MANUAL_REVIEW,
-            PaymentIntentStatus.PAID,
-        ]
-    ).exists()
-    if blocking:
-        return
+    # ---------------------------------------------------------
+    # CREATED
+    # ---------------------------------------------------------
+    #
+    # If a receipt was submitted before the deadline,
+    # the customer has completed their part.
+    #
+    # Therefore the order must remain active while
+    # admin reviews the payment.
+    #
 
-    payment = getattr(order, "payment", None)
-    if payment and payment.status not in (
-        PaymentStatus.PENDING,
-        PaymentStatus.FAILED,
-        PaymentStatus.CANCELED,
-    ):
-        return
+    if order.status == OrderStatus.CREATED:
 
-    for item in order.items.all():
-        variant = item.variant
-        variant.stock += item.quantity
-        variant.save(update_fields=["stock"])
+        if has_valid_payment_receipt(
+            order=order,
+            expires_at=order.expires_at,
+        ):
+            return
 
-    for intent in order.payment_intents.filter(
-        status=PaymentIntentStatus.PENDING_PAYMENT
-    ):
-        intent.status = PaymentIntentStatus.EXPIRED
-        intent.save(update_fields=["status", "updated_at"])
+    # ---------------------------------------------------------
+    # PAYMENT_REJECTED
+    # ---------------------------------------------------------
+    #
+    # If the customer did not submit a new receipt during
+    # the retry window, the order expires.
+    #
+
+    payment_intent = (
+        PaymentIntent.objects
+        .select_for_update()
+        .filter(
+            order=order,
+            status__in=(
+                ACTIVE_PAYMENT_STATUSES
+                + [
+                    PaymentIntentStatus.REJECTED,
+                ]
+            ),
+        )
+        .order_by("-created_at")
+        .first()
+    )
+
+    if payment_intent is not None:
+        payment_intent.status = (
+            PaymentIntentStatus.EXPIRED
+        )
+
+        payment_intent.save(
+            update_fields=[
+                "status",
+                "updated_at",
+            ]
+        )
 
     # ---------------------------------------------------------
     # RELEASE STOCK
@@ -188,3 +216,28 @@ def expire_order(order_id: int):
         new_status=OrderStatus.EXPIRED,
         reason="Order expired automatically.",
     )
+
+
+@shared_task
+def expire_overdue_orders():
+    now = timezone.now()
+
+    overdue_order_ids = list(
+        Order.objects
+        .filter(
+            status__in=[
+                OrderStatus.CREATED,
+                OrderStatus.PAYMENT_REJECTED,
+            ],
+            expires_at__lte=now,
+        )
+        .values_list(
+            "id",
+            flat=True,
+        )
+    )
+
+    for order_id in overdue_order_ids:
+        expire_order.delay(order_id)
+
+    return len(overdue_order_ids)

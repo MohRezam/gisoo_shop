@@ -1,4 +1,12 @@
-from django.db.models import Min, Prefetch, F
+from django.db.models import (
+    Avg,
+    Count,
+    Min,
+    OuterRef,
+    Prefetch,
+    Q,
+    Subquery,
+)
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -18,118 +26,209 @@ from apps.products.filters import ProductFilter
 from apps.products.models import (
     Product,
     ProductImage,
-    ProductVariant,
-    Bundle,
-    ProductAttribute,
+    ProductVariant, Bundle, ProductAttribute, ProductRelatedProduct,
 )
 from apps.products.serializers import (
     ProductDetailSerializer,
-    ProductListSerializer,
-    SpecialOfferProductListSerializer,
+    ProductListSerializer, SpecialOfferProductListSerializer, RelatedProductSerializer,
 )
-from apps.shared.cache.list_cache import CachedListMixin, CachedRetrieveMixin
-from apps.shared.cache import namespaces as ns
+from apps.reviews.models import ProductReview, ReviewStatus
 from utils.paginators import StandardResultPagination
+from django.db.models import F
+from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+from apps.products.services.product_viewers import (
+    register_viewer,
+    VIEWER_COOKIE_NAME,
+)
 
 
 @extend_schema(
     tags=["Products"],
     summary="List Products",
     parameters=[
-        OpenApiParameter(name="category", type=int, description="Category ID"),
-        OpenApiParameter(name="brand", type=int, description="Brand ID"),
-        OpenApiParameter(name="min_price", type=int, description="Minimum price"),
-        OpenApiParameter(name="max_price", type=int, description="Maximum price"),
-        OpenApiParameter(name="search", type=str, description="Search products"),
+        OpenApiParameter(
+            name="category",
+            type=int,
+            description="Category ID",
+        ),
+        OpenApiParameter(
+            name="brand",
+            type=int,
+            description="Brand ID",
+        ),
+        OpenApiParameter(
+            name="min_price",
+            type=int,
+            description="Minimum price",
+        ),
+        OpenApiParameter(
+            name="max_price",
+            type=int,
+            description="Maximum price",
+        ),
+        OpenApiParameter(
+            name="search",
+            type=str,
+            description="Search products",
+        ),
         OpenApiParameter(
             name="ordering",
             type=str,
             description="price, -price, created_at, -created_at",
         ),
     ],
-    responses={200: OpenApiResponse(response=ProductListSerializer)},
+    responses={
+        200: OpenApiResponse(
+            response=ProductListSerializer,
+        ),
+    },
 )
-class ProductListAPIView(CachedListMixin, ListAPIView):
+class ProductListAPIView(ListAPIView):
     serializer_class = ProductListSerializer
     pagination_class = StandardResultPagination
-    cache_namespace = ns.PRODUCTS_LIST
-    cache_ttl = 60 * 5
 
     queryset = (
-        Product.objects.filter(is_available=True)
-        .select_related("brand", "category")
+        Product.objects
+        .filter(is_available=True)
+        .select_related(
+            "brand",
+            "category",
+        )
         .prefetch_related(
             Prefetch(
                 "images",
-                queryset=ProductImage.objects.filter(is_primary=True),
+                queryset=ProductImage.objects.filter(
+                    is_primary=True,
+                ),
                 to_attr="primary_images",
             ),
             Prefetch(
                 "variants",
-                queryset=ProductVariant.objects.filter(is_active=True).order_by("price"),
+                queryset=(
+                    ProductVariant.objects
+                    .filter(is_active=True)
+                    .order_by("price")
+                ),
                 to_attr="active_variants",
             ),
         )
-        .annotate(price=Min("variants__price"))
+        .annotate(
+            price=Min("variants__price"),
+        )
         .distinct()
     )
 
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+        OrderingFilter,
+    ]
+
     filterset_class = ProductFilter
-    search_fields = ["title", "category__title", "brand__title", "hair_problems__title"]
-    ordering_fields = ["price", "created_at"]
-    ordering = ["-created_at"]
+
+    search_fields = [
+        "title",
+        "category__title",
+        "brand__title",
+        "hair_problems__title",
+    ]
+
+    ordering_fields = [
+        "price",
+        "created_at",
+    ]
+
+    ordering = [
+        "-created_at",
+    ]
 
 
 @extend_schema(
     tags=["Products"],
     summary="Retrieve Product",
-    responses={200: ProductDetailSerializer},
+    responses={
+        200: ProductDetailSerializer,
+    },
 )
-class ProductDetailAPIView(CachedRetrieveMixin, RetrieveAPIView):
+class ProductDetailAPIView(RetrieveAPIView):
     serializer_class = ProductDetailSerializer
-    cache_namespace = ns.PRODUCTS_DETAIL
-    cache_ttl = 60 * 10
-    cache_lookup_kwarg = "slug"
-    lookup_field = "slug"
 
     queryset = (
-        Product.objects.filter(is_available=True)
-        .select_related("brand", "category")
+        Product.objects
+        .filter(
+            is_available=True,
+        )
+        .select_related(
+            "brand",
+            "category",
+        )
         .prefetch_related(
             Prefetch(
                 "images",
-                queryset=ProductImage.objects.order_by("-is_primary", "created_at"),
+                queryset=ProductImage.objects.order_by(
+                    "-is_primary",
+                    "created_at",
+                ),
             ),
+
             Prefetch(
                 "variants",
                 queryset=(
-                    ProductVariant.objects.filter(is_active=True)
-                    .prefetch_related("attributes__value__attribute")
-                    .order_by("created_at")
-                ),
-            ),
-            Prefetch(
-                "product_attributes",
-                queryset=(
-                    ProductAttribute.objects.select_related("attribute").order_by(
-                        "display_order", "created_at"
+                    ProductVariant.objects
+                    .filter(
+                        is_active=True,
+                    )
+                    .prefetch_related(
+                        "attributes__value__attribute",
+
+                        Prefetch(
+                            "bundles",
+                            queryset=(
+                                Bundle.objects
+                                .filter(
+                                    is_active=True,
+                                )
+                                .order_by(
+                                    "display_order",
+                                    "created_at",
+                                )
+                            ),
+                        ),
+                    )
+                    .order_by(
+                        "created_at",
                     )
                 ),
             ),
+
             Prefetch(
-                "bundles",
+                "product_attributes",
                 queryset=(
-                    Bundle.objects.filter(is_active=True)
-                    .prefetch_related("items__variant__attributes__value__attribute")
-                    .order_by("display_order", "created_at")
+                    ProductAttribute.objects
+                    .select_related(
+                        "attribute",
+                    )
+                    .order_by(
+                        "display_order",
+                        "created_at",
+                    )
                 ),
             ),
+
             Prefetch(
                 "reviews",
                 queryset=(
-                    Product.objects.filter(is_available=True)
-                    .prefetch_related("images", "variants")
+                    ProductReview.objects
+                    .filter(
+                        status=ReviewStatus.APPROVED,
+                    )
+                    .select_related(
+                        "user",
+                    )
                     .order_by(
                         "-created_at",
                     )[:5]
@@ -206,6 +305,8 @@ class ProductDetailAPIView(CachedRetrieveMixin, RetrieveAPIView):
             ),
         )
     )
+
+    lookup_field = "slug"
 
 
 @extend_schema(
@@ -293,39 +394,49 @@ class ProductRelatedProductsAPIView(ListAPIView):
 @extend_schema(
     tags=["Products"],
     summary="Special Offer Product List",
-    responses={200: ProductDetailSerializer},
+    responses={
+        200: ProductDetailSerializer,
+    },
 )
-class SpecialOfferProductListAPIView(CachedListMixin, ListAPIView):
+class SpecialOfferProductListAPIView(ListAPIView):
     serializer_class = SpecialOfferProductListSerializer
     pagination_class = StandardResultPagination
-    cache_namespace = ns.PRODUCTS_SPECIAL
-    cache_ttl = 60 * 5
 
     def get_queryset(self):
         return (
-            Product.objects.filter(
+            Product.objects
+            .filter(
                 is_available=True,
                 variants__is_active=True,
                 variants__stock__gt=0,
                 variants__discounted_price__isnull=False,
-                variants__discounted_price__lt=F("variants__price"),
+                variants__discounted_price__lt=F(
+                    "variants__price",
+                ),
             )
-            .select_related("brand", "category")
+            .select_related(
+                "brand",
+                "category",
+            )
             .prefetch_related(
                 Prefetch(
                     "images",
-                    queryset=ProductImage.objects.filter(is_primary=True),
+                    queryset=ProductImage.objects.filter(
+                        is_primary=True,
+                    ),
                     to_attr="primary_images",
                 ),
                 Prefetch(
                     "variants",
                     queryset=(
-                        ProductVariant.objects.filter(
+                        ProductVariant.objects
+                        .filter(
                             is_active=True,
                             stock__gt=0,
                             discounted_price__isnull=False,
                             discounted_price__lt=F("price"),
-                        ).order_by("discounted_price")
+                        )
+                        .order_by("discounted_price")
                     ),
                     to_attr="active_variants",
                 ),

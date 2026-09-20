@@ -1,8 +1,12 @@
 from rest_framework import serializers
 
-from apps.orders.models import Order
-from apps.payments.models import Payment
-from apps.payments.serializers.payment_intent import PaymentIntentSerializer
+from apps.orders.models import (
+    Order,
+    OrderBundle,
+    OrderItem,
+    OrderStatus,
+)
+from apps.payments.models import PaymentIntentStatus
 
 
 class CreateOrderSerializer(serializers.Serializer):
@@ -14,64 +18,9 @@ class CreateOrderSerializer(serializers.Serializer):
     )
 
 
-class OrderPaymentSerializer(
-    serializers.ModelSerializer,
-):
-    class Meta:
-        model = Payment
-
-        fields = [
-            "id",
-            "amount",
-            "status",
-            "gateway_payment_id",
-            "gateway_reference_id",
-            "paid_at",
-        ]
-
-
-class OrderListSerializer(serializers.ModelSerializer):
-    payment_intent = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Order
-        fields = [
-            "id",
-            "public_number",
-            "status",
-            "products_price",
-            "shipping_price",
-            "discount_amount",
-            "total_price",
-            "expires_at",
-            "tracking_code",
-            "payment_intent",
-            "created_at",
-        ]
-
-    def get_payment_intent(self, obj):
-        intent = None
-        intents = getattr(obj, "_prefetched_objects_cache", {}).get("payment_intents")
-        if intents is not None:
-            intent = intents[0] if intents else None
-        else:
-            intent = obj.payment_intents.select_related("destination_card").order_by(
-                "-created_at"
-            ).first()
-        if intent is None:
-            return None
-        return PaymentIntentSerializer(intent, context=self.context).data
-
-
-class OrderDetailSerializer(
-    serializers.ModelSerializer,
-):
-    payment = OrderPaymentSerializer(
-        read_only=True,
-    )
-    payment_intent = serializers.SerializerMethodField()
-    shipping_method_title = serializers.CharField(
-        source="shipping_method.title",
+class OrderItemListSerializer(serializers.ModelSerializer):
+    product_id = serializers.IntegerField(
+        source="variant.product.id",
         read_only=True,
     )
 
@@ -187,35 +136,78 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             "id",
-            "public_number",
             "status",
-            "products_price",
-            "shipping_price",
-            "discount_amount",
-            "total_price",
-            "expires_at",
-            "phone_number",
-            "province",
-            "city",
-            "postal_code",
-            "address",
-            "description",
-            "tracking_code",
-            "shipping_method_title",
-            "payment",
-            "payment_intent",
             "created_at",
+            "total_price",
+            "discount_amount",
+            "items_count",
+            "items",
+            "bundles",
+            "tracking_code",
+            "payment_intent",
         ]
+        read_only_fields = fields
+
+    def get_items_count(self, obj):
+        return sum(
+            item.quantity
+            for item in obj.items.all()
+        )
+
+    def get_items(self, obj):
+        return OrderItemListSerializer(
+            obj.items.all(),
+            many=True,
+            context=self.context,
+        ).data
+
+    def get_bundles(self, obj):
+        return OrderBundleListSerializer(
+            obj.bundles.all(),
+            many=True,
+            context=self.context,
+        ).data
+
+    def get_tracking_code(self, obj):
+        if obj.status != OrderStatus.SHIPPED:
+            return None
+
+        return obj.tracking_code
 
     def get_payment_intent(self, obj):
-        intent = obj.payment_intents.select_related("destination_card").order_by(
-            "-created_at"
-        ).first()
-        if intent is None:
+        payment_intent = (
+            obj.payment_intents
+            .filter(
+                status__in=[
+                    PaymentIntentStatus.PENDING_PAYMENT,
+                    PaymentIntentStatus.RECEIPT_SUBMITTED,
+                    PaymentIntentStatus.UNDER_REVIEW,
+                    PaymentIntentStatus.MANUAL_REVIEW,
+                    PaymentIntentStatus.REJECTED,
+                ]
+            )
+            .order_by("-created_at")
+            .first()
+        )
+
+        if payment_intent is None:
             return None
-        return PaymentIntentSerializer(intent, context=self.context).data
 
+        if payment_intent.status in {
+            PaymentIntentStatus.PENDING_PAYMENT,
+            PaymentIntentStatus.REJECTED,
+        }:
+            expires_at = payment_intent.expires_at
+        else:
+            expires_at = None
 
-class TrackOrderQuerySerializer(serializers.Serializer):
-    code = serializers.CharField()
-    phone = serializers.CharField(max_length=11)
+        return {
+            "id": payment_intent.id,
+            "token": str(payment_intent.token),
+            "status": payment_intent.status,
+            "expires_at": expires_at,
+            "can_upload_receipt": payment_intent.status in {
+                PaymentIntentStatus.PENDING_PAYMENT,
+                PaymentIntentStatus.REJECTED,
+            },
+        }
