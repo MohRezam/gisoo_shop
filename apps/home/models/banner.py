@@ -14,11 +14,6 @@ class Banner(BaseModel):
         CUSTOM = "custom", "لینک سفارشی"
         NONE = "none", "بدون لینک"
 
-    title = models.CharField(
-        max_length=255,
-        verbose_name="عنوان",
-    )
-
     image = models.ImageField(
         upload_to=banner_image_path(),
         verbose_name="تصویر",
