@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.cart.services.merge_cart import CartService
 from apps.consultations.services import merge_guest_consultations_after_login
 from apps.notifications.constants import NotificationStatus
 from apps.notifications.services.notification import NotificationService
@@ -209,6 +210,15 @@ class VerifyOTPAPIView(APIView):
 
         WishlistService.merge_wishlist_after_login(
             request=request,
+            user=user,
+        )
+
+        cart_uuid = request.headers.get(
+            "X-Cart-UUID"
+        )
+
+        CartService.merge_cart_after_login(
+            cart_uuid=cart_uuid,
             user=user,
         )
 

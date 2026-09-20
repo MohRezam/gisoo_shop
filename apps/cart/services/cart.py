@@ -1,12 +1,12 @@
 import uuid
 
 from apps.cart.models import Cart, CartItem
-from apps.cart.services.get_cart import get_cart
 from apps.products.models import ProductVariant, Bundle
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 
 from utils.exceptions import CartItemNotFound
+from apps.cart.services.get_cart import get_cart
 
 
 def add_to_cart(
@@ -17,10 +17,6 @@ def add_to_cart(
         bundle_id: int | None = None,
         quantity: int = 1,
 ):
-    # -----------------------------------------
-    # Validate input
-    # -----------------------------------------
-
     if (variant_id is None) == (bundle_id is None):
         raise ValidationError(
             "Provide either variant_id or bundle_id."
@@ -31,11 +27,12 @@ def add_to_cart(
             "Quantity must be greater than zero."
         )
 
-    # -----------------------------------------
-    # PRODUCT
-    # -----------------------------------------
+    # ---------------------------------
+    # Validate Variant / Bundle
+    # ---------------------------------
 
     if variant_id is not None:
+
         variant = get_object_or_404(
             ProductVariant,
             id=variant_id,
@@ -51,11 +48,8 @@ def add_to_cart(
                 "Not enough stock."
             )
 
-    # -----------------------------------------
-    # BUNDLE
-    # -----------------------------------------
-
     else:
+
         bundle = get_object_or_404(
             Bundle.objects.select_related(
                 "variant",
@@ -71,10 +65,8 @@ def add_to_cart(
                 "The product variant of this bundle is not active."
             )
 
-        # Each bundle consumes `bundle.quantity`
-        # units of the variant.
         required_stock = (
-                quantity * bundle.quantity
+            quantity * bundle.quantity
         )
 
         if required_stock > variant.stock:
@@ -82,34 +74,50 @@ def add_to_cart(
                 "Not enough stock for this bundle."
             )
 
-    # -----------------------------------------
-    # GET / CREATE CART
-    # -----------------------------------------
+    # ---------------------------------
+    # Get / Create Cart
+    # ---------------------------------
 
     if user and user.is_authenticated:
+
         cart, _ = Cart.objects.get_or_create(
             user=user,
             is_active=True,
         )
 
     else:
+
         if cart_uuid:
-            cart, _ = Cart.objects.get_or_create(
-                uuid=cart_uuid,
-                defaults={
-                    "is_active": True,
-                },
+
+            # فقط Guest Cart مجاز است.
+            cart = (
+                Cart.objects
+                .filter(
+                    uuid=cart_uuid,
+                    user__isnull=True,
+                    is_active=True,
+                )
+                .first()
             )
+
+            if cart is None:
+                raise ValidationError(
+                    "Invalid cart."
+                )
+
         else:
+
             cart = Cart.objects.create(
                 uuid=uuid.uuid4(),
+                is_active=True,
             )
 
-    # -----------------------------------------
-    # GET / CREATE CART ITEM
-    # -----------------------------------------
+    # ---------------------------------
+    # Add Variant
+    # ---------------------------------
 
     if variant_id is not None:
+
         cart_item, created = (
             CartItem.objects.get_or_create(
                 cart=cart,
@@ -121,7 +129,12 @@ def add_to_cart(
             )
         )
 
+    # ---------------------------------
+    # Add Bundle
+    # ---------------------------------
+
     else:
+
         cart_item, created = (
             CartItem.objects.get_or_create(
                 cart=cart,
@@ -133,21 +146,24 @@ def add_to_cart(
             )
         )
 
-    # -----------------------------------------
-    # EXISTING ITEM
-    # -----------------------------------------
+    # ---------------------------------
+    # Existing Item
+    # ---------------------------------
 
     if not created:
+
         new_quantity = (
-                cart_item.quantity + quantity
+            cart_item.quantity + quantity
         )
 
         if variant_id is not None:
+
             required_stock = new_quantity
 
         else:
+
             required_stock = (
-                    new_quantity * bundle.quantity
+                new_quantity * bundle.quantity
             )
 
         if required_stock > variant.stock:
