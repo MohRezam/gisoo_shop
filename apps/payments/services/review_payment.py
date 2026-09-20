@@ -12,6 +12,7 @@ from apps.orders.services.change_order_status import (
     change_order_status,
 )
 from apps.notifications.tasks import send_payment_success_sms
+from apps.notifications.services.inbox import notify_user
 from apps.payments.models import (
     PaymentIntent,
     PaymentIntentStatus,
@@ -24,6 +25,11 @@ REVIEWABLE_STATUSES = {
     PaymentIntentStatus.RECEIPT_SUBMITTED,
     PaymentIntentStatus.UNDER_REVIEW,
     PaymentIntentStatus.MANUAL_REVIEW,
+}
+
+PAYABLE_ORDER_STATUSES = {
+    OrderStatus.CREATED,
+    OrderStatus.WAITING_PAYMENT,
 }
 
 
@@ -39,7 +45,7 @@ def approve_payment(
     payment_intent = (
         PaymentIntent.objects
         .select_for_update()
-        .select_related("order")
+        .select_related("order", "order__user")
         .get(pk=payment_intent_id)
     )
 
@@ -107,7 +113,7 @@ def approve_payment(
             order=order,
         )
 
-    if order.status == OrderStatus.CREATED:
+    if order.status in PAYABLE_ORDER_STATUSES:
         change_order_status(
             order=order,
             new_status=OrderStatus.PREPARING,
@@ -115,12 +121,29 @@ def approve_payment(
             reason="Payment approved.",
         )
 
+    order_label = order.public_number or order.id
+    user = order.user
+    order_id = order.id
+    user_id = order.user_id
+    phone = order.phone_number
+    amount = order.total_price
+
     transaction.on_commit(
         lambda: send_payment_success_sms.delay(
-            user_id=order.user_id,
-            recipient=order.phone_number,
-            order_id=order.id,
-            amount=order.total_price,
+            user_id=user_id,
+            recipient=phone,
+            order_id=order_id,
+            amount=amount,
+        )
+    )
+    transaction.on_commit(
+        lambda: notify_user(
+            user=user,
+            title="پرداخت تأیید شد",
+            body=f"رسید پرداخت سفارش {order_label} تأیید شد.",
+            type="order",
+            link=f"/account/orders/{order_id}",
+            order_id=order_id,
         )
     )
 
@@ -137,7 +160,7 @@ def reject_payment(
     payment_intent = (
         PaymentIntent.objects
         .select_for_update()
-        .select_related("order")
+        .select_related("order", "order__user")
         .get(pk=payment_intent_id)
     )
 
@@ -197,7 +220,9 @@ def reject_payment(
 
     order = payment_intent.order
 
-    if order.status == OrderStatus.CREATED:
+    if order.status in PAYABLE_ORDER_STATUSES | {
+        OrderStatus.PAYMENT_REJECTED,
+    }:
         order.expires_at = new_expiration
 
         order.save(
@@ -207,11 +232,32 @@ def reject_payment(
             ]
         )
 
-        change_order_status(
-            order=order,
-            new_status=OrderStatus.PAYMENT_REJECTED,
-            changed_by=admin,
-            reason="Payment receipt rejected.",
+        if order.status != OrderStatus.PAYMENT_REJECTED:
+            change_order_status(
+                order=order,
+                new_status=OrderStatus.PAYMENT_REJECTED,
+                changed_by=admin,
+                reason="Payment receipt rejected.",
+            )
+
+    order_label = order.public_number or order.id
+    user = order.user
+    order_id = order.id
+    reject_body = (
+        f"رسید پرداخت سفارش {order_label} رد شد. "
+        f"دلیل: {reason}. "
+        "می‌توانید دوباره پرداخت را ارسال کنید."
+    )
+
+    transaction.on_commit(
+        lambda: notify_user(
+            user=user,
+            title="رسید پرداخت رد شد",
+            body=reject_body,
+            type="order",
+            link=f"/account/orders/{order_id}",
+            order_id=order_id,
         )
+    )
 
     return payment_intent
