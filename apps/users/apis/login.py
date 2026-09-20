@@ -217,8 +217,6 @@ class VerifyOTPAPIView(APIView):
             "X-Cart-UUID"
         )
 
-        print("LOGIN USER:", user.id)
-        print("CART UUID FROM LOGIN:", request.headers.get("X-Cart-UUID"))
 
         CartService.merge_cart_after_login(
             cart_uuid=cart_uuid,
