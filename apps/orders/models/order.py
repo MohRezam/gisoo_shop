@@ -252,6 +252,10 @@ class OrderItem(BaseModel):
         verbose_name="تعداد",
     )
 
+    original_unit_price = models.PositiveIntegerField(
+        verbose_name="قیمت واحد اصلی",
+    )
+
     unit_price = models.PositiveIntegerField(
         verbose_name="قیمت واحد",
     )
