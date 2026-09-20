@@ -262,28 +262,16 @@ class ConsultationListAPIView(
         merge_guest_consultations_after_login(
             self.request.user,
         )
-
         recommendations_qs = (
             ConsultationRecommendation.objects
             .select_related(
                 "variant",
                 "variant__product",
                 "variant__product__brand",
-                "bundle",
-                "bundle__variant",
-                "bundle__variant__product",
-                "bundle__variant__product__brand",
             )
             .prefetch_related(
                 Prefetch(
                     "variant__product__images",
-                    queryset=ProductImage.objects.filter(
-                        is_primary=True
-                    ),
-                    to_attr="primary_images",
-                ),
-                Prefetch(
-                    "bundle__variant__product__images",
                     queryset=ProductImage.objects.filter(
                         is_primary=True
                     ),
