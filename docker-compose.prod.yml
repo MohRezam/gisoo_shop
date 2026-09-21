@@ -83,6 +83,9 @@ services:
     env_file:
       - .env
 
+    environment:
+      SKIP_ENTRYPOINT_SETUP: "1"
+
     depends_on:
       db:
         condition: service_healthy
@@ -111,6 +114,9 @@ services:
 
     env_file:
       - .env
+
+    environment:
+      SKIP_ENTRYPOINT_SETUP: "1"
 
     depends_on:
       db:

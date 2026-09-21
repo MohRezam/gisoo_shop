@@ -2,6 +2,11 @@
 
 set -e
 
+# Celery / beat should skip migrate + collectstatic (web owns DB/static setup).
+if [ "${SKIP_ENTRYPOINT_SETUP:-0}" = "1" ]; then
+  exec "$@"
+fi
+
 echo "Waiting for database..."
 
 # Wait until Postgres accepts TCP connections (portable; no pg_isready required).
@@ -29,7 +34,8 @@ PY
 python manage.py migrate --noinput
 
 # DatabaseCache table (unmanaged CacheTable model); required for FallbackCache.
-python manage.py createcachetable
+# --verbosity 0: table already exists is normal on redeploy; do not spam logs.
+python manage.py createcachetable --verbosity 0
 
 python manage.py collectstatic --noinput
 
