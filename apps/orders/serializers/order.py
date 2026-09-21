@@ -104,6 +104,7 @@ class OrderListSerializer(serializers.ModelSerializer):
             "status",
             "total_price",
             "created_at",
+            "expires_at",
             "items_count",
             "items",
             "bundles",
