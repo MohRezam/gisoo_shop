@@ -424,6 +424,38 @@ class ProductListAPIViewTests(APITestCase):
             "cheap",
         )
 
+    def test_price_filter_uses_product_effective_price_not_any_variant(self):
+        """A product with cheap + expensive variants must not match a mid range
+        just because one variant sits inside the range while the displayed
+        (cheapest) price is outside it."""
+        product = create_product(
+            category=self.category,
+            brand=self.brand,
+            title="Mixed",
+            slug="mixed",
+        )
+        create_product_variant(
+            product=product,
+            sku="mixed-low",
+            price=100,
+        )
+        create_product_variant(
+            product=product,
+            sku="mixed-high",
+            price=900,
+        )
+
+        response = self.client.get(
+            reverse("apps.products:product-list"),
+            {
+                "min_price": 300,
+                "max_price": 800,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 0)
+
     def test_filter_by_category_and_price(self):
         category2 = create_category(
             title="Category 2",
