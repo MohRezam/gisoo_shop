@@ -202,14 +202,16 @@ class SharedConfig(AppConfig):
         _orig_init = ModelAdmin.__init__
         _orig_inline_init = InlineModelAdmin.__init__
 
-        def display_for_field(value, field, empty_value_display):
+        def display_for_field(value, field, empty_value_display, avoid_link=False):
             if value and isinstance(field, models.DateTimeField):
                 fmt = settings.JALALI_DATE_DEFAULTS["Strftime"]["datetime"]
                 return datetime2jalali(value).strftime(normalize_strftime(fmt))
             if value and isinstance(field, models.DateField):
                 fmt = settings.JALALI_DATE_DEFAULTS["Strftime"]["date"]
                 return date2jalali(value).strftime(normalize_strftime(fmt))
-            return _orig_display_for_field(value, field, empty_value_display)
+            return _orig_display_for_field(
+                value, field, empty_value_display, avoid_link=avoid_link
+            )
 
         def patched_init(self, model, admin_site):
             merged = jalali_overrides.copy()
