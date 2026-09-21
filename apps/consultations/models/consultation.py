@@ -17,22 +17,22 @@ class GuestIdentity(models.Model):
     phone_number = models.CharField(
         max_length=20,
         unique=True,
-        verbose_name=_("phone number"),
+        verbose_name="شماره تلفن",
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
+        verbose_name="تاریخ ایجاد",
     )
 
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name=_("updated at"),
+        verbose_name="تاریخ به‌روزرسانی",
     )
 
     class Meta:
-        verbose_name = _("guest identity")
-        verbose_name_plural = _("guest identities")
+        verbose_name = "هویت مهمان"
+        verbose_name_plural = "هویت‌های مهمان"
 
     def __str__(self):
         return self.phone_number
@@ -49,33 +49,33 @@ class GuestDeviceAccess(models.Model):
         GuestIdentity,
         on_delete=models.CASCADE,
         related_name="device_accesses",
-        verbose_name=_("guest"),
+        verbose_name="مهمان",
     )
 
     token = models.CharField(
         max_length=64,
         unique=True,
         editable=False,
-        verbose_name=_("token"),
+        verbose_name="توکن",
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
+        verbose_name="تاریخ ایجاد",
     )
 
     last_used_at = models.DateTimeField(
         auto_now=True,
-        verbose_name=_("last used at"),
+        verbose_name="آخرین استفاده",
     )
 
     expires_at = models.DateTimeField(
-        verbose_name=_("expires at"),
+        verbose_name="تاریخ انقضا",
     )
 
     class Meta:
-        verbose_name = _("guest device access")
-        verbose_name_plural = _("guest device accesses")
+        verbose_name = "دسترسی دستگاه مهمان"
+        verbose_name_plural = "دسترسی‌های دستگاه مهمان"
 
     def save(self, *args, **kwargs):
         if not self.token:
@@ -221,36 +221,36 @@ class ConsultationRecommendation(models.Model):
         ConsultationRequest,
         on_delete=models.CASCADE,
         related_name="recommendations",
-        verbose_name=_("consultation"),
+        verbose_name="مشاوره",
     )
 
     variant = models.ForeignKey(
         "products.ProductVariant",
         on_delete=models.PROTECT,
         related_name="consultation_recommendations",
-        verbose_name=_("product variant"),
+        verbose_name="واریانت محصول",
     )
 
     explanation = models.TextField(
         blank=True,
         default="",
-        verbose_name=_("explanation"),
+        verbose_name="توضیح",
     )
 
     usage_instruction = models.TextField(
         blank=True,
         default="",
-        verbose_name=_("usage instruction"),
+        verbose_name="دستور مصرف",
     )
 
     display_order = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("display order"),
+        verbose_name="ترتیب نمایش",
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
+        verbose_name="تاریخ ایجاد",
     )
 
     class Meta:
@@ -269,6 +269,9 @@ class ConsultationRecommendation(models.Model):
             ),
         ]
 
+        verbose_name = "پیشنهاد محصول مشاوره"
+        verbose_name_plural = "پیشنهادهای محصول مشاوره"
+
     def __str__(self):
         return (
             f"{self.consultation.full_name} "
@@ -281,28 +284,28 @@ class ConsultationRecommendationPack(models.Model):
         ConsultationRequest,
         on_delete=models.CASCADE,
         related_name="recommendation_packs",
-        verbose_name=_("consultation"),
+        verbose_name="مشاوره",
     )
 
     title = models.CharField(
         max_length=255,
-        verbose_name=_("title"),
+        verbose_name="عنوان",
     )
 
     description = models.TextField(
         blank=True,
         default="",
-        verbose_name=_("description"),
+        verbose_name="توضیحات",
     )
 
     display_order = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("display order"),
+        verbose_name="ترتیب نمایش",
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
+        verbose_name="تاریخ ایجاد",
     )
 
     class Meta:
@@ -311,10 +314,8 @@ class ConsultationRecommendationPack(models.Model):
             "created_at",
         ]
 
-        verbose_name = _("consultation recommendation pack")
-        verbose_name_plural = _(
-            "consultation recommendation packs"
-        )
+        verbose_name = "پک پیشنهادی مشاوره"
+        verbose_name_plural = "پک‌های پیشنهادی مشاوره"
 
     def __str__(self):
         return (
@@ -328,24 +329,24 @@ class ConsultationRecommendationPackItem(models.Model):
         ConsultationRecommendationPack,
         on_delete=models.CASCADE,
         related_name="items",
-        verbose_name=_("pack"),
+        verbose_name="پک",
     )
 
     recommendation = models.ForeignKey(
         ConsultationRecommendation,
         on_delete=models.CASCADE,
         related_name="pack_items",
-        verbose_name=_("recommendation"),
+        verbose_name="پیشنهاد",
     )
 
     display_order = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("display order"),
+        verbose_name="ترتیب نمایش",
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
+        verbose_name="تاریخ ایجاد",
     )
 
     class Meta:
@@ -364,12 +365,8 @@ class ConsultationRecommendationPackItem(models.Model):
             ),
         ]
 
-        verbose_name = _(
-            "consultation recommendation pack item"
-        )
-        verbose_name_plural = _(
-            "consultation recommendation pack items"
-        )
+        verbose_name = "آیتم پک مشاوره"
+        verbose_name_plural = "آیتم‌های پک مشاوره"
 
     def clean(self):
         if (
@@ -425,6 +422,8 @@ class GuestOTP(models.Model):
         ordering = [
             "-created_at",
         ]
+        verbose_name = "کد تأیید مهمان"
+        verbose_name_plural = "کدهای تأیید مهمان"
 
     def __str__(self):
         return (

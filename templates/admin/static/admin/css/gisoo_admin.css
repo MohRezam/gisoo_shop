@@ -229,6 +229,7 @@ body {
 .gisoo-header-badge {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   padding: 5px 10px;
   border-radius: 999px;
   font-size: 0.72rem;
@@ -239,18 +240,25 @@ body {
   white-space: nowrap;
 }
 
+.gisoo-ico {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
 .gisoo-user-chip {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 10px 4px 4px;
+  padding: 4px 12px 4px 4px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .gisoo-user-avatar {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -258,28 +266,62 @@ body {
   color: #fff !important;
   font-size: 0.82rem;
   font-weight: 700;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.28);
   text-transform: uppercase;
+  object-fit: cover;
+  overflow: hidden;
+}
+
+.gisoo-user-avatar--photo {
+  background: #fff;
+  padding: 0;
+}
+
+.gisoo-user-avatar--empty {
+  background: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+}
+
+.gisoo-user-avatar--empty svg {
+  width: 18px;
+  height: 18px;
 }
 
 .gisoo-user-meta {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  line-height: 1.2;
+  gap: 2px;
+  line-height: 1.25;
   text-align: right;
+  min-width: 0;
 }
 
 .gisoo-user-hello {
-  font-size: 0.7rem;
-  opacity: 0.8;
+  font-size: 0.68rem;
+  opacity: 0.78;
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
 .gisoo-user-name {
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: #fff !important;
+}
+
+.gisoo-user-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #ffe8a3 !important;
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+
+.gisoo-user-phone .gisoo-ico {
+  color: #ffe8a3;
 }
 
 .gisoo-user-actions {
@@ -292,27 +334,41 @@ body {
 .gisoo-header-link {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   padding: 7px 12px !important;
   border-radius: 999px !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
   color: #fff !important;
   text-decoration: none !important;
   font-size: 0.8rem !important;
   font-weight: 600;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+.gisoo-header-link--site {
+  background: rgba(56, 189, 248, 0.18) !important;
+  border-color: rgba(125, 211, 252, 0.35) !important;
+}
+
+.gisoo-header-link--key {
+  background: rgba(251, 191, 36, 0.16) !important;
+  border-color: rgba(252, 211, 77, 0.35) !important;
 }
 
 .gisoo-header-link:hover {
-  background: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.22) !important;
   color: #fff !important;
 }
 
 .gisoo-logout-btn,
 #logout-form button.gisoo-logout-btn,
 #logout-form button {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
   background: #fff !important;
-  color: #122447 !important;
+  color: #8b1e3f !important;
   border: none !important;
   border-radius: 999px !important;
   cursor: pointer;
@@ -322,6 +378,10 @@ body {
   padding: 7px 14px !important;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
   transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.gisoo-logout-btn .gisoo-ico {
+  color: #8b1e3f;
 }
 
 .gisoo-logout-btn:hover,
@@ -1224,7 +1284,10 @@ body .addlink::before {
   flex-wrap: wrap;
 }
 
-.gisoo-btn {
+.gisoo-btn,
+a.gisoo-btn,
+a.gisoo-btn:link,
+a.gisoo-btn:visited {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1238,19 +1301,24 @@ body .addlink::before {
   box-shadow: 0 8px 18px rgba(23, 61, 237, 0.18);
 }
 
-.gisoo-btn:hover {
+.gisoo-btn:hover,
+a.gisoo-btn:hover {
   background: #0f2fb8 !important;
   color: #fff !important;
 }
 
-.gisoo-btn-ghost {
+.gisoo-btn-ghost,
+a.gisoo-btn-ghost,
+a.gisoo-btn-ghost:link,
+a.gisoo-btn-ghost:visited {
   background: #fff !important;
   color: #0f2fb8 !important;
   border: 1px solid #dbe4ff;
   box-shadow: none;
 }
 
-.gisoo-btn-ghost:hover {
+.gisoo-btn-ghost:hover,
+a.gisoo-btn-ghost:hover {
   background: #eef3ff !important;
   color: #0f2fb8 !important;
 }
