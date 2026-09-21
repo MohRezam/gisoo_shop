@@ -1,4 +1,173 @@
 {% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+  .bulk-wrap {
+    max-width: 920px;
+    margin: 0 auto 2rem;
+  }
+  .bulk-hero {
+    background: linear-gradient(135deg, #eef3ff 0%, #fcfbf8 55%, #fff 100%);
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .bulk-hero h1 {
+    margin: 0 0 0.5rem;
+    font-size: 1.35rem;
+    color: #0f2fb8;
+  }
+  .bulk-hero p {
+    margin: 0;
+    line-height: 1.85;
+    color: #4b5563;
+    font-size: 0.95rem;
+  }
+  .bulk-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin: 0 0 1.25rem;
+  }
+  .bulk-actions a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.65rem 1rem;
+    border-radius: 10px;
+    text-decoration: none !important;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #0f2fb8 !important;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .bulk-actions a:hover {
+    background: #eef3ff;
+    border-color: #c7d2fe;
+  }
+  .bulk-actions a.is-primary {
+    background: #173ded;
+    border-color: #173ded;
+    color: #fff !important;
+  }
+  .bulk-actions a.is-primary:hover {
+    background: #0f2fb8;
+  }
+  .bulk-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 1.35rem 1.5rem;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  }
+  .bulk-card h2 {
+    margin: 0 0 0.85rem;
+    font-size: 1.05rem;
+    color: #111827;
+  }
+  .bulk-hint {
+    margin: 0 0 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    color: #475569;
+    font-size: 0.88rem;
+    line-height: 1.7;
+  }
+  .bulk-hint strong {
+    color: #0f2fb8;
+  }
+  .bulk-upload {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .bulk-upload .errorlist {
+    color: #b91c1c;
+    margin: 0;
+  }
+  .bulk-file input[type="file"] {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 2px dashed #c7d2fe;
+    border-radius: 12px;
+    background: #f8faff;
+    cursor: pointer;
+  }
+  .bulk-submit {
+    align-self: flex-start;
+    background: #173ded !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 0.7rem 1.4rem !important;
+    font-weight: 700 !important;
+  }
+  .bulk-result {
+    margin-top: 1.25rem;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    overflow: hidden;
+  }
+  .bulk-result__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .bulk-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .bulk-stat--ok {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .bulk-stat--err {
+    background: #fee2e2;
+    color: #991b1b;
+  }
+  .bulk-result table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .bulk-result th,
+  .bulk-result td {
+    text-align: right;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+  }
+  .bulk-result th {
+    background: #fff;
+    color: #64748b;
+    font-weight: 700;
+  }
+  .bulk-result td.msg {
+    color: #b91c1c;
+  }
+  .bulk-empty-ok {
+    padding: 1rem 1.25rem;
+    color: #166534;
+    font-weight: 600;
+  }
+</style>
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumbs">
@@ -13,69 +182,84 @@
 {% endblock %}
 
 {% block content %}
-<div id="content-main">
-  <h1>{{ title }}</h1>
+<div id="content-main" class="bulk-wrap">
+  <div class="bulk-hero">
+    <h1>{{ title }}</h1>
+    <p>
+      فایل اکسل را با ستون‌های فارسی پر کنید و آپلود کنید.
+      برای هر ردیف معتبر، کد رهگیری ذخیره می‌شود و وضعیت سفارش به «ارسال‌شده» تغییر می‌کند.
+      سفارش باید در وضعیت «در حال آماده‌سازی» باشد و کد رهگیری فقط عدد باشد.
+    </p>
+  </div>
 
-  <p style="max-width: 720px; line-height: 1.8; color: #444;">
-    فایل اکسل را با ستون‌های فارسی پر کنید، سپس آپلود کنید.
-    برای هر ردیف معتبر، کد رهگیری ذخیره و وضعیت سفارش به «ارسال شده» تغییر می‌کند.
-    سفارش باید در وضعیت «در حال آماده‌سازی» باشد.
-  </p>
-
-  <div style="margin: 20px 0; display: flex; flex-wrap: wrap; gap: 10px;">
-    <a class="button" href="{% url 'admin:orders_order_bulk_tracking_template' %}">
-      دانلود تمپلیت خالی
-    </a>
-    <a class="button" href="{% url 'admin:orders_order_bulk_tracking_preparing' %}">
+  <div class="bulk-actions">
+    <a class="is-primary" href="{% url 'admin:orders_order_bulk_tracking_preparing' %}">
       دانلود سفارش‌های آماده‌ارسال
     </a>
-    <a class="button" href="{% url 'admin:orders_order_changelist' %}">
+    <a href="{% url 'admin:orders_order_bulk_tracking_template' %}">
+      دانلود تمپلیت خالی
+    </a>
+    <a href="{% url 'admin:orders_order_changelist' %}">
       بازگشت به لیست سفارش‌ها
     </a>
   </div>
 
-  <form method="post" enctype="multipart/form-data" style="margin-top: 24px;">
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-    <div style="margin-bottom: 16px;">
-      {{ form.file.errors }}
-      <div>{{ form.file.label_tag }}</div>
-      <div style="margin-top: 8px;">{{ form.file }}</div>
-      {% if form.file.help_text %}
-        <div style="color: #666; margin-top: 6px;">{{ form.file.help_text }}</div>
-      {% endif %}
-    </div>
-    <input type="submit" value="آپلود و اعمال" class="default">
-  </form>
+  <div class="bulk-card">
+    <h2>آپلود فایل</h2>
+    <p class="bulk-hint">
+      ستون‌های لازم:
+      <strong>شماره سفارش</strong>،
+      <strong>نام</strong>،
+      <strong>نام خانوادگی</strong>،
+      <strong>کد رهگیری</strong>
+      — کد رهگیری فقط عدد (حداقل ۶ رقم). حرف یا متن فارسی در این ستون پذیرفته نمی‌شود.
+    </p>
+
+    <form method="post" enctype="multipart/form-data" class="bulk-upload">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      <div class="bulk-file">
+        {{ form.file.errors }}
+        <label for="{{ form.file.id_for_label }}">{{ form.file.label }}</label>
+        {{ form.file }}
+        {% if form.file.help_text %}
+          <div style="color:#6b7280;margin-top:0.4rem;font-size:0.85rem;">{{ form.file.help_text }}</div>
+        {% endif %}
+      </div>
+      <input type="submit" value="آپلود و اعمال" class="default bulk-submit">
+    </form>
+  </div>
 
   {% if import_result %}
-    <div style="margin-top: 28px;">
-      <h2>نتیجه</h2>
-      <p>
-        تعداد موفق:
-        <strong>{{ import_result.success_count }}</strong>
-      </p>
+    <div class="bulk-result">
+      <div class="bulk-result__head">
+        <h2 style="margin:0;font-size:1rem;">نتیجه پردازش</h2>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <span class="bulk-stat bulk-stat--ok">موفق: {{ import_result.success_count }}</span>
+          <span class="bulk-stat bulk-stat--err">خطا: {{ import_result.errors|length }}</span>
+        </div>
+      </div>
       {% if import_result.errors %}
-        <table style="width: 100%; max-width: 900px; border-collapse: collapse;">
+        <table>
           <thead>
             <tr>
-              <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 8px;">ردیف اکسل</th>
-              <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 8px;">شماره سفارش</th>
-              <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 8px;">خطا</th>
+              <th>ردیف اکسل</th>
+              <th>شماره سفارش</th>
+              <th>پیام خطا</th>
             </tr>
           </thead>
           <tbody>
             {% for err in import_result.errors %}
               <tr>
-                <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ err.row_number }}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ err.order_number|default:"—" }}</td>
-                <td style="padding: 8px; border-bottom: 1px solid #eee; color: #b91c1c;">{{ err.message }}</td>
+                <td>{{ err.row_number }}</td>
+                <td>{{ err.order_number|default:"—" }}</td>
+                <td class="msg">{{ err.message }}</td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
       {% else %}
-        <p style="color: #166534;">خطایی ثبت نشد.</p>
+        <p class="bulk-empty-ok">همه ردیف‌ها بدون خطا اعمال شدند.</p>
       {% endif %}
     </div>
   {% endif %}

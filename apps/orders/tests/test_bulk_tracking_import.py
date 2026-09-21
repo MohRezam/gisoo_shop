@@ -3,6 +3,7 @@ from io import BytesIO
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from openpyxl import Workbook
+from rest_framework.exceptions import ValidationError
 
 from apps.orders.models import Order, OrderStatus
 from apps.orders.services.bulk_tracking_import import (
@@ -10,6 +11,7 @@ from apps.orders.services.bulk_tracking_import import (
     build_empty_tracking_template,
     build_preparing_orders_workbook,
     import_tracking_from_workbook,
+    validate_tracking_code,
 )
 from apps.shipping.models import ShippingMethod
 
@@ -65,7 +67,7 @@ class BulkTrackingImportTests(TestCase):
     def test_valid_row_sets_tracking_and_ships(self):
         file_obj = _workbook_bytes(
             [
-                ["ORD-1001", "علی", "محمدی", "TRK-999", "09120000001"],
+                ["ORD-1001", "علی", "محمدی", "1234567890", "09120000001"],
             ]
         )
 
@@ -77,14 +79,41 @@ class BulkTrackingImportTests(TestCase):
         self.order.refresh_from_db()
         self.assertEqual(result.success_count, 1)
         self.assertEqual(result.errors, [])
-        self.assertEqual(self.order.tracking_code, "TRK-999")
+        self.assertEqual(self.order.tracking_code, "1234567890")
         self.assertEqual(self.order.status, OrderStatus.SHIPPED)
         self.assertIsNotNone(self.order.shipped_at)
+
+    def test_letters_in_tracking_code_rejected(self):
+        file_obj = _workbook_bytes(
+            [
+                ["ORD-1001", "علی", "محمدی", "TRK-999", ""],
+            ]
+        )
+
+        result = import_tracking_from_workbook(
+            file_obj=file_obj,
+            changed_by=self.admin,
+        )
+
+        self.order.refresh_from_db()
+        self.assertEqual(result.success_count, 0)
+        self.assertEqual(len(result.errors), 1)
+        self.assertIn("حرف", result.errors[0].message)
+        self.assertEqual(self.order.status, OrderStatus.PREPARING)
+        self.assertEqual(self.order.tracking_code, "")
+
+    def test_persian_digits_accepted(self):
+        code = validate_tracking_code("۱۲۳۴۵۶۷۸۹۰")
+        self.assertEqual(code, "1234567890")
+
+    def test_short_tracking_code_rejected(self):
+        with self.assertRaises(ValidationError):
+            validate_tracking_code("123")
 
     def test_wrong_name_does_not_change_order(self):
         file_obj = _workbook_bytes(
             [
-                ["ORD-1001", "حسن", "رضایی", "TRK-1", ""],
+                ["ORD-1001", "حسن", "رضایی", "1234567890", ""],
             ]
         )
 
@@ -102,7 +131,7 @@ class BulkTrackingImportTests(TestCase):
     def test_missing_order_reports_error(self):
         file_obj = _workbook_bytes(
             [
-                ["ORD-MISSING", "علی", "محمدی", "TRK-1", ""],
+                ["ORD-MISSING", "علی", "محمدی", "1234567890", ""],
             ]
         )
 
@@ -121,7 +150,7 @@ class BulkTrackingImportTests(TestCase):
 
         file_obj = _workbook_bytes(
             [
-                ["ORD-1001", "علی", "محمدی", "TRK-1", ""],
+                ["ORD-1001", "علی", "محمدی", "1234567890", ""],
             ]
         )
 
@@ -138,12 +167,12 @@ class BulkTrackingImportTests(TestCase):
 
     def test_already_shipped_updates_tracking_only(self):
         self.order.status = OrderStatus.SHIPPED
-        self.order.tracking_code = "OLD"
+        self.order.tracking_code = "111111"
         self.order.save(update_fields=["status", "tracking_code"])
 
         file_obj = _workbook_bytes(
             [
-                ["ORD-1001", "علی", "محمدی", "NEW-777", ""],
+                ["ORD-1001", "علی", "محمدی", "999888777666", ""],
             ]
         )
 
@@ -155,7 +184,7 @@ class BulkTrackingImportTests(TestCase):
         self.order.refresh_from_db()
         self.assertEqual(result.success_count, 1)
         self.assertEqual(result.errors, [])
-        self.assertEqual(self.order.tracking_code, "NEW-777")
+        self.assertEqual(self.order.tracking_code, "999888777666")
         self.assertEqual(self.order.status, OrderStatus.SHIPPED)
 
     def test_mixed_rows_partial_success(self):
@@ -181,9 +210,9 @@ class BulkTrackingImportTests(TestCase):
 
         file_obj = _workbook_bytes(
             [
-                ["ORD-1001", "علی", "محمدی", "TRK-A", ""],
-                ["ORD-1002", "نام", "غلط", "TRK-B", ""],
-                ["ORD-MISSING", "سارا", "احمدی", "TRK-C", ""],
+                ["ORD-1001", "علی", "محمدی", "111222333444", ""],
+                ["ORD-1002", "نام", "غلط", "555666777888", ""],
+                ["ORD-MISSING", "سارا", "احمدی", "999000111222", ""],
             ]
         )
 
@@ -198,7 +227,7 @@ class BulkTrackingImportTests(TestCase):
         self.assertEqual(result.success_count, 1)
         self.assertEqual(len(result.errors), 2)
         self.assertEqual(self.order.status, OrderStatus.SHIPPED)
-        self.assertEqual(self.order.tracking_code, "TRK-A")
+        self.assertEqual(self.order.tracking_code, "111222333444")
         self.assertEqual(other.status, OrderStatus.PREPARING)
         self.assertEqual(other.tracking_code, "")
 
@@ -208,7 +237,7 @@ class BulkTrackingImportTests(TestCase):
 
         file_obj = _workbook_bytes(
             [
-                [str(self.order.pk), "علی", "محمدی", "TRK-ID", ""],
+                [str(self.order.pk), "علی", "محمدی", "444555666777", ""],
             ]
         )
 
@@ -219,7 +248,7 @@ class BulkTrackingImportTests(TestCase):
 
         self.order.refresh_from_db()
         self.assertEqual(result.success_count, 1)
-        self.assertEqual(self.order.tracking_code, "TRK-ID")
+        self.assertEqual(self.order.tracking_code, "444555666777")
         self.assertEqual(self.order.status, OrderStatus.SHIPPED)
 
     def test_template_builders(self):

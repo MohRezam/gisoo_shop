@@ -1,24 +1,25 @@
+from django.db.models import Prefetch
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+)
 from rest_framework import status
-from rest_framework.generics import RetrieveAPIView, ListAPIView
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.orders.models import Order, OrderStatus, OrderItem
+from apps.orders.models import Order, OrderItem, OrderStatus
+from apps.orders.ordering import apply_status_priority_ordering
 from apps.orders.serializers import (
     CreateOrderSerializer,
-    OrderDetailSerializer, OrderListSerializer,
+    OrderDetailSerializer,
+    OrderListSerializer,
 )
-from apps.orders.services.create_order import (
-    create_order,
-)
-
-from drf_spectacular.utils import (
-    OpenApiExample,
-    OpenApiResponse,
-    extend_schema,
-)
-from django.db.models import Prefetch
+from apps.orders.services.create_order import create_order
 from utils.paginators import StandardResultPagination
 
 CUSTOMER_ORDER_STATUSES = [
@@ -32,11 +33,12 @@ CUSTOMER_ORDER_STATUSES = [
     OrderStatus.EXPIRED,
 ]
 
+VALID_STATUS_FILTERS = {choice.value for choice in OrderStatus}
 
-def get_customer_orders_queryset(user):
-    return (
-        Order.objects
-        .filter(
+
+def get_customer_orders_queryset(user, *, statuses=None):
+    queryset = (
+        Order.objects.filter(
             user=user,
             status__in=CUSTOMER_ORDER_STATUSES,
         )
@@ -47,11 +49,9 @@ def get_customer_orders_queryset(user):
             Prefetch(
                 "items",
                 queryset=(
-                    OrderItem.objects
-                    .select_related(
+                    OrderItem.objects.select_related(
                         "variant__product",
-                    )
-                    .prefetch_related(
+                    ).prefetch_related(
                         "variant__product__images",
                     )
                 ),
@@ -59,8 +59,25 @@ def get_customer_orders_queryset(user):
             "bundles",
             "payment_intents",
         )
-        .order_by("-created_at")
     )
+
+    if statuses:
+        queryset = queryset.filter(status__in=statuses)
+
+    return apply_status_priority_ordering(queryset)
+
+
+def parse_status_filter(raw_value) -> list[str] | None:
+    if raw_value is None:
+        return None
+    parts = [
+        part.strip().lower()
+        for part in str(raw_value).split(",")
+        if part and part.strip()
+    ]
+    if not parts:
+        return None
+    return [part for part in parts if part in VALID_STATUS_FILTERS]
 
 
 @extend_schema(
@@ -197,11 +214,36 @@ class OrderDetailAPIView(APIView):
 
 @extend_schema(
     tags=["Orders"],
-    summary="List My Active Orders",
+    summary="List My Orders",
     description=(
-            "Returns the authenticated user's orders that are "
-            "currently being prepared or have been shipped."
+        "Returns the authenticated user's orders, ordered with "
+        "«در حال آماده‌سازی» first, then other statuses by priority. "
+        "Supports status filter and page pagination."
     ),
+    parameters=[
+        OpenApiParameter(
+            name="status",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description=(
+                "Filter by status. Comma-separated values allowed, e.g. "
+                "preparing,shipped"
+            ),
+        ),
+        OpenApiParameter(
+            name="page",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            required=False,
+        ),
+        OpenApiParameter(
+            name="page_size",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            required=False,
+        ),
+    ],
     responses={
         200: OrderListSerializer(many=True),
         401: OpenApiResponse(
@@ -218,8 +260,10 @@ class OrderListAPIView(ListAPIView):
     pagination_class = StandardResultPagination
 
     def get_queryset(self):
+        statuses = parse_status_filter(self.request.query_params.get("status"))
         return get_customer_orders_queryset(
             self.request.user,
+            statuses=statuses,
         )
 
 

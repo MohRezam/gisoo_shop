@@ -4,7 +4,7 @@ from django import forms
 class BulkTrackingUploadForm(forms.Form):
     file = forms.FileField(
         label="فایل اکسل",
-        help_text="فقط فایل .xlsx — ستون‌ها: شماره سفارش، نام، نام خانوادگی، کد رهگیری",
+        help_text="فقط فایل .xlsx — ستون‌ها: شماره سفارش، نام، نام خانوادگی، کد رهگیری (فقط عدد)",
     )
 
     def clean_file(self):

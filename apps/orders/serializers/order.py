@@ -90,21 +90,27 @@ class OrderListSerializer(serializers.ModelSerializer):
     items_count = serializers.SerializerMethodField()
     items = serializers.SerializerMethodField()
     bundles = serializers.SerializerMethodField()
+    payment_intent = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = [
             "id",
+            "public_number",
             "order_name",
             "status",
+            "total_price",
             "created_at",
             "items_count",
             "items",
             "bundles",
+            "payment_intent",
         ]
         read_only_fields = fields
 
     def get_order_name(self, obj):
+        if obj.public_number:
+            return f"سفارش {obj.public_number}"
         return f"سفارش #{obj.id}"
 
     def get_items_count(self, obj):
@@ -127,6 +133,9 @@ class OrderListSerializer(serializers.ModelSerializer):
             context=self.context,
         ).data
 
+    def get_payment_intent(self, obj):
+        return OrderDetailSerializer.get_payment_intent(self, obj)
+
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     items_count = serializers.SerializerMethodField()
@@ -139,8 +148,11 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             "id",
+            "public_number",
             "status",
             "created_at",
+            "products_price",
+            "shipping_price",
             "total_price",
             "discount_amount",
             "items_count",
@@ -148,6 +160,10 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "bundles",
             "tracking_code",
             "payment_intent",
+            "phone_number",
+            "province",
+            "city",
+            "address",
         ]
         read_only_fields = fields
 

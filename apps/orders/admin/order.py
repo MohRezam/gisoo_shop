@@ -15,6 +15,7 @@ from apps.orders.models import (
     OrderItem,
     OrderStatus,
 )
+from apps.orders.ordering import apply_status_priority_ordering
 from apps.orders.services.bulk_tracking_import import (
     build_empty_tracking_template,
     build_preparing_orders_workbook,
@@ -155,8 +156,12 @@ class OrderAdmin(admin.ModelAdmin):
     ]
     exclude = ("creator", "archived")
     raw_id_fields = ("user", "discount", "shipping_method")
-    list_per_page = 15
+    list_per_page = 20
     list_display_links = ("user",)
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        return apply_status_priority_ordering(queryset)
 
     def get_urls(self):
         urls = super().get_urls()

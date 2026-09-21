@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from io import BytesIO
 from typing import BinaryIO
@@ -34,6 +35,14 @@ REQUIRED_HEADERS = (
     HEADER_TRACKING,
 )
 
+_DIGIT_TRANSLATE = str.maketrans(
+    "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩",
+    "01234567890123456789",
+)
+_LETTER_RE = re.compile(r"[A-Za-z\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]")
+_TRACKING_MIN_LEN = 6
+_TRACKING_MAX_LEN = 40
+
 
 @dataclass
 class RowError:
@@ -53,9 +62,51 @@ def normalize_persian_text(value) -> str:
         return ""
     text = str(value).strip()
     text = " ".join(text.split())
-    # Arabic Yeh/Kaf → Persian
     text = text.replace("ي", "ی").replace("ك", "ک")
     return text
+
+
+def normalize_tracking_digits(value: str) -> str:
+    text = normalize_persian_text(value).translate(_DIGIT_TRANSLATE)
+    text = text.replace("ـ", "").replace("-", "").replace("_", "")
+    text = re.sub(r"\s+", "", text)
+    return text
+
+
+def validate_tracking_code(raw_value) -> str:
+    """Accept digit-only tracking codes (Persian digits OK). Reject letters."""
+    text = normalize_persian_text(raw_value)
+    if not text:
+        raise ValidationError("کد رهگیری خالی است.")
+
+    # Convert Eastern digits first so they are not treated as letters.
+    ascii_ready = text.translate(_DIGIT_TRANSLATE)
+    if _LETTER_RE.search(ascii_ready):
+        raise ValidationError(
+            "کد رهگیری نامعتبر است: شامل حرف است. فقط عدد وارد کنید."
+        )
+
+    digits = normalize_tracking_digits(text)
+    if not digits:
+        raise ValidationError("کد رهگیری خالی است.")
+
+    if not digits.isdigit():
+        raise ValidationError(
+            "کد رهگیری نامعتبر است: فقط عدد مجاز است "
+            "(بدون حرف، فاصله یا کاراکتر خاص)."
+        )
+
+    if len(digits) < _TRACKING_MIN_LEN:
+        raise ValidationError(
+            f"کد رهگیری کوتاه است؛ حداقل {_TRACKING_MIN_LEN} رقم لازم است."
+        )
+
+    if len(digits) > _TRACKING_MAX_LEN:
+        raise ValidationError(
+            f"کد رهگیری بیش از حد طولانی است؛ حداکثر {_TRACKING_MAX_LEN} رقم."
+        )
+
+    return digits
 
 
 def _cell_str(value) -> str:
@@ -146,7 +197,7 @@ def import_tracking_from_workbook(
         workbook = load_workbook(file_obj, read_only=True, data_only=True)
     except Exception as exc:
         raise ValidationError(
-            _("Invalid Excel file: %(error)s") % {"error": str(exc)}
+            _("فایل اکسل نامعتبر است: %(error)s") % {"error": str(exc)}
         ) from exc
 
     sheet = workbook.active
@@ -155,13 +206,13 @@ def import_tracking_from_workbook(
     try:
         header_row = next(rows)
     except StopIteration as exc:
-        raise ValidationError(_("Excel file is empty.")) from exc
+        raise ValidationError(_("فایل اکسل خالی است.")) from exc
 
     headers = _header_map(header_row)
     missing = [h for h in REQUIRED_HEADERS if h not in headers]
     if missing:
         raise ValidationError(
-            _("Missing required columns: %(cols)s")
+            _("ستون‌های الزامی موجود نیست: %(cols)s")
             % {"cols": "، ".join(missing)}
         )
 
@@ -180,9 +231,9 @@ def import_tracking_from_workbook(
         order_number = col(HEADER_ORDER_NUMBER)
         first_name = col(HEADER_FIRST_NAME)
         last_name = col(HEADER_LAST_NAME)
-        tracking_code = normalize_persian_text(col(HEADER_TRACKING))
+        tracking_raw = col(HEADER_TRACKING)
 
-        if not order_number and not tracking_code and not first_name and not last_name:
+        if not order_number and not tracking_raw and not first_name and not last_name:
             continue
 
         if not order_number:
@@ -195,12 +246,19 @@ def import_tracking_from_workbook(
             )
             continue
 
-        if not tracking_code:
+        try:
+            tracking_code = validate_tracking_code(tracking_raw)
+        except ValidationError as exc:
+            detail = exc.detail
+            if isinstance(detail, list):
+                message = "; ".join(str(item) for item in detail)
+            else:
+                message = str(detail)
             result.errors.append(
                 RowError(
                     row_number=excel_row_index,
                     order_number=order_number,
-                    message="کد رهگیری خالی است.",
+                    message=message,
                 )
             )
             continue
@@ -281,13 +339,12 @@ def build_empty_tracking_template() -> bytes:
     for cell in sheet[1]:
         cell.font = Font(bold=True)
 
-    # Sample row for guidance
     sheet.append(
         [
             "ORD-1001",
             "علی",
             "محمدی",
-            "",
+            "1234567890",
             "09121234567",
         ]
     )
