@@ -5,7 +5,24 @@ from apps.shared.models.base import BaseModel
 from core_gisoo_backend.storage_backends.locations import home_about_image_path
 
 
+class AboutSection(models.TextChoices):
+    INTRO = "intro", _("معرفی (صفحه اصلی و درباره ما)")
+    STORY = "story", _("داستان شکل‌گیری")
+    CTA = "cta", _("دعوت به اقدام")
+
+
 class HomeAbout(BaseModel):
+    section = models.CharField(
+        max_length=20,
+        choices=AboutSection.choices,
+        default=AboutSection.INTRO,
+        verbose_name=_("section"),
+        help_text=_(
+            "intro = homepage + about first block; "
+            "story / cta = about page second and third blocks."
+        ),
+    )
+
     title = models.CharField(
         max_length=255,
         verbose_name=_("title"),
@@ -36,4 +53,4 @@ class HomeAbout(BaseModel):
         ordering = ["display_order", "-created_at"]
 
     def __str__(self):
-        return self.title
+        return f"{self.get_section_display()} — {self.title}"

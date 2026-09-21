@@ -5,6 +5,8 @@ from apps.payments.apis.payment import (
     PaymentIntentDetailAPIView,
     PaymentReceiptSubmitAPIView,
 )
+from apps.payments.apis.guide_video import PaymentGuideVideoAPIView
+
 app_name = "apps.payments"
 
 urlpatterns = [
@@ -22,5 +24,10 @@ urlpatterns = [
         "v1/payment-intents/<int:id>/receipt/",
         PaymentReceiptSubmitAPIView.as_view(),
         name="payment-intent-receipt",
+    ),
+    path(
+        "v1/guide-video/",
+        PaymentGuideVideoAPIView.as_view(),
+        name="payment-guide-video",
     ),
 ]

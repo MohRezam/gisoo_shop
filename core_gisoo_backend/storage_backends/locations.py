@@ -42,3 +42,11 @@ def magazine_thumbnail_path():
 
 def payment_receipt_path():
     return f"{BASE_MEDIA_LOCATION}/payments/receipts"
+
+def payment_guide_video_path():
+    return f"{BASE_MEDIA_LOCATION}/payments/guide"
+
+
+def payment_guide_poster_path():
+    return f"{BASE_MEDIA_LOCATION}/payments/guide/posters"
+

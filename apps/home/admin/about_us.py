@@ -7,6 +7,7 @@ from apps.home.models import HomeAbout
 class HomeAboutAdmin(admin.ModelAdmin):
     list_display = (
         "id",
+        "section",
         "title",
         "display_order",
         "is_active",
@@ -14,6 +15,7 @@ class HomeAboutAdmin(admin.ModelAdmin):
     )
 
     list_filter = (
+        "section",
         "is_active",
     )
 

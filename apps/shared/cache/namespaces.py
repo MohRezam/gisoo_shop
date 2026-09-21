@@ -20,6 +20,8 @@ HOME_FAQ = "home:faq"
 HOME_SATISFACTION = "home:satisfaction"
 HOME_SOCIAL_LINKS = "home:social_links"
 
+PAYMENT_GUIDE_VIDEO = "payments:guide_video"
+
 MAGAZINE_LIST = "magazine:list"
 MAGAZINE_DETAIL = "magazine:detail"
 MAGAZINE_HOME = "magazine:home"

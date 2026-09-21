@@ -8,7 +8,9 @@ class HomeAboutSerializer(serializers.ModelSerializer):
         model = HomeAbout
         fields = (
             "id",
+            "section",
             "title",
             "description",
             "image",
+            "display_order",
         )
