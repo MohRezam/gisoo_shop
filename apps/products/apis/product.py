@@ -7,6 +7,7 @@ from django.db.models import (
     Q,
     Subquery,
 )
+from django.db.models.functions import Coalesce
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -63,12 +64,22 @@ from apps.products.services.product_viewers import (
         OpenApiParameter(
             name="min_price",
             type=int,
-            description="Minimum price",
+            description="Minimum variant list price (toman)",
         ),
         OpenApiParameter(
             name="max_price",
             type=int,
-            description="Maximum price",
+            description="Maximum variant list price (toman)",
+        ),
+        OpenApiParameter(
+            name="hair_problem",
+            type=str,
+            description="Hair problem ID, or comma-separated IDs",
+        ),
+        OpenApiParameter(
+            name="hair_type",
+            type=str,
+            description="Hair type ID, or comma-separated IDs",
         ),
         OpenApiParameter(
             name="search",
@@ -78,7 +89,11 @@ from apps.products.services.product_viewers import (
         OpenApiParameter(
             name="ordering",
             type=str,
-            description="price, -price, created_at, -created_at",
+            description=(
+                "price, -price, created_at, -created_at, "
+                "discounted_price, -discounted_price, "
+                "discount_amount, -discount_amount, id, -id"
+            ),
         ),
     ],
     responses={
@@ -118,6 +133,15 @@ class ProductListAPIView(ListAPIView):
         )
         .annotate(
             price=Min("variants__price"),
+            discounted_price=Min(
+                Coalesce(
+                    "variants__discounted_price",
+                    "variants__price",
+                )
+            ),
+        )
+        .annotate(
+            discount_amount=F("price") - F("discounted_price"),
         )
         .distinct()
     )
@@ -135,11 +159,15 @@ class ProductListAPIView(ListAPIView):
         "category__title",
         "brand__title",
         "hair_problems__title",
+        "hair_types__title",
     ]
 
     ordering_fields = [
         "price",
+        "discounted_price",
+        "discount_amount",
         "created_at",
+        "id",
     ]
 
     ordering = [

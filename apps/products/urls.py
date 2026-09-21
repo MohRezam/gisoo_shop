@@ -6,6 +6,8 @@ from apps.products.apis import (
     ProductListAPIView,
     ProductDetailAPIView,
     HairProblemAPIView,
+    HairTypeAPIView,
+    ProductFiltersMetaAPIView,
     SpecialOfferProductListAPIView,
     ProductRelatedProductsAPIView,
     ProductViewerAPIView,
@@ -39,6 +41,16 @@ urlpatterns = [
         "v1/hair/problems/",
         HairProblemAPIView.as_view(),
         name="hair-problem",
+    ),
+    path(
+        "v1/hair/types/",
+        HairTypeAPIView.as_view(),
+        name="hair-type",
+    ),
+    path(
+        "v1/filters/",
+        ProductFiltersMetaAPIView.as_view(),
+        name="product-filters-meta",
     ),
     path(
         "v1/special/offers/",

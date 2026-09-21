@@ -22,12 +22,14 @@ class ProductFilter(filters.FilterSet):
         lookup_expr="lte",
     )
 
-    hair_problem = filters.NumberFilter(
+    hair_problem = filters.BaseInFilter(
         field_name="hair_problems__id",
+        lookup_expr="in",
     )
 
-    hair_type = filters.NumberFilter(
+    hair_type = filters.BaseInFilter(
         field_name="hair_types__id",
+        lookup_expr="in",
     )
 
     class Meta:
@@ -39,5 +41,5 @@ class ProductFilter(filters.FilterSet):
             "min_price",
             "max_price",
             "hair_problem",
-            "hair_type"
+            "hair_type",
         ]

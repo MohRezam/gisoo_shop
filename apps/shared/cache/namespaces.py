@@ -9,6 +9,8 @@ PRODUCTS_SPECIAL = "products:special"
 PRODUCTS_BRANDS = "products:brands"
 PRODUCTS_CATEGORIES = "products:categories"
 PRODUCTS_HAIR_PROBLEMS = "products:hair_problems"
+PRODUCTS_HAIR_TYPES = "products:hair_types"
+PRODUCTS_FILTERS_META = "products:filters_meta"
 PRODUCTS_CONSULTATION = "products:consultation"
 
 HOME_BANNERS = "home:banners"

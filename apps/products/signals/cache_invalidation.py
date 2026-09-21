@@ -51,8 +51,18 @@ def register_product_cache_signals():
         bump_cache_version(ns.PRODUCTS_BRANDS)
         bump_cache_version(ns.PRODUCTS_CATEGORIES)
         bump_cache_version(ns.PRODUCTS_HAIR_PROBLEMS)
+        bump_cache_version(ns.PRODUCTS_HAIR_TYPES)
+        bump_cache_version(ns.PRODUCTS_FILTERS_META)
         _bump_product_caches()
 
     for model in (Brand, Category, HairProblem, HairType):
         post_save.connect(bump_taxonomies, sender=model, weak=False)
         post_delete.connect(bump_taxonomies, sender=model, weak=False)
+
+    def bump_filters_meta(**_kwargs):
+        bump_cache_version(ns.PRODUCTS_FILTERS_META)
+        _bump_product_caches()
+
+    for model in (Product, ProductVariant):
+        post_save.connect(bump_filters_meta, sender=model, weak=False)
+        post_delete.connect(bump_filters_meta, sender=model, weak=False)
