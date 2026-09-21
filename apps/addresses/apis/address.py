@@ -32,7 +32,8 @@ class AddressViewSet(ModelViewSet):
 
     def get_queryset(self):
         return Address.objects.filter(
-            user=self.request.user
+            user=self.request.user,
+            archived=False,
         ).order_by(
             "-is_default",
             "-created_at",
@@ -66,11 +67,13 @@ class AddressViewSet(ModelViewSet):
             self,
             serializer,
     ):
+        make_default = serializer.validated_data.pop(
+            "make_default",
+            False,
+        )
         address = serializer.save()
 
-        if serializer.validated_data.get(
-                "make_default"
-        ):
+        if make_default:
             set_default_address(
                 user=self.request.user,
                 address=address,

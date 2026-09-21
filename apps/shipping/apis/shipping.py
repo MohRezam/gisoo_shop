@@ -15,7 +15,8 @@ from apps.shipping.serializers import ShippingMethodSerializer
     summary="List shipping methods",
     description=(
         "Active shipping methods. `price` and `free_shipping_minimum` are in تومان. "
-        "When cart products total >= `free_shipping_minimum`, shipping fee is 0. "
+        "Free shipping applies only when `free_shipping_minimum` > 0 and "
+        "cart products total >= that minimum; 0 means no free shipping. "
         "Response is cached briefly."
     ),
     responses={

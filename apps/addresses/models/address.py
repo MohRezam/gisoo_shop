@@ -83,6 +83,7 @@ class Address(BaseModel):
             exists = Address.objects.filter(
                 user=self.user,
                 is_default=True,
+                archived=False,
             ).exclude(
                 pk=self.pk,
             ).exists()

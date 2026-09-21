@@ -3,7 +3,8 @@ from django.core.cache import cache
 
 def expire_cache(partial_key):
     try:
-        keys = cache.keys(f"*.{partial_key}.*")
+        # Keys use colon separators: prefix:version:key (see make_key).
+        keys = cache.keys(f"*:{partial_key}*")
 
         for key in keys:
             cache.delete(key)
@@ -17,7 +18,9 @@ def put_in_cache(key, value, exp_time=None):
 
 
 def extend_cache(key, exp_time=None):
-    cache.expire(key, timeout=exp_time)
+    expire = getattr(cache, "expire", None)
+    if callable(expire):
+        expire(key, timeout=exp_time)
 
 
 def get_from_cache(key, delete=False):
@@ -35,7 +38,10 @@ def check_in_cache(key, value=None):
 
 
 def get_cache_ttl(key):
-    return cache.pttl(key)
+    pttl = getattr(cache, "pttl", None)
+    if callable(pttl):
+        return pttl(key)
+    return None
 
 
 def remove_from_cache(key):

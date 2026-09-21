@@ -161,9 +161,11 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
     def get_image(self, obj):
         product = obj.variant.product
 
-        image = product.images.filter(
-            is_primary=True
-        ).first()
+        images = getattr(product, "primary_images", None)
+        if images is None:
+            images = product.images.filter(is_primary=True)
+
+        image = images[0] if images else None
 
         if not image or not image.image:
             return None

@@ -5,6 +5,8 @@ from apps.consultations.forms import (
 )
 from apps.consultations.models.consultation import (
     ConsultationRecommendation,
+    ConsultationRecommendationPack,
+    ConsultationRecommendationPackItem,
     ConsultationRequest,
 )
 from apps.shared.admin_filters import (
@@ -32,6 +34,20 @@ class ConsultationRecommendationInline(
     raw_id_fields = ("variant",)
     verbose_name = "پیشنهاد محصول"
     verbose_name_plural = "پیشنهادهای محصول"
+
+
+class ConsultationRecommendationPackItemInline(
+    admin.TabularInline
+):
+    model = ConsultationRecommendationPackItem
+    extra = 0
+    fields = (
+        "recommendation",
+        "display_order",
+    )
+    raw_id_fields = ("recommendation",)
+    verbose_name = "آیتم پک"
+    verbose_name_plural = "آیتم‌های پک"
 
 
 @admin.register(ConsultationRequest)
@@ -123,3 +139,48 @@ class ConsultationRequestAdmin(
             return f"مهمان ({obj.phone_number})"
 
         return "-"
+
+
+@admin.register(ConsultationRecommendationPack)
+class ConsultationRecommendationPackAdmin(
+    admin.ModelAdmin
+):
+    list_display = (
+        "title",
+        "consultation",
+        "display_order",
+        "created_at",
+    )
+    search_fields = (
+        "title",
+        "consultation__full_name",
+        "consultation__phone_number",
+    )
+    list_filter = (
+        ("consultation", PersianRelatedFilter),
+    )
+    raw_id_fields = ("consultation",)
+    list_editable = ("display_order",)
+    list_per_page = 15
+    inlines = (
+        ConsultationRecommendationPackItemInline,
+    )
+
+
+@admin.register(ConsultationRecommendationPackItem)
+class ConsultationRecommendationPackItemAdmin(
+    admin.ModelAdmin
+):
+    list_display = (
+        "pack",
+        "recommendation",
+        "display_order",
+        "created_at",
+    )
+    search_fields = (
+        "pack__title",
+        "recommendation__variant__sku",
+    )
+    raw_id_fields = ("pack", "recommendation")
+    list_editable = ("display_order",)
+    list_per_page = 15

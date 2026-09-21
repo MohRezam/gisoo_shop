@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 
@@ -107,19 +106,13 @@ class Magazine(BaseModel):
         super().clean()
 
         if self.is_featured:
-            exists = Magazine.objects.filter(
+            Magazine.objects.filter(
                 is_featured=True
             ).exclude(
                 pk=self.pk
-            ).exists()
-
-            if exists:
-                raise ValidationError({
-                    "is_featured": (
-                        "مقاله ویژه دیگری از قبل وجود دارد. "
-                        "لطفاً ابتدا مقاله ویژه فعلی را غیرفعال کنید."
-                    )
-                })
+            ).update(
+                is_featured=False
+            )
 
     def __str__(self):
         return self.title

@@ -16,6 +16,7 @@ from apps.orders.services.change_order_status import (
 )
 from apps.orders.services.create_order import create_order
 from apps.orders.tests.factories import create_shipping_method
+from apps.payments.models import PaymentIntentStatus
 from apps.products.tests.factories import (
     create_brand,
     create_category,
@@ -74,7 +75,15 @@ class ChangeOrderStatusTests(TestCase):
             shipping_method_id=self.shipping.id,
         )
 
+    def _mark_order_paid(self):
+        intent = self.order.payment_intents.first()
+        intent.status = PaymentIntentStatus.PAID
+        intent.save(update_fields=["status", "updated_at"])
+        return intent
+
     def test_change_status_success(self):
+        self._mark_order_paid()
+
         order = change_order_status(
             order=self.order,
             new_status=OrderStatus.PREPARING,
@@ -123,7 +132,16 @@ class ChangeOrderStatusTests(TestCase):
                 new_status=OrderStatus.DELIVERED,
             )
 
+    def test_preparing_requires_paid_payment(self):
+        with self.assertRaises(ValidationError):
+            change_order_status(
+                order=self.order,
+                new_status=OrderStatus.PREPARING,
+            )
+
     def test_set_shipped_at(self):
+        self._mark_order_paid()
+
         change_order_status(
             order=self.order,
             new_status=OrderStatus.PREPARING,
@@ -141,6 +159,8 @@ class ChangeOrderStatusTests(TestCase):
         )
 
     def test_set_delivered_at(self):
+        self._mark_order_paid()
+
         change_order_status(
             order=self.order,
             new_status=OrderStatus.PREPARING,
@@ -163,6 +183,7 @@ class ChangeOrderStatusTests(TestCase):
         )
 
     def test_save_reason(self):
+        self._mark_order_paid()
         reason = "Prepared by admin"
 
         change_order_status(
@@ -179,6 +200,7 @@ class ChangeOrderStatusTests(TestCase):
         )
 
     def test_save_changed_by(self):
+        self._mark_order_paid()
         admin = User.objects.create_user(
             phone_number="09121111111",
         )

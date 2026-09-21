@@ -44,6 +44,16 @@ class UserPhoneNumber(models.Model):
                 fields=["user", "phone_number"],
                 name="unique_user_phone_number",
             ),
+            models.UniqueConstraint(
+                fields=["phone_number"],
+                condition=models.Q(is_verified=True),
+                name="unique_verified_phone_number",
+            ),
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(is_primary=True),
+                name="unique_primary_phone_per_user",
+            ),
         ]
         ordering = ["-is_primary", "-created_at"]
 

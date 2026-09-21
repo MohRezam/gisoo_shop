@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.template.response import TemplateResponse
 from django.urls import path, reverse
@@ -96,6 +97,11 @@ class PaymentIntentAdmin(admin.ModelAdmin):
 
     readonly_fields = (
         "token",
+        "status",
+        "base_amount_rial",
+        "unique_suffix",
+        "adjustment_discount",
+        "payable_amount_rial",
         "created_at",
         "updated_at",
         "paid_at",
@@ -250,6 +256,9 @@ class PaymentIntentAdmin(admin.ModelAdmin):
                 reverse("admin:payments_paymentintent_changelist")
             )
 
+        if not self.has_change_permission(request, payment_intent):
+            raise PermissionDenied
+
         if request.method == "POST":
             form = PaymentApproveForm(request.POST)
 
@@ -314,6 +323,9 @@ class PaymentIntentAdmin(admin.ModelAdmin):
             return HttpResponseRedirect(
                 reverse("admin:payments_paymentintent_changelist")
             )
+
+        if not self.has_change_permission(request, payment_intent):
+            raise PermissionDenied
 
         if request.method == "POST":
             form = PaymentRejectForm(request.POST)

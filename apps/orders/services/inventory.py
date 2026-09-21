@@ -37,6 +37,45 @@ def _aggregate_variants(*, variants):
     return quantities
 
 
+def get_order_reserved_variants(*, order):
+    """
+    Return all product variants whose stock was reserved
+    by this order.
+
+    Includes:
+    - normal OrderItems
+    - products contained inside OrderBundles
+    """
+
+    variants = []
+
+    for item in order.items.all():
+        variants.append(
+            (
+                item.variant,
+                item.quantity,
+            )
+        )
+
+    # OrderBundle.quantity = number of bundles purchased
+    # OrderBundle.bundle_quantity = units per bundle
+    # reserved_quantity = bundle_quantity * quantity
+    for bundle in order.bundles.all():
+        reserved_quantity = (
+            bundle.bundle_quantity
+            * bundle.quantity
+        )
+
+        variants.append(
+            (
+                bundle.variant,
+                reserved_quantity,
+            )
+        )
+
+    return variants
+
+
 def reserve_stock(
     *,
     variants,
@@ -126,6 +165,27 @@ def reserve_stock(
         )
 
 
+def _notify_back_in_stock_variants(variants_with_previous):
+    """
+    bulk_update does not fire post_save signals, so call the
+    existing stock-notify helper for 0 → >0 transitions.
+    """
+
+    from apps.products.signals.stock_notify import (
+        notify_back_in_stock,
+    )
+
+    for variant, previous_stock in variants_with_previous:
+        if previous_stock > 0 or variant.stock <= 0:
+            continue
+
+        variant._previous_stock = previous_stock
+        notify_back_in_stock(
+            sender=ProductVariant,
+            instance=variant,
+        )
+
+
 def release_stock(
     *,
     variants,
@@ -180,6 +240,11 @@ def release_stock(
                 }
             )
 
+        previous_stocks = {
+            variant.id: variant.stock
+            for variant in locked_variants
+        }
+
         for variant in locked_variants:
 
             quantity = quantities[variant.id]
@@ -189,4 +254,11 @@ def release_stock(
         ProductVariant.objects.bulk_update(
             locked_variants,
             ["stock"],
+        )
+
+        _notify_back_in_stock_variants(
+            [
+                (variant, previous_stocks[variant.id])
+                for variant in locked_variants
+            ]
         )

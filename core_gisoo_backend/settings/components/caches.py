@@ -17,6 +17,7 @@ if config("REDIS_MODE", "default") == "gitlab_ci":
 
 if config("REDIS_MODE", "default") == "default":
     CACHES = {
+        # App/data cache: Redis with DatabaseCache fallback (FallbackCache).
         "default": {"BACKEND": "apps.shared.cache.base_cache.FallbackCache"},
         "redis": {
             "BACKEND": "django_redis.cache.RedisCache",
@@ -31,12 +32,15 @@ if config("REDIS_MODE", "default") == "default":
         "database": {
             "BACKEND": "django.core.cache.backends.db.DatabaseCache",
             "LOCATION": "cache_table",
+            # Same KEY_PREFIX + KEY_FUNCTION as Redis so fallback keys match.
+            "KEY_PREFIX": config("CACHE_PREFIX", ""),
             "KEY_FUNCTION": "apps.shared.cache.utils.make_key",
         },
     }
 
 if config("REDIS_MODE", "default") == "sentinel":
     CACHES = {
+        # App/data cache: Redis with DatabaseCache fallback (FallbackCache).
         "default": {"BACKEND": "apps.shared.cache.base_cache.FallbackCache"},
         "redis": {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -56,11 +60,16 @@ if config("REDIS_MODE", "default") == "sentinel":
         "database": {
             "BACKEND": "django.core.cache.backends.db.DatabaseCache",
             "LOCATION": "cache_table",
+            # Same KEY_PREFIX + KEY_FUNCTION as Redis so fallback keys match.
+            "KEY_PREFIX": config("CACHE_PREFIX", ""),
             "KEY_FUNCTION": "apps.shared.cache.utils.make_key",
         },
     }
+
+# Sessions use redis-only (not FallbackCache/"default") to avoid split-brain:
+# a Redis blip must not write the session into DB then read an empty key from Redis.
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-SESSION_CACHE_ALIAS = "default"
+SESSION_CACHE_ALIAS = "redis"
 
 CACHE_TTL = 60 * 15
 FAVORITE_CACHE_TTL = 60 * 60 * 24 * 2  # 2 days

@@ -1,3 +1,4 @@
+from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 
 from rest_framework import generics, permissions
@@ -48,11 +49,20 @@ class ProductReviewListCreateAPIView(generics.ListCreateAPIView):
                 }
             )
 
-        serializer.save(
-            user=self.request.user,
-            product=product,
-            status=ReviewStatus.PENDING,
-        )
+        try:
+            serializer.save(
+                user=self.request.user,
+                product=product,
+                status=ReviewStatus.PENDING,
+            )
+        except IntegrityError:
+            raise ValidationError(
+                {
+                    "detail": (
+                        "You have already reviewed this product."
+                    )
+                }
+            )
 
 
 class HomepageReviewListAPIView(generics.ListAPIView):

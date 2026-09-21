@@ -1,15 +1,13 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
-
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
-from apps.consultations.models import (
-    GuestDeviceAccess,
-)
 from apps.cart.services import add_to_cart
 from apps.consultations.models import (
     ConsultationRecommendation,
     ConsultationRequest,
+    GuestDeviceAccess,
 )
 
 
@@ -121,7 +119,7 @@ def get_accessible_consultation(
         .select_related("guest")
         .filter(
             token=guest_token,
-            is_active=True,
+            expires_at__gt=timezone.now(),
         )
         .first()
     )

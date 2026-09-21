@@ -7,6 +7,9 @@ from apps.orders.models import (
     OrderStatus,
 )
 from apps.payments.models import PaymentIntentStatus
+from apps.payments.services.submit_receipt import (
+    ALLOWED_STATUSES as RECEIPT_UPLOAD_STATUSES,
+)
 
 
 class CreateOrderSerializer(serializers.Serializer):
@@ -206,8 +209,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "token": str(payment_intent.token),
             "status": payment_intent.status,
             "expires_at": expires_at,
-            "can_upload_receipt": payment_intent.status in {
-                PaymentIntentStatus.PENDING_PAYMENT,
-                PaymentIntentStatus.REJECTED,
-            },
+            "can_upload_receipt": (
+                payment_intent.status in RECEIPT_UPLOAD_STATUSES
+            ),
         }

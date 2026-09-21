@@ -23,12 +23,13 @@ from utils.paginators import StandardResultPagination
 
 CUSTOMER_ORDER_STATUSES = [
     OrderStatus.CREATED,
+    OrderStatus.WAITING_PAYMENT,
     OrderStatus.PAYMENT_REJECTED,
     OrderStatus.PREPARING,
     OrderStatus.SHIPPED,
     OrderStatus.DELIVERED,
     OrderStatus.CANCELED,
-    OrderStatus.EXPIRED
+    OrderStatus.EXPIRED,
 ]
 
 

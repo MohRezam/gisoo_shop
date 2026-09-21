@@ -37,7 +37,8 @@ class SendOTPAPIView(APIView):
 
         return Response(
             {
-                "message": "OTP sent successfully"
+                # OTP is stored only; SMS delivery is not wired yet.
+                "message": "OTP generated successfully"
             },
             status=status.HTTP_200_OK,
         )

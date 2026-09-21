@@ -62,6 +62,7 @@ class Discount(BaseModel):
     per_user_limit = models.PositiveIntegerField(
         verbose_name="سقف هر کاربر",
         default=1,
+        help_text="۰ یعنی نامحدود.",
     )
 
     starts_at = models.DateTimeField(
@@ -86,6 +87,11 @@ class Discount(BaseModel):
 
     def __str__(self):
         return self.code
+
+    def save(self, *args, **kwargs):
+        if self.code:
+            self.code = self.code.strip().upper()
+        super().save(*args, **kwargs)
 
     @property
     def is_valid(self):

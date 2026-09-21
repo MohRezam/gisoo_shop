@@ -2,6 +2,11 @@ from django.db import models
 
 
 class CacheTable(models.Model):
+    """
+    Unmanaged mirror of Django's DatabaseCache table.
+    Created via `manage.py createcachetable`, not migrations.
+    """
+
     cache_key = models.CharField(primary_key=True, max_length=255)
     value = models.TextField()
     expires = models.DateTimeField()
@@ -13,3 +18,4 @@ class CacheTable(models.Model):
     class Meta:
         app_label = "shared"
         db_table = "cache_table"
+        managed = False

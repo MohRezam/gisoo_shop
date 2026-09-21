@@ -1,11 +1,29 @@
+from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from apps.users.models import User, UserPhoneNumber
 
 
+class UserPhoneNumberInlineForm(forms.ModelForm):
+    class Meta:
+        model = UserPhoneNumber
+        fields = (
+            "phone_number",
+            "is_verified",
+            "is_primary",
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        instance = self.instance
+        if instance and instance.pk and instance.is_verified:
+            self.fields["phone_number"].disabled = True
+
+
 class UserPhoneNumberInline(admin.TabularInline):
     model = UserPhoneNumber
+    form = UserPhoneNumberInlineForm
     extra = 0
     fields = (
         "phone_number",

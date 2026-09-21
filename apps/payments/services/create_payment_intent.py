@@ -7,6 +7,9 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.orders.models import Order, OrderStatus
+from apps.orders.services.change_order_status import (
+    change_order_status,
+)
 from apps.payments.models import (
     ACTIVE_PAYMENT_INTENT_STATUSES,
     DestinationCard,
@@ -20,6 +23,12 @@ TOMAN_TO_RIAL = 10
 MIN_SUFFIX = 100
 MAX_SUFFIX = 999
 MAX_SUFFIX_ATTEMPTS = 20
+
+PAYMENT_INTENT_ORDER_STATUSES = {
+    OrderStatus.CREATED,
+    OrderStatus.WAITING_PAYMENT,
+    OrderStatus.PAYMENT_REJECTED,
+}
 
 
 def get_payment_expiration(order: Order):
@@ -141,6 +150,24 @@ def generate_unique_amount(
     )
 
 
+def _close_rejected_intents(*, order):
+    """
+    Close rejected intents so they can no longer accept
+    receipts once a new intent is created.
+    """
+
+    (
+        PaymentIntent.objects
+        .filter(
+            order=order,
+            status=PaymentIntentStatus.REJECTED,
+        )
+        .update(
+            status=PaymentIntentStatus.EXPIRED,
+        )
+    )
+
+
 @transaction.atomic
 def create_payment_intent(*, order_id: int, user):
     order = (
@@ -156,7 +183,7 @@ def create_payment_intent(*, order_id: int, user):
     if order is None:
         raise ValidationError("Order not found.")
 
-    if order.status != OrderStatus.CREATED:
+    if order.status not in PAYMENT_INTENT_ORDER_STATUSES:
         raise ValidationError(
             "Payment is not available for this order."
         )
@@ -190,6 +217,17 @@ def create_payment_intent(*, order_id: int, user):
         raise ValidationError(
             "Order payment time has expired."
         )
+
+    # After rejection, recreate cleanly: close old rejected
+    # intents so they cannot accept receipts with a conflicting amount.
+    if order.status == OrderStatus.PAYMENT_REJECTED:
+        _close_rejected_intents(order=order)
+        change_order_status(
+            order=order,
+            new_status=OrderStatus.WAITING_PAYMENT,
+            reason="New payment intent created after rejection.",
+        )
+        order.refresh_from_db()
 
     destination_card = get_destination_card()
 

@@ -29,10 +29,13 @@ def apply_discount_to_cart(
             "Discount code not found."
         )
 
+    # Validate the new code first. Do not assign yet — if validation
+    # fails, the cart keeps any previously applied coupon.
     result = calculate_cart_totals(
         cart=cart,
         user=user,
         discount=discount,
+        raise_on_invalid=True,
     )
 
     cart.discount = discount
@@ -44,6 +47,7 @@ def apply_discount_to_cart(
     )
 
     return result
+
 
 @transaction.atomic
 def remove_discount_from_cart(

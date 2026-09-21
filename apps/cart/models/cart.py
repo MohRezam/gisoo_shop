@@ -39,6 +39,16 @@ class Cart(BaseModel):
     class Meta:
         verbose_name = "سبد خرید"
         verbose_name_plural = "سبدهای خرید"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(
+                    is_active=True,
+                    user__isnull=False,
+                ),
+                name="unique_active_cart_per_user",
+            ),
+        ]
 
 
 class CartItem(BaseModel):

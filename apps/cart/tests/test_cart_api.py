@@ -379,3 +379,128 @@ class AddToCartAPITests(APITestCase):
             response.status_code,
             status.HTTP_404_NOT_FOUND,
         )
+
+
+class CartOwnershipAPITests(APITestCase):
+
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        from apps.cart.models import CartItem
+
+        User = get_user_model()
+        self.user = User.objects.create_user(
+            phone_number="09121110001",
+        )
+        self.category = create_category(slug="own-cat")
+        self.brand = create_brand(slug="own-brand")
+        self.product = create_product(
+            category=self.category,
+            brand=self.brand,
+            slug="own-product",
+        )
+        self.variant = create_product_variant(
+            product=self.product,
+            sku="own-sku",
+            stock=10,
+            price=100000,
+        )
+        self.user_cart = Cart.objects.create(
+            user=self.user,
+            is_active=True,
+        )
+        CartItem.objects.create(
+            cart=self.user_cart,
+            variant=self.variant,
+            quantity=1,
+        )
+
+    def test_guest_cannot_view_user_cart(self):
+        response = self.client.get(
+            reverse(
+                "apps.cart:cart-detail",
+                kwargs={"uuid": self.user_cart.uuid},
+            ),
+        )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+    def test_guest_cannot_update_user_cart_item(self):
+        item = self.user_cart.items.first()
+        response = self.client.patch(
+            reverse(
+                "apps.cart:cart-item-update",
+                kwargs={"item_id": item.id},
+            ),
+            {"quantity": 2},
+            format="json",
+            HTTP_X_CART_UUID=str(self.user_cart.uuid),
+        )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+
+
+class CartStockAggregationAPITests(APITestCase):
+
+    def setUp(self):
+        from apps.cart.tests.factories import BundleFactory
+
+        self.url = reverse("apps.cart:add-to-cart")
+        self.category = create_category(slug="agg-cat")
+        self.brand = create_brand(slug="agg-brand")
+        self.product = create_product(
+            category=self.category,
+            brand=self.brand,
+            slug="agg-product",
+        )
+        self.variant = create_product_variant(
+            product=self.product,
+            sku="agg-sku",
+            stock=5,
+            price=100000,
+        )
+        self.bundle = BundleFactory(
+            variant=self.variant,
+            quantity=2,
+            price=150000,
+        )
+
+    def test_variant_and_bundle_share_stock_budget(self):
+        response = self.client.post(
+            self.url,
+            {
+                "variant_id": self.variant.id,
+                "quantity": 3,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        cart_uuid = response.data["cart_uuid"]
+
+        response = self.client.post(
+            self.url,
+            {
+                "bundle_id": self.bundle.id,
+                "quantity": 1,
+            },
+            format="json",
+            HTTP_X_CART_UUID=cart_uuid,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.post(
+            self.url,
+            {
+                "bundle_id": self.bundle.id,
+                "quantity": 1,
+            },
+            format="json",
+            HTTP_X_CART_UUID=cart_uuid,
+        )
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )

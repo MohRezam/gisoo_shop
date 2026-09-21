@@ -48,10 +48,10 @@ class RequestOTPAPIView(APIView):
 
         phone_number = serializer.validated_data["phone_number"]
 
+        # TODO: enable real OTP + SMS when SMS panel is available
         # otp = str(secrets.randbelow(900000) + 100000)
-        otp = 123456
-        otp_key = f"otp_{phone_number}"
-        attempts_key = f"otp_attempts_{phone_number}"
+        otp = "123456"
+        otp_key = f"login:otp_{phone_number}"
 
         # notification = NotificationService.send_otp(
         #     user=None,
@@ -75,8 +75,6 @@ class RequestOTPAPIView(APIView):
             timeout=OTP_TTL,
         )
 
-        cache.delete(attempts_key)
-
         return Response(
             {
                 "detail": _("OTP sent successfully."),
@@ -90,6 +88,7 @@ class RequestOTPAPIView(APIView):
     responses={200: None},
 )
 class ResendOTPAPIView(APIView):
+    throttle_classes = [OTPThrottle]
 
     def post(self, request):
         serializer = RequestOTPSerializer(data=request.data)
@@ -118,8 +117,9 @@ class ResendOTPAPIView(APIView):
                 )
             )
 
+        # TODO: enable real OTP + SMS when SMS panel is available
         # otp = str(secrets.randbelow(900000) + 100000)
-        otp = 123456
+        otp = "123456"
         # notification = NotificationService.send_otp(
         #     user=None,
         #     recipient=phone_number,
@@ -136,16 +136,13 @@ class ResendOTPAPIView(APIView):
         #         status=status.HTTP_503_SERVICE_UNAVAILABLE,
         #     )
 
-        otp_key = f"otp_{phone_number}"
-        attempts_key = f"otp_attempts_{phone_number}"
+        otp_key = f"login:otp_{phone_number}"
 
         cache.set(
             otp_key,
             otp,
             timeout=OTP_TTL,
         )
-
-        cache.delete(attempts_key)
 
         cache.set(
             timestamp_key,
@@ -197,13 +194,32 @@ class VerifyOTPAPIView(APIView):
                 phone_number=phone_number,
             )
 
-            UserPhoneNumber.objects.get_or_create(
+            user_phone, phone_created = UserPhoneNumber.objects.get_or_create(
                 user=user,
                 phone_number=phone_number,
                 defaults={
                     "is_verified": True,
                     "is_primary": True,
                 },
+            )
+
+            if not phone_created and not user_phone.is_verified:
+                user_phone.is_verified = True
+                user_phone.save(
+                    update_fields=[
+                        "is_verified",
+                        "updated_at",
+                    ]
+                )
+
+        if not user.is_active:
+            return Response(
+                {
+                    "detail": _(
+                        "This account is inactive."
+                    )
+                },
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         merge_guest_consultations_after_login(user)
@@ -217,16 +233,17 @@ class VerifyOTPAPIView(APIView):
             "X-Cart-UUID"
         )
 
-
-        CartService.merge_cart_after_login(
-            cart_uuid=cart_uuid,
-            user=user,
+        _merged_cart, stock_adjustments = (
+            CartService.merge_cart_after_login(
+                cart_uuid=cart_uuid,
+                user=user,
+            )
         )
 
         refresh = RefreshToken.for_user(user)
 
-        otp_key = f"otp_{phone_number}"
-        attempts_key = f"otp_attempts_{phone_number}"
+        otp_key = f"login:otp_{phone_number}"
+        attempts_key = f"login:otp_attempts_{phone_number}"
         timestamp_key = f"otp_timestamp_{phone_number}"
         request_count_key = f"otp_request_count_{phone_number}"
 
@@ -238,7 +255,8 @@ class VerifyOTPAPIView(APIView):
         response = Response(
             {
                 "access_token": str(refresh.access_token),
-                "refresh_token": str(refresh)
+                "refresh_token": str(refresh),
+                "stock_adjustments": stock_adjustments,
             },
             status=status.HTTP_200_OK,
         )

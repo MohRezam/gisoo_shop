@@ -7,6 +7,10 @@ from rest_framework.exceptions import ValidationError
 
 from apps.addresses.models import Address
 from apps.cart.models import Cart
+from apps.cart.services.pricing import (
+    get_bundle_prices,
+    get_variant_prices,
+)
 from apps.discounts.services import calculate_discount
 from apps.notifications.services.inbox import notify_user
 from apps.notifications.tasks import send_order_created_sms
@@ -54,11 +58,11 @@ def create_order(
             _("Invalid shipping method.")
         )
 
+    # Lock the active cart so concurrent checkouts cannot both
+    # create an order from the same cart.
     cart = (
         Cart.objects
-        .prefetch_related(
-            "items__variant__product",
-        )
+        .select_for_update()
         .filter(
             user=user,
             is_active=True,
@@ -68,7 +72,7 @@ def create_order(
 
     if cart is None:
         raise ValidationError(
-            _("Cart not found.")
+            _("Cart not found or is no longer available.")
         )
 
     if not cart.items.exists():
@@ -78,7 +82,7 @@ def create_order(
 
     order = Order.objects.create(
         user=user,
-        status=OrderStatus.CREATED,
+        status=OrderStatus.WAITING_PAYMENT,
         expires_at=timezone.now() + timedelta(
             minutes=ORDER_EXPIRATION_MINUTES,
         ),
@@ -114,11 +118,41 @@ def create_order(
     discount_amount = 0
 
     if cart.discount_id is not None:
+        cart_discount = cart.discount
+        eligible_price = products_total
+
+        if not cart_discount.applies_to_discounted_products:
+            eligible_price = 0
+            for item in cart.items.select_related(
+                "variant",
+                "bundle",
+                "bundle__variant",
+            ):
+                if item.variant_id:
+                    prices = get_variant_prices(item.variant)
+                    if not prices["is_discounted"]:
+                        eligible_price += (
+                            prices["unit_price"]
+                            * item.quantity
+                        )
+                elif item.bundle_id:
+                    prices = get_bundle_prices(item.bundle)
+                    if not prices["is_discounted"]:
+                        eligible_price += (
+                            prices["unit_price"]
+                            * item.quantity
+                        )
+
         try:
+            # Lock discount row and re-validate limits, counting
+            # other WAITING_PAYMENT orders as soft reservations.
             discount_result = calculate_discount(
                 user=user,
-                code=cart.discount.code,
+                code=cart_discount.code,
                 products_price=products_total,
+                eligible_price=eligible_price,
+                for_update=True,
+                include_pending_reservations=True,
             )
 
             discount = discount_result["discount"]

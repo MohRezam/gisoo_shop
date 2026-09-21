@@ -9,6 +9,14 @@ from apps.orders.models import (
     OrderStatus,
     OrderStatusHistory,
 )
+from apps.orders.services.inventory import (
+    get_order_reserved_variants,
+    release_stock,
+)
+from apps.payments.models import (
+    PaymentIntent,
+    PaymentIntentStatus,
+)
 
 
 STATUS_NOTIFICATIONS = {
@@ -42,6 +50,38 @@ STATUS_NOTIFICATIONS = {
     ),
 }
 
+STOCK_RELEASE_STATUSES = {
+    OrderStatus.CANCELED,
+    OrderStatus.EXPIRED,
+}
+
+STOCK_RELEASED_MARKER = "stock_released"
+
+
+def _order_stock_already_released(*, order) -> bool:
+    return OrderStatusHistory.objects.filter(
+        order=order,
+        reason__contains=STOCK_RELEASED_MARKER,
+    ).exists()
+
+
+def _release_order_stock_once(*, order, reason: str) -> str:
+    """
+    Release reserved stock at most once per order.
+    Marks the history reason so cancel/expire cannot double-release.
+    """
+
+    if _order_stock_already_released(order=order):
+        return reason
+
+    variants = get_order_reserved_variants(order=order)
+    release_stock(variants=variants)
+
+    if reason:
+        return f"{reason} [{STOCK_RELEASED_MARKER}]"
+
+    return STOCK_RELEASED_MARKER
+
 
 @transaction.atomic
 def change_order_status(
@@ -56,6 +96,10 @@ def change_order_status(
         Order.objects
         .select_for_update()
         .select_related("user")
+        .prefetch_related(
+            "items__variant",
+            "bundles__variant",
+        )
         .get(
             pk=order.pk,
         )
@@ -76,6 +120,22 @@ def change_order_status(
         raise ValidationError(
             _("Invalid order status transition.")
         )
+
+    # Preparing requires a paid payment intent so unpaid
+    # waiting_payment/created orders cannot skip payment.
+    if new_status == OrderStatus.PREPARING:
+        has_paid_intent = PaymentIntent.objects.filter(
+            order=order,
+            status=PaymentIntentStatus.PAID,
+        ).exists()
+
+        if not has_paid_intent:
+            raise ValidationError(
+                _(
+                    "Order cannot be marked preparing "
+                    "without a paid payment."
+                )
+            )
 
     update_fields = [
         "status",
@@ -111,6 +171,34 @@ def change_order_status(
         update_fields.append(
             "delivered_at",
         )
+
+    if new_status in STOCK_RELEASE_STATUSES:
+        reason = _release_order_stock_once(
+            order=order,
+            reason=reason,
+        )
+
+        # Canceling after payment: mark paid intents as
+        # refunded so status is not left as paid+canceled.
+        # Actual refund payout is not implemented yet.
+        if new_status == OrderStatus.CANCELED:
+            paid_intents = (
+                PaymentIntent.objects
+                .select_for_update()
+                .filter(
+                    order=order,
+                    status=PaymentIntentStatus.PAID,
+                )
+            )
+
+            for intent in paid_intents:
+                intent.status = PaymentIntentStatus.REFUNDED
+                intent.save(
+                    update_fields=[
+                        "status",
+                        "updated_at",
+                    ]
+                )
 
     order.save(
         update_fields=update_fields,

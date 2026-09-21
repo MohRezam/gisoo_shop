@@ -64,4 +64,5 @@ def list_keys_by_pattern(pattern: str):
 
 
 def make_key(key, key_prefix, version):
-    return key
+    """Match django-redis / Django default key format: prefix:version:key."""
+    return f"{key_prefix}:{version}:{key}"

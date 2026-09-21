@@ -6,6 +6,7 @@ from rest_framework.test import APITestCase
 
 from apps.shipping.models import ShippingMethod
 from apps.shipping.cache import SHIPPING_METHODS_CACHE_KEY
+from apps.shipping.services.shipping import calculate_shipping_price
 
 User = get_user_model()
 
@@ -58,6 +59,45 @@ class ShippingAndAddressAPITests(APITestCase):
         )
         titles = [i["title"] for i in items]
         self.assertIn("Post-Ship-New", titles)
+
+    def test_free_shipping_minimum_zero_is_not_always_free(self):
+        method = ShippingMethod.objects.create(
+            title="Post-No-Free",
+            price=25000,
+            free_shipping_minimum=0,
+            estimated_days=2,
+            is_active=True,
+        )
+        self.assertEqual(
+            calculate_shipping_price(
+                shipping_method=method,
+                products_total=1_000_000,
+            ),
+            25000,
+        )
+
+    def test_free_shipping_applies_when_minimum_met(self):
+        method = ShippingMethod.objects.create(
+            title="Post-Free-Threshold",
+            price=25000,
+            free_shipping_minimum=500_000,
+            estimated_days=2,
+            is_active=True,
+        )
+        self.assertEqual(
+            calculate_shipping_price(
+                shipping_method=method,
+                products_total=500_000,
+            ),
+            0,
+        )
+        self.assertEqual(
+            calculate_shipping_price(
+                shipping_method=method,
+                products_total=499_999,
+            ),
+            25000,
+        )
 
     def test_create_address_returns_id(self):
         url = reverse("apps.addresses:addresses-list")

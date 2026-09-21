@@ -12,7 +12,9 @@ def register_home_cache_signals():
         FAQCategory,
         HomeAbout,
         Slider,
+        SocialLinks,
     )
+    from apps.products.models import Category, Product
 
     mapping = {
         Banner: ns.HOME_BANNERS,
@@ -21,6 +23,7 @@ def register_home_cache_signals():
         CustomerSatisfaction: ns.HOME_SATISFACTION,
         FAQ: ns.HOME_FAQ,
         FAQCategory: ns.HOME_FAQ,
+        SocialLinks: ns.HOME_SOCIAL_LINKS,
     }
 
     for model, namespace in mapping.items():
@@ -34,3 +37,12 @@ def register_home_cache_signals():
         handler = make_handler(namespace)
         post_save.connect(handler, sender=model, weak=False)
         post_delete.connect(handler, sender=model, weak=False)
+
+    def bump_banner_slider_caches(**_kwargs):
+        bump_cache_version(ns.HOME_BANNERS)
+        bump_cache_version(ns.HOME_SLIDERS)
+
+    for model in (Product, Category):
+        # post_save: slug/title changes still referenced by banner/slider caches
+        post_save.connect(bump_banner_slider_caches, sender=model, weak=False)
+        post_delete.connect(bump_banner_slider_caches, sender=model, weak=False)

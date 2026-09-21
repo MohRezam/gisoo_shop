@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from django.db.models import Prefetch
 from rest_framework import status
 from rest_framework.generics import (
@@ -235,7 +236,10 @@ class ConsultationCreateAPIView(
             value=guest_access.token,
             max_age=30 * 24 * 60 * 60,
             httponly=True,
-            secure=True,
+            secure=(
+                request.is_secure()
+                or getattr(settings, "SESSION_COOKIE_SECURE", False)
+            ),
             samesite="Lax",
         )
 

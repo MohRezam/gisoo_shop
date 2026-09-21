@@ -16,6 +16,7 @@ HOME_SLIDERS = "home:sliders"
 HOME_ABOUT = "home:about"
 HOME_FAQ = "home:faq"
 HOME_SATISFACTION = "home:satisfaction"
+HOME_SOCIAL_LINKS = "home:social_links"
 
 MAGAZINE_LIST = "magazine:list"
 MAGAZINE_DETAIL = "magazine:detail"

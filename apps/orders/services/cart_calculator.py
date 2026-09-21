@@ -47,6 +47,7 @@ def calculate_cart(
         cart.items.select_related(
             "variant__product",
             "bundle__variant__product",
+            "bundle",
         )
     )
 
@@ -63,6 +64,28 @@ def calculate_cart(
         # -------------------------
         if cart_item.variant:
 
+            if not cart_item.variant.is_active:
+                raise ValidationError(
+                    {
+                        "detail": _(
+                            "Product variant '%(product)s' is not active."
+                        ) % {
+                            "product": cart_item.variant.product.title,
+                        },
+                    }
+                )
+
+            if not cart_item.variant.product.is_available:
+                raise ValidationError(
+                    {
+                        "detail": _(
+                            "Product '%(product)s' is not available."
+                        ) % {
+                            "product": cart_item.variant.product.title,
+                        },
+                    }
+                )
+
             required_stock[
                 cart_item.variant_id
             ] += cart_item.quantity
@@ -73,6 +96,37 @@ def calculate_cart(
         else:
 
             bundle = cart_item.bundle
+
+            if bundle is None or not bundle.is_active:
+                raise ValidationError(
+                    {
+                        "detail": _(
+                            "One or more bundles are not active."
+                        ),
+                    }
+                )
+
+            if not bundle.variant.is_active:
+                raise ValidationError(
+                    {
+                        "detail": _(
+                            "Product variant '%(product)s' is not active."
+                        ) % {
+                            "product": bundle.variant.product.title,
+                        },
+                    }
+                )
+
+            if not bundle.variant.product.is_available:
+                raise ValidationError(
+                    {
+                        "detail": _(
+                            "Product '%(product)s' is not available."
+                        ) % {
+                            "product": bundle.variant.product.title,
+                        },
+                    }
+                )
 
             bundle_quantity = (
                 bundle.quantity *
@@ -118,6 +172,32 @@ def calculate_cart(
                 ),
             }
         )
+
+    # ---------------------------------------------------------
+    # Re-check active flags after lock
+    # ---------------------------------------------------------
+
+    for variant in locked_variants.values():
+        if not variant.is_active:
+            raise ValidationError(
+                {
+                    "detail": _(
+                        "Product variant '%(product)s' is not active."
+                    ) % {
+                        "product": variant.product.title,
+                    },
+                }
+            )
+        if not variant.product.is_available:
+            raise ValidationError(
+                {
+                    "detail": _(
+                        "Product '%(product)s' is not available."
+                    ) % {
+                        "product": variant.product.title,
+                    },
+                }
+            )
 
     # ---------------------------------------------------------
     # Validate total stock

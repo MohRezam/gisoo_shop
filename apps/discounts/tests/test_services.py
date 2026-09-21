@@ -151,6 +151,21 @@ class TestCalculateDiscountPerUserLimit:
             user=user,
         )
 
+    def test_per_user_limit_zero_means_unlimited(self):
+        user = UserFactory()
+
+        discount = DiscountFactory(
+            per_user_limit=0,
+        )
+
+        result = calculate_discount(
+            user=user,
+            code=discount.code,
+            products_price=100_000,
+        )
+
+        assert result["discount_amount"] == 10_000
+
 
 @pytest.mark.django_db
 class TestCalculateDiscountValidity:

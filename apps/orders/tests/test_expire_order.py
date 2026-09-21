@@ -16,7 +16,7 @@ from apps.orders.models import (
 from apps.orders.services.create_order import create_order
 from apps.orders.tasks import expire_order
 from apps.orders.tests.factories import create_shipping_method
-from apps.payments.models import PaymentStatus
+from apps.payments.models import PaymentIntentStatus
 from apps.products.tests.factories import (
     create_brand,
     create_category,
@@ -76,40 +76,27 @@ class ExpireOrderTests(TestCase):
             shipping_method_id=self.shipping.id,
         )
 
-    @patch("apps.orders.tasks.change_order_status")
-    def test_expire_order_success(
-            self,
-            mock_change_status,
-    ):
+    def test_expire_order_success(self):
         self.order.expires_at = (
-                timezone.now() - timedelta(minutes=1)
+            timezone.now() - timedelta(minutes=1)
         )
-
         self.order.save()
 
         self.variant.refresh_from_db()
-
         stock_before = self.variant.stock
 
-        expire_order(
-            self.order.id,
-        )
+        expire_order(self.order.id)
 
         self.variant.refresh_from_db()
+        self.order.refresh_from_db()
 
         self.assertEqual(
             self.variant.stock,
             stock_before + 2,
         )
         self.assertEqual(
-            self.variant.stock,
-            10,
-        )
-
-        mock_change_status.assert_called_once_with(
-            order=self.order,
-            new_status=OrderStatus.EXPIRED,
-            reason="Order expired automatically.",
+            self.order.status,
+            OrderStatus.EXPIRED,
         )
 
     def test_order_not_found(self):
@@ -135,7 +122,7 @@ class ExpireOrderTests(TestCase):
             mock_change_status,
     ):
         self.order.expires_at = (
-                timezone.now() + timedelta(minutes=5)
+            timezone.now() + timedelta(minutes=5)
         )
 
         self.order.save()
@@ -151,20 +138,37 @@ class ExpireOrderTests(TestCase):
             self,
             mock_change_status,
     ):
-        payment = self.order.payment
+        intent = self.order.payment_intents.first()
+        intent.status = PaymentIntentStatus.PAID
+        intent.save(update_fields=["status"])
 
-        payment.status = PaymentStatus.SUCCESS
-
-        payment.save()
-
+        self.order.status = OrderStatus.PREPARING
         self.order.expires_at = (
-                timezone.now() - timedelta(minutes=1)
+            timezone.now() - timedelta(minutes=1)
         )
-
         self.order.save()
 
         expire_order(
             self.order.id,
         )
+
+        mock_change_status.assert_not_called()
+
+    @patch("apps.orders.tasks.change_order_status")
+    def test_skip_expire_when_receipt_under_review(
+            self,
+            mock_change_status,
+    ):
+        intent = self.order.payment_intents.first()
+        intent.status = PaymentIntentStatus.RECEIPT_SUBMITTED
+        intent.submitted_at = timezone.now() - timedelta(minutes=5)
+        intent.save(update_fields=["status", "submitted_at"])
+
+        self.order.expires_at = (
+            timezone.now() - timedelta(minutes=1)
+        )
+        self.order.save()
+
+        expire_order(self.order.id)
 
         mock_change_status.assert_not_called()

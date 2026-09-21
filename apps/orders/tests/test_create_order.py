@@ -117,10 +117,6 @@ class CreateOrderTests(TestCase):
             1,
         )
 
-        self.assertIsNotNone(
-            order.payment,
-        )
-
         self.assertTrue(
             order.payment_intents.exists(),
         )

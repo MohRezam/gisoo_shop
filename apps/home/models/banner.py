@@ -64,13 +64,6 @@ class Banner(BaseModel):
         verbose_name_plural = "بنرها"
         ordering = ["display_order", "-created_at"]
 
-        constraints = [
-            models.UniqueConstraint(
-                fields=["display_order"],
-                name="unique_banner_display_order",
-            ),
-        ]
-
     def __str__(self):
         return self.link_type
 

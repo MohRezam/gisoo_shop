@@ -1,0 +1,12 @@
+{% extends "admin/change_list.html" %}
+
+{% block object-tools-items %}
+  {% if show_bulk_tracking %}
+    <li>
+      <a href="{% url 'admin:orders_order_bulk_tracking' %}" class="addlink">
+        ورود کد رهگیری از اکسل
+      </a>
+    </li>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}

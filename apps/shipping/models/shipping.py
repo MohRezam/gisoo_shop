@@ -21,6 +21,7 @@ class ShippingMethod(BaseModel):
     free_shipping_minimum = models.PositiveBigIntegerField(
         verbose_name="حداقل ارسال رایگان",
         default=0,
+        help_text="۰ یعنی ارسال رایگان غیرفعال است.",
     )
 
     estimated_days = models.PositiveSmallIntegerField(

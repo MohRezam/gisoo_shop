@@ -166,14 +166,12 @@ class CreateOrderAPITests(APITestCase):
         )
 
         order = Order.objects.first()
+        intent = order.payment_intents.first()
 
-        self.assertIsNotNone(
-            order.payment,
-        )
-
+        self.assertIsNotNone(intent)
         self.assertEqual(
-            order.payment.amount,
-            order.total_price,
+            intent.base_amount_rial,
+            order.total_price * 10,
         )
 
     def test_cart_is_cleared(self):

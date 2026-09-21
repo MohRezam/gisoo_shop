@@ -74,7 +74,7 @@ class MagazineViewSet(CachedRetrieveMixin, viewsets.ReadOnlyModelViewSet):
                                 to_attr="active_variants",
                             ),
                         )
-                        .order_by("-created_at")[:8]
+                        .order_by("-created_at")
                     ),
                     to_attr="prefetched_related_products",
                 ),
@@ -83,7 +83,7 @@ class MagazineViewSet(CachedRetrieveMixin, viewsets.ReadOnlyModelViewSet):
                     queryset=(
                         Magazine.objects.filter(is_published=True)
                         .select_related("category")
-                        .order_by("-published_at")[:6]
+                        .order_by("-published_at")
                     ),
                     to_attr="prefetched_related_articles",
                 ),

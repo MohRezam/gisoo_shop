@@ -1,3 +1,4 @@
+from django.http import Http404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -56,6 +57,19 @@ class CartDetailAPIView(RetrieveAPIView):
         "items__variant__product",
         "items__bundle__variant__product",
     )
+
+    def get_object(self):
+        cart = super().get_object()
+        user = self.request.user
+
+        if user and user.is_authenticated:
+            if cart.user_id != user.id:
+                raise Http404
+        elif cart.user_id is not None:
+            # Guests may only access guest carts.
+            raise Http404
+
+        return cart
 
 
 class UpdateCartItemAPIView(APIView):

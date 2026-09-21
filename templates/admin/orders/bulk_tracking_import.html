@@ -1,0 +1,83 @@
+{% extends "admin/base_site.html" %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">خانه</a>
+  &rsaquo;
+  <a href="{% url 'admin:app_list' app_label='orders' %}">سفارش‌ها</a>
+  &rsaquo;
+  <a href="{% url 'admin:orders_order_changelist' %}">سفارش</a>
+  &rsaquo;
+  ورود کد رهگیری از اکسل
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <h1>{{ title }}</h1>
+
+  <p style="max-width: 720px; line-height: 1.8; color: #444;">
+    فایل اکسل را با ستون‌های فارسی پر کنید، سپس آپلود کنید.
+    برای هر ردیف معتبر، کد رهگیری ذخیره و وضعیت سفارش به «ارسال شده» تغییر می‌کند.
+    سفارش باید در وضعیت «در حال آماده‌سازی» باشد.
+  </p>
+
+  <div style="margin: 20px 0; display: flex; flex-wrap: wrap; gap: 10px;">
+    <a class="button" href="{% url 'admin:orders_order_bulk_tracking_template' %}">
+      دانلود تمپلیت خالی
+    </a>
+    <a class="button" href="{% url 'admin:orders_order_bulk_tracking_preparing' %}">
+      دانلود سفارش‌های آماده‌ارسال
+    </a>
+    <a class="button" href="{% url 'admin:orders_order_changelist' %}">
+      بازگشت به لیست سفارش‌ها
+    </a>
+  </div>
+
+  <form method="post" enctype="multipart/form-data" style="margin-top: 24px;">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div style="margin-bottom: 16px;">
+      {{ form.file.errors }}
+      <div>{{ form.file.label_tag }}</div>
+      <div style="margin-top: 8px;">{{ form.file }}</div>
+      {% if form.file.help_text %}
+        <div style="color: #666; margin-top: 6px;">{{ form.file.help_text }}</div>
+      {% endif %}
+    </div>
+    <input type="submit" value="آپلود و اعمال" class="default">
+  </form>
+
+  {% if import_result %}
+    <div style="margin-top: 28px;">
+      <h2>نتیجه</h2>
+      <p>
+        تعداد موفق:
+        <strong>{{ import_result.success_count }}</strong>
+      </p>
+      {% if import_result.errors %}
+        <table style="width: 100%; max-width: 900px; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 8px;">ردیف اکسل</th>
+              <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 8px;">شماره سفارش</th>
+              <th style="text-align: right; border-bottom: 1px solid #ddd; padding: 8px;">خطا</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for err in import_result.errors %}
+              <tr>
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ err.row_number }}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee;">{{ err.order_number|default:"—" }}</td>
+                <td style="padding: 8px; border-bottom: 1px solid #eee; color: #b91c1c;">{{ err.message }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p style="color: #166534;">خطایی ثبت نشد.</p>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -7,7 +7,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.discounts.services import register_discount_usage
 from apps.orders.constants import ORDER_EXPIRATION_MINUTES
-from apps.orders.models import OrderStatus
+from apps.orders.models import Order, OrderStatus
 from apps.orders.services.change_order_status import (
     change_order_status,
 )
@@ -32,6 +32,40 @@ PAYABLE_ORDER_STATUSES = {
     OrderStatus.WAITING_PAYMENT,
 }
 
+APPROVED_BANK_REF_STATUSES = {
+    PaymentIntentStatus.PAID,
+    PaymentIntentStatus.REFUNDED,
+}
+
+
+def _lock_order_then_intent(*, payment_intent_id):
+    """
+    Lock Order first, then PaymentIntent, to match
+    expire_order and avoid deadlocks.
+    """
+
+    intent_order_id = (
+        PaymentIntent.objects
+        .filter(pk=payment_intent_id)
+        .values_list("order_id", flat=True)
+        .get()
+    )
+
+    order = (
+        Order.objects
+        .select_for_update()
+        .select_related("user")
+        .get(pk=intent_order_id)
+    )
+
+    payment_intent = (
+        PaymentIntent.objects
+        .select_for_update()
+        .get(pk=payment_intent_id)
+    )
+
+    return order, payment_intent
+
 
 @transaction.atomic
 def approve_payment(
@@ -42,11 +76,8 @@ def approve_payment(
     bank_reference,
     reason="",
 ):
-    payment_intent = (
-        PaymentIntent.objects
-        .select_for_update()
-        .select_related("order", "order__user")
-        .get(pk=payment_intent_id)
+    order, payment_intent = _lock_order_then_intent(
+        payment_intent_id=payment_intent_id,
     )
 
     if payment_intent.status == PaymentIntentStatus.PAID:
@@ -55,6 +86,11 @@ def approve_payment(
     if payment_intent.status not in REVIEWABLE_STATUSES:
         raise ValidationError(
             _("This payment cannot be approved.")
+        )
+
+    if order.status not in PAYABLE_ORDER_STATUSES:
+        raise ValidationError(
+            _("Payment cannot be approved for this order status.")
         )
 
     if not bank_verified:
@@ -69,6 +105,21 @@ def approve_payment(
     if not bank_reference:
         raise ValidationError(
             _("Bank reference is required.")
+        )
+
+    duplicate_ref = (
+        PaymentIntent.objects
+        .filter(
+            bank_reference=bank_reference,
+            status__in=APPROVED_BANK_REF_STATUSES,
+        )
+        .exclude(pk=payment_intent.pk)
+        .exists()
+    )
+
+    if duplicate_ref:
+        raise ValidationError(
+            _("This bank reference is already used on another approved payment.")
         )
 
     now = timezone.now()
@@ -104,8 +155,6 @@ def approve_payment(
         bank_verified=True,
     )
 
-    order = payment_intent.order
-
     if order.discount_id is not None:
         register_discount_usage(
             discount=order.discount,
@@ -113,14 +162,13 @@ def approve_payment(
             order=order,
         )
 
-    if order.status in PAYABLE_ORDER_STATUSES:
-        change_order_status(
-            order=order,
-            new_status=OrderStatus.PREPARING,
-            changed_by=admin,
-            reason="Payment approved.",
-            send_notification=False,
-        )
+    change_order_status(
+        order=order,
+        new_status=OrderStatus.PREPARING,
+        changed_by=admin,
+        reason="Payment approved.",
+        send_notification=False,
+    )
 
     order_label = order.public_number or order.id
     user = order.user
@@ -158,11 +206,8 @@ def reject_payment(
     admin,
     reason,
 ):
-    payment_intent = (
-        PaymentIntent.objects
-        .select_for_update()
-        .select_related("order", "order__user")
-        .get(pk=payment_intent_id)
+    order, payment_intent = _lock_order_then_intent(
+        payment_intent_id=payment_intent_id,
     )
 
     if payment_intent.status == PaymentIntentStatus.REJECTED:
@@ -218,8 +263,6 @@ def reject_payment(
         reason=reason,
         bank_verified=False,
     )
-
-    order = payment_intent.order
 
     if order.status in PAYABLE_ORDER_STATUSES | {
         OrderStatus.PAYMENT_REJECTED,

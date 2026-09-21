@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.home.apis import BannerAPIView, HomeAboutAPIView, SliderAPIView
+from apps.home.apis import BannerAPIView, HomeAboutAPIView, SliderAPIView, SocialLinksAPIView
 from apps.home.apis.customer_satisfaction import CustomerSatisfactionListAPIView
 from apps.home.apis.frequently_asked_questions import FAQListAPIView
 
@@ -31,5 +31,10 @@ urlpatterns = [
         "v1/faqs/",
         FAQListAPIView.as_view(),
         name="faq-list",
+    ),
+    path(
+        "v1/social-links/",
+        SocialLinksAPIView.as_view(),
+        name="social-links",
     ),
 ]

@@ -3,6 +3,7 @@ from django.contrib.auth.models import (
     AbstractBaseUser,
     PermissionsMixin,
 )
+from django.db.models.functions import Lower
 from apps.users.managers.managers import UserManager
 from core_gisoo_backend.storage_backends.locations import avatar_path
 
@@ -62,6 +63,23 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = "کاربر"
         verbose_name_plural = "کاربران"
+        constraints = [
+            models.UniqueConstraint(
+                Lower("email"),
+                condition=(
+                    models.Q(email__isnull=False)
+                    & ~models.Q(email="")
+                ),
+                name="unique_user_email_ci",
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.email:
+            self.email = self.email.strip().lower()
+        elif self.email == "":
+            self.email = None
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.phone_number
