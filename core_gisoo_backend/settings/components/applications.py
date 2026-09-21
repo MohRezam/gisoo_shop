@@ -38,7 +38,7 @@ THIRD_PARTY_APPS = [
     "admin_auto_filters",
     "drf_spectacular",
     "django_object_actions",
-    # "jalali_date",
+    "jalali_date",
     "import_export",
     "silk",
     "rest_framework_simplejwt.token_blacklist",

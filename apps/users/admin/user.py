@@ -2,6 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import Permission
+from jalali_date.admin import ModelAdminJalaliMixin
 
 from apps.shared.admin_filters import PersianBooleanFilter
 from apps.users.admin.forms import GisooUserPasswordChangeForm
@@ -40,7 +41,7 @@ class UserPhoneNumberInline(admin.TabularInline):
 
 
 @admin.register(User)
-class CustomUserAdmin(UserAdmin):
+class CustomUserAdmin(ModelAdminJalaliMixin, UserAdmin):
     model = User
     change_password_form = GisooUserPasswordChangeForm
     change_user_password_template = "admin/users/user/change_password.html"

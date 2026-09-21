@@ -16,6 +16,7 @@ class SharedConfig(AppConfig):
     verbose_name = "اشتراکی"
 
     def ready(self):
+        self._ensure_distutils_strictversion()
         from django.apps import apps
 
         renames = {
@@ -181,3 +182,96 @@ class SharedConfig(AppConfig):
                 _patch_field_labels(model, labels)
             except LookupError:
                 pass
+
+        self._enable_jalali_admin_globally()
+
+    def _enable_jalali_admin_globally(self) -> None:
+        """Shamsi dates in every admin list/form (not only BaseModelAdmin)."""
+        from django.conf import settings
+        from django.contrib.admin import utils as admin_utils
+        from django.contrib.admin.options import InlineModelAdmin, ModelAdmin
+        from django.db import models
+        from jalali_date import date2jalali, datetime2jalali
+        from jalali_date.admin import overrides as jalali_overrides
+        from jalali_date.utils import normalize_strftime
+
+        if getattr(ModelAdmin, "_gisoo_jalali_patched", False):
+            return
+
+        _orig_display_for_field = admin_utils.display_for_field
+        _orig_init = ModelAdmin.__init__
+        _orig_inline_init = InlineModelAdmin.__init__
+
+        def display_for_field(value, field, empty_value_display):
+            if value and isinstance(field, models.DateTimeField):
+                fmt = settings.JALALI_DATE_DEFAULTS["Strftime"]["datetime"]
+                return datetime2jalali(value).strftime(normalize_strftime(fmt))
+            if value and isinstance(field, models.DateField):
+                fmt = settings.JALALI_DATE_DEFAULTS["Strftime"]["date"]
+                return date2jalali(value).strftime(normalize_strftime(fmt))
+            return _orig_display_for_field(value, field, empty_value_display)
+
+        def patched_init(self, model, admin_site):
+            merged = jalali_overrides.copy()
+            merged.update(getattr(self, "formfield_overrides", None) or {})
+            self.formfield_overrides = merged
+            _orig_init(self, model, admin_site)
+
+        def patched_inline_init(self, parent_model, admin_site):
+            merged = jalali_overrides.copy()
+            merged.update(getattr(self, "formfield_overrides", None) or {})
+            self.formfield_overrides = merged
+            _orig_inline_init(self, parent_model, admin_site)
+
+        admin_utils.display_for_field = display_for_field
+        # Imported-by-name bindings that must be updated too.
+        from django.contrib.admin.templatetags import admin_list
+        from django.contrib.admin import helpers as admin_helpers
+
+        admin_list.display_for_field = display_for_field
+        admin_helpers.display_for_field = display_for_field
+        ModelAdmin.__init__ = patched_init
+        InlineModelAdmin.__init__ = patched_inline_init
+        ModelAdmin._gisoo_jalali_patched = True
+
+    @staticmethod
+    def _ensure_distutils_strictversion() -> None:
+        """django-jalali-date still imports distutils (removed in Python 3.12+)."""
+        try:
+            from distutils.version import StrictVersion  # noqa: F401
+            return
+        except ImportError:
+            pass
+
+        import sys
+        import types
+
+        from packaging.version import Version
+
+        class StrictVersion:
+            def __init__(self, v: str):
+                self._v = Version(v)
+
+            def __ge__(self, other: "StrictVersion") -> bool:
+                return self._v >= other._v
+
+            def __gt__(self, other: "StrictVersion") -> bool:
+                return self._v > other._v
+
+            def __le__(self, other: "StrictVersion") -> bool:
+                return self._v <= other._v
+
+            def __lt__(self, other: "StrictVersion") -> bool:
+                return self._v < other._v
+
+            def __eq__(self, other: object) -> bool:
+                if not isinstance(other, StrictVersion):
+                    return NotImplemented
+                return self._v == other._v
+
+        distutils_mod = types.ModuleType("distutils")
+        version_mod = types.ModuleType("distutils.version")
+        version_mod.StrictVersion = StrictVersion
+        distutils_mod.version = version_mod
+        sys.modules["distutils"] = distutils_mod
+        sys.modules["distutils.version"] = version_mod
