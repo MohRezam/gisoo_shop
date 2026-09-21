@@ -139,13 +139,17 @@ class ChangeOrderStatusTests(TestCase):
                 new_status=OrderStatus.PREPARING,
             )
 
-    def test_set_shipped_at(self):
+    def _prepare_for_ship(self):
         self._mark_order_paid()
-
         change_order_status(
             order=self.order,
             new_status=OrderStatus.PREPARING,
         )
+        self.order.tracking_code = "1234567890"
+        self.order.save(update_fields=["tracking_code", "updated_at"])
+
+    def test_set_shipped_at(self):
+        self._prepare_for_ship()
 
         order = change_order_status(
             order=self.order,
@@ -157,14 +161,22 @@ class ChangeOrderStatusTests(TestCase):
         self.assertIsNotNone(
             order.shipped_at,
         )
+        self.assertEqual(order.carrier, "post")
 
-    def test_set_delivered_at(self):
+    def test_ship_requires_tracking_code(self):
         self._mark_order_paid()
-
         change_order_status(
             order=self.order,
             new_status=OrderStatus.PREPARING,
         )
+        with self.assertRaises(ValidationError):
+            change_order_status(
+                order=self.order,
+                new_status=OrderStatus.SHIPPED,
+            )
+
+    def test_set_delivered_at(self):
+        self._prepare_for_ship()
 
         change_order_status(
             order=self.order,

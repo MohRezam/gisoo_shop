@@ -15,18 +15,13 @@ from apps.payments.models import (
 ACTIVE_PAYMENT_STATUSES = [
     PaymentIntentStatus.PENDING_PAYMENT,
     PaymentIntentStatus.RECEIPT_SUBMITTED,
-    PaymentIntentStatus.UNDER_REVIEW,
-    PaymentIntentStatus.MANUAL_REVIEW,
 ]
 
 REVIEW_PENDING_STATUSES = {
     PaymentIntentStatus.RECEIPT_SUBMITTED,
-    PaymentIntentStatus.UNDER_REVIEW,
-    PaymentIntentStatus.MANUAL_REVIEW,
 }
 
 EXPIRABLE_ORDER_STATUSES = {
-    OrderStatus.CREATED,
     OrderStatus.WAITING_PAYMENT,
     OrderStatus.PAYMENT_REJECTED,
 }
@@ -45,11 +40,7 @@ def has_valid_payment_receipt(
 
     return PaymentIntent.objects.filter(
         order=order,
-        status__in=[
-            PaymentIntentStatus.RECEIPT_SUBMITTED,
-            PaymentIntentStatus.UNDER_REVIEW,
-            PaymentIntentStatus.MANUAL_REVIEW,
-        ],
+        status=PaymentIntentStatus.RECEIPT_SUBMITTED,
         submitted_at__isnull=False,
         submitted_at__lte=expires_at,
     ).exists()
@@ -81,7 +72,7 @@ def expire_order(order_id: int):
         return
 
     # ---------------------------------------------------------
-    # WAITING_PAYMENT / CREATED
+    # WAITING_PAYMENT
     # ---------------------------------------------------------
     #
     # If a receipt was submitted before the deadline,
@@ -91,10 +82,7 @@ def expire_order(order_id: int):
     # admin reviews the payment.
     #
 
-    if order.status in {
-        OrderStatus.CREATED,
-        OrderStatus.WAITING_PAYMENT,
-    }:
+    if order.status == OrderStatus.WAITING_PAYMENT:
         if has_valid_payment_receipt(
             order=order,
             expires_at=order.expires_at,

@@ -403,47 +403,11 @@ class SpecialOfferProductListAPIView(ListAPIView):
     pagination_class = StandardResultPagination
 
     def get_queryset(self):
-        return (
-            Product.objects
-            .filter(
-                is_available=True,
-                variants__is_active=True,
-                variants__stock__gt=0,
-                variants__discounted_price__isnull=False,
-                variants__discounted_price__lt=F(
-                    "variants__price",
-                ),
-            )
-            .select_related(
-                "brand",
-                "category",
-            )
-            .prefetch_related(
-                Prefetch(
-                    "images",
-                    queryset=ProductImage.objects.filter(
-                        is_primary=True,
-                    ),
-                    to_attr="primary_images",
-                ),
-                Prefetch(
-                    "variants",
-                    queryset=(
-                        ProductVariant.objects
-                        .filter(
-                            is_active=True,
-                            stock__gt=0,
-                            discounted_price__isnull=False,
-                            discounted_price__lt=F("price"),
-                        )
-                        .order_by("discounted_price")
-                    ),
-                    to_attr="active_variants",
-                ),
-            )
-            .distinct()
-            .order_by("-created_at")
+        from apps.products.services.discount_campaign import (
+            special_offer_products_queryset,
         )
+
+        return special_offer_products_queryset()
 
 
 @extend_schema(

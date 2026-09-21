@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 
 from apps.products.admin import BundleInline
 from apps.products.models import (
@@ -11,7 +11,6 @@ from apps.products.models import (
     VariantAttribute, ProductRelatedProduct, DiscountCampaign,
 )
 import nested_admin
-from django.db.models import F
 
 
 class ProductImageInline(nested_admin.NestedTabularInline):
@@ -73,6 +72,7 @@ class ProductAdmin(
         "category",
         "brand",
         "is_available",
+        "show_in_special_offer",
         "created_at",
     )
 
@@ -80,6 +80,7 @@ class ProductAdmin(
         "category",
         "brand",
         "is_available",
+        "show_in_special_offer",
         "created_at",
     )
 
@@ -107,12 +108,55 @@ class ProductAdmin(
     list_per_page = 15
     list_display_links = ("title",)
 
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "title",
+                    "slug",
+                    "category",
+                    "brand",
+                    "short_description",
+                    "description",
+                    "is_available",
+                    "show_in_special_offer",
+                    "hair_problems",
+                    "hair_types",
+                ),
+            },
+        ),
+    )
+
+    filter_horizontal = (
+        "hair_problems",
+        "hair_types",
+    )
+
     inlines = [
         ProductImageInline,
         ProductAttributeInline,
         ProductVariantInline,
         ProductRelatedProductInline,
     ]
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+
+        product = form.instance
+        if not product.show_in_special_offer:
+            return
+
+        if product.has_active_discount():
+            return
+
+        product.show_in_special_offer = False
+        product.save(update_fields=["show_in_special_offer", "updated_at"])
+        messages.error(
+            request,
+            "تیک پیشنهاد ویژه برداشته شد؛ محصول باید حداقل یک واریانت "
+            "فعال با قیمت تخفیف‌خورده داشته باشد.",
+        )
 
 
 @admin.register(ProductVariant)
@@ -312,10 +356,6 @@ class DiscountCampaignAdmin(admin.ModelAdmin):
         "title",
     )
 
-    filter_horizontal = (
-        "products",
-    )
-
     readonly_fields = (
         "created_at",
         "updated_at",
@@ -329,8 +369,11 @@ class DiscountCampaignAdmin(admin.ModelAdmin):
                 "fields": (
                     "title",
                     "is_active",
-                    "products",
-                )
+                ),
+                "description": (
+                    "محصولات را از صفحهٔ هر محصول با تیک "
+                    "«نمایش در پیشنهاد ویژه» اضافه کنید."
+                ),
             },
         ),
         (
@@ -339,7 +382,11 @@ class DiscountCampaignAdmin(admin.ModelAdmin):
                 "fields": (
                     "starts_at",
                     "ends_at",
-                )
+                ),
+                "description": (
+                    "با رسیدن به زمان پایان، تخفیف محصولات عضو "
+                    "پیشنهاد ویژه به‌صورت خودکار برداشته می‌شود."
+                ),
             },
         ),
         (
@@ -362,28 +409,6 @@ class DiscountCampaignAdmin(admin.ModelAdmin):
     )
     list_per_page = 15
     list_display_links = ("title",)
-
-    def formfield_for_manytomany(
-            self,
-            db_field,
-            request,
-            **kwargs,
-    ):
-        if db_field.name == "products":
-            kwargs["queryset"] = Product.objects.filter(
-                is_available=True,
-                variants__is_active=True,
-                variants__discounted_price__isnull=False,
-                variants__discounted_price__lt=F(
-                    "variants__price"
-                ),
-            ).distinct()
-
-        return super().formfield_for_manytomany(
-            db_field,
-            request,
-            **kwargs,
-        )
 
     @admin.display(description="وضعیت")
     def status(self, obj):

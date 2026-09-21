@@ -13,6 +13,7 @@ class ShippingMethodAdmin(
     list_display = [
         "id",
         "title",
+        "carrier",
         "price",
         "free_shipping_minimum",
         "estimated_days",
@@ -21,6 +22,7 @@ class ShippingMethodAdmin(
 
     list_filter = [
         "is_active",
+        "carrier",
     ]
 
     search_fields = [

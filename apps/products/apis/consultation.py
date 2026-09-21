@@ -1,4 +1,4 @@
-from django.db.models import F, Prefetch, Q
+from django.db.models import Prefetch, Q
 from django.core.cache import cache
 import hashlib
 import json
@@ -9,7 +9,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.products.models import Product, ProductImage, ProductVariant
+from apps.products.models import Product, ProductVariant
 from apps.products.serializers.product import (
     ProductListSerializer,
     SpecialOfferProductListSerializer,
@@ -132,34 +132,11 @@ class DiscountCampaignsAPIView(APIView):
         if cached is not None:
             return Response(cached)
 
-        qs = list(
-            Product.objects.filter(
-                is_available=True,
-                variants__is_active=True,
-                variants__stock__gt=0,
-                variants__discounted_price__isnull=False,
-                variants__discounted_price__lt=F("variants__price"),
-            )
-            .select_related("brand", "category")
-            .prefetch_related(
-                Prefetch(
-                    "images",
-                    queryset=ProductImage.objects.filter(is_primary=True),
-                    to_attr="primary_images",
-                ),
-                Prefetch(
-                    "variants",
-                    queryset=ProductVariant.objects.filter(
-                        is_active=True,
-                        stock__gt=0,
-                        discounted_price__isnull=False,
-                        discounted_price__lt=F("price"),
-                    ),
-                ),
-            )
-            .distinct()
-            .order_by("-id")[:50]
+        from apps.products.services.discount_campaign import (
+            special_offer_products_queryset,
         )
+
+        qs = list(special_offer_products_queryset()[:50])
         results = SpecialOfferProductListSerializer(
             qs,
             many=True,

@@ -810,10 +810,7 @@ class DiscountCampaignProductSerializer(serializers.ModelSerializer):
 
 
 class DiscountCampaignSerializer(serializers.ModelSerializer):
-    products = DiscountCampaignProductSerializer(
-        many=True,
-        read_only=True,
-    )
+    products = serializers.SerializerMethodField()
 
     class Meta:
         model = DiscountCampaign
@@ -824,3 +821,18 @@ class DiscountCampaignSerializer(serializers.ModelSerializer):
             "ends_at",
             "products",
         )
+
+    def get_products(self, obj):
+        products = self.context.get("campaign_products")
+        if products is None:
+            from apps.products.services.discount_campaign import (
+                campaign_member_products_queryset,
+            )
+
+            products = campaign_member_products_queryset()
+
+        return DiscountCampaignProductSerializer(
+            products,
+            many=True,
+            context=self.context,
+        ).data

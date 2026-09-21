@@ -109,6 +109,8 @@ class OrderAdmin(admin.ModelAdmin):
         "id",
         "user",
         "status",
+        "carrier",
+        "tracking_code",
         "total_price",
         "phone_number",
         "created_at",
@@ -116,6 +118,7 @@ class OrderAdmin(admin.ModelAdmin):
 
     list_filter = [
         ("status", PersianChoicesFilter),
+        ("carrier", PersianChoicesFilter),
         OrderCreatedAtFilter,
         ("province", PersianAllValuesFilter),
         ("city", PersianAllValuesFilter),
@@ -311,6 +314,10 @@ class OrderAdmin(admin.ModelAdmin):
 
     @admin.action(description="Mark selected as shipped")
     def mark_shipped(self, request, queryset):
+        """
+        Requires tracking_code (and carrier via order/shipping method)
+        — enforced in change_order_status.
+        """
         self._bulk_change_status(
             request,
             queryset,

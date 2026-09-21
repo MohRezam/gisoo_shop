@@ -9,7 +9,6 @@ MAX_PAYMENT_RETRY = 3
 
 
 ORDER_STATUS_LABELS = {
-    OrderStatus.CREATED: "ثبت شده",
     OrderStatus.WAITING_PAYMENT: "در انتظار پرداخت",
     OrderStatus.PAYMENT_REJECTED: "پرداخت رد شده",
     OrderStatus.PREPARING: "در حال آماده‌سازی",
@@ -21,13 +20,6 @@ ORDER_STATUS_LABELS = {
 
 
 ALLOWED_TRANSITIONS = {
-    OrderStatus.CREATED: [
-        OrderStatus.WAITING_PAYMENT,
-        OrderStatus.PREPARING,
-        OrderStatus.CANCELED,
-        OrderStatus.EXPIRED,
-        OrderStatus.PAYMENT_REJECTED,
-    ],
     OrderStatus.WAITING_PAYMENT: [
         OrderStatus.PREPARING,
         OrderStatus.PAYMENT_REJECTED,
@@ -35,7 +27,6 @@ ALLOWED_TRANSITIONS = {
         OrderStatus.EXPIRED,
     ],
     OrderStatus.PAYMENT_REJECTED: [
-        OrderStatus.CREATED,
         OrderStatus.WAITING_PAYMENT,
         OrderStatus.CANCELED,
         OrderStatus.EXPIRED,

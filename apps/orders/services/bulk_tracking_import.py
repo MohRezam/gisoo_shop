@@ -138,7 +138,7 @@ def find_order_by_number(order_number: str) -> Order | None:
         return None
 
     order = (
-        Order.objects.select_related("user")
+        Order.objects.select_related("user", "shipping_method")
         .filter(public_number=raw)
         .first()
     )
@@ -147,7 +147,7 @@ def find_order_by_number(order_number: str) -> Order | None:
 
     if raw.isdigit():
         return (
-            Order.objects.select_related("user")
+            Order.objects.select_related("user", "shipping_method")
             .filter(pk=int(raw))
             .first()
         )
@@ -168,8 +168,22 @@ def _apply_tracking_and_ship(
     tracking_code: str,
     changed_by,
 ) -> None:
+    update_fields = ["tracking_code", "updated_at"]
     order.tracking_code = tracking_code
-    order.save(update_fields=["tracking_code", "updated_at"])
+
+    if not (order.carrier or "").strip():
+        method = getattr(order, "shipping_method", None)
+        if method is None and order.shipping_method_id:
+            from apps.shipping.models import ShippingMethod
+
+            method = ShippingMethod.objects.filter(
+                pk=order.shipping_method_id,
+            ).first()
+        if method and method.carrier:
+            order.carrier = method.carrier
+            update_fields.append("carrier")
+
+    order.save(update_fields=update_fields)
 
     if order.status == OrderStatus.SHIPPED:
         return

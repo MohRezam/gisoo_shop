@@ -6,12 +6,11 @@ from apps.orders.models import OrderStatus
 STATUS_LIST_PRIORITY = {
     OrderStatus.PREPARING: 0,
     OrderStatus.WAITING_PAYMENT: 1,
-    OrderStatus.CREATED: 2,
-    OrderStatus.PAYMENT_REJECTED: 3,
-    OrderStatus.SHIPPED: 4,
-    OrderStatus.DELIVERED: 5,
-    OrderStatus.CANCELED: 6,
-    OrderStatus.EXPIRED: 7,
+    OrderStatus.PAYMENT_REJECTED: 2,
+    OrderStatus.SHIPPED: 3,
+    OrderStatus.DELIVERED: 4,
+    OrderStatus.CANCELED: 5,
+    OrderStatus.EXPIRED: 6,
 }
 
 

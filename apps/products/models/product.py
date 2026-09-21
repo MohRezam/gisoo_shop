@@ -60,6 +60,16 @@ class Product(BaseModel):
         default=True,
         verbose_name="موجود",
     )
+
+    show_in_special_offer = models.BooleanField(
+        default=False,
+        verbose_name="نمایش در پیشنهاد ویژه",
+        help_text=(
+            "فقط محصولاتی که حداقل یک واریانت با قیمت تخفیف‌خورده دارند "
+            "می‌توانند در پیشنهاد ویژه نمایش داده شوند."
+        ),
+    )
+
     hair_problems = models.ManyToManyField(
         "products.HairProblem",
         blank=True,
@@ -81,6 +91,28 @@ class Product(BaseModel):
 
     def __str__(self):
         return self.title
+
+    def has_active_discount(self) -> bool:
+        if not self.pk:
+            return False
+
+        return self.variants.filter(
+            is_active=True,
+            discounted_price__isnull=False,
+            discounted_price__lt=F("price"),
+        ).exists()
+
+    def clean(self):
+        super().clean()
+
+        if self.show_in_special_offer and self.pk:
+            if not self.has_active_discount():
+                raise ValidationError({
+                    "show_in_special_offer": (
+                        "برای افزودن به پیشنهاد ویژه، محصول باید "
+                        "حداقل یک واریانت فعال با قیمت تخفیف‌خورده داشته باشد."
+                    ),
+                })
 
 
 class ProductRelatedProduct(BaseModel):
@@ -439,16 +471,9 @@ class DiscountCampaign(BaseModel):
         editable=False,
     )
 
-    products = models.ManyToManyField(
-        Product,
-        related_name="discount_campaigns",
-        blank=True,
-        verbose_name=_("products"),
-    )
-
     class Meta:
-        verbose_name = _("Discount Campaign")
-        verbose_name_plural = _("Discount Campaigns")
+        verbose_name = "کمپین تخفیف"
+        verbose_name_plural = "کمپین تخفیف"
         ordering = ["-created_at"]
 
     def __str__(self):

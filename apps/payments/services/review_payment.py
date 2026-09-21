@@ -23,12 +23,9 @@ from apps.payments.models import (
 
 REVIEWABLE_STATUSES = {
     PaymentIntentStatus.RECEIPT_SUBMITTED,
-    PaymentIntentStatus.UNDER_REVIEW,
-    PaymentIntentStatus.MANUAL_REVIEW,
 }
 
 PAYABLE_ORDER_STATUSES = {
-    OrderStatus.CREATED,
     OrderStatus.WAITING_PAYMENT,
 }
 

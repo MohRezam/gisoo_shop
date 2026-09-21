@@ -17,16 +17,6 @@ class PaymentIntentStatus(models.TextChoices):
         "رسید ارسال‌شده",
     )
 
-    UNDER_REVIEW = (
-        "under_review",
-        "در حال بررسی",
-    )
-
-    MANUAL_REVIEW = (
-        "manual_review",
-        "بررسی دستی",
-    )
-
     PAID = (
         "paid",
         "پرداخت‌شده",
@@ -51,8 +41,6 @@ class PaymentIntentStatus(models.TextChoices):
 ACTIVE_PAYMENT_INTENT_STATUSES = (
     PaymentIntentStatus.PENDING_PAYMENT,
     PaymentIntentStatus.RECEIPT_SUBMITTED,
-    PaymentIntentStatus.UNDER_REVIEW,
-    PaymentIntentStatus.MANUAL_REVIEW,
 )
 
 
@@ -266,11 +254,6 @@ class PaymentReviewDecision(models.TextChoices):
     REJECTED = (
         "rejected",
         _("Rejected"),
-    )
-
-    MANUAL_REVIEW = (
-        "manual_review",
-        _("Manual review"),
     )
 
 

@@ -35,7 +35,7 @@ def gisoo_dashboard_stats(context):
         stats["orders_total"] = Order.objects.count()
         stats["orders_today"] = Order.objects.filter(created_at__date=today).count()
         stats["waiting_payment"] = Order.objects.filter(
-            status__in=[OrderStatus.CREATED, OrderStatus.WAITING_PAYMENT]
+            status=OrderStatus.WAITING_PAYMENT
         ).count()
         stats["preparing"] = Order.objects.filter(status=OrderStatus.PREPARING).count()
         stats["shipped"] = Order.objects.filter(status=OrderStatus.SHIPPED).count()
@@ -58,11 +58,7 @@ def gisoo_dashboard_stats(context):
         from apps.payments.models import PaymentIntent, PaymentIntentStatus
 
         stats["payment_review"] = PaymentIntent.objects.filter(
-            status__in=[
-                PaymentIntentStatus.RECEIPT_SUBMITTED,
-                PaymentIntentStatus.UNDER_REVIEW,
-                PaymentIntentStatus.MANUAL_REVIEW,
-            ]
+            status=PaymentIntentStatus.RECEIPT_SUBMITTED,
         ).count()
     except Exception:
         pass

@@ -91,6 +91,9 @@ class OrderListSerializer(serializers.ModelSerializer):
     items = serializers.SerializerMethodField()
     bundles = serializers.SerializerMethodField()
     payment_intent = serializers.SerializerMethodField()
+    tracking_code = serializers.SerializerMethodField()
+    carrier = serializers.SerializerMethodField()
+    tracking_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -105,6 +108,9 @@ class OrderListSerializer(serializers.ModelSerializer):
             "items",
             "bundles",
             "payment_intent",
+            "tracking_code",
+            "carrier",
+            "tracking_url",
         ]
         read_only_fields = fields
 
@@ -136,12 +142,23 @@ class OrderListSerializer(serializers.ModelSerializer):
     def get_payment_intent(self, obj):
         return OrderDetailSerializer.get_payment_intent(self, obj)
 
+    def get_tracking_code(self, obj):
+        return OrderDetailSerializer.get_tracking_code(self, obj)
+
+    def get_carrier(self, obj):
+        return OrderDetailSerializer.get_carrier(self, obj)
+
+    def get_tracking_url(self, obj):
+        return OrderDetailSerializer.get_tracking_url(self, obj)
+
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     items_count = serializers.SerializerMethodField()
     items = serializers.SerializerMethodField()
     bundles = serializers.SerializerMethodField()
     tracking_code = serializers.SerializerMethodField()
+    carrier = serializers.SerializerMethodField()
+    tracking_url = serializers.SerializerMethodField()
     payment_intent = serializers.SerializerMethodField()
 
     class Meta:
@@ -159,11 +176,14 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "items",
             "bundles",
             "tracking_code",
+            "carrier",
+            "tracking_url",
             "payment_intent",
             "phone_number",
             "province",
             "city",
             "address",
+            "expires_at",
         ]
         read_only_fields = fields
 
@@ -188,10 +208,36 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         ).data
 
     def get_tracking_code(self, obj):
-        if obj.status != OrderStatus.SHIPPED:
+        if obj.status not in (
+            OrderStatus.SHIPPED,
+            OrderStatus.DELIVERED,
+        ):
             return None
+        code = (obj.tracking_code or "").strip()
+        return code or None
 
-        return obj.tracking_code
+    def get_carrier(self, obj):
+        carrier = (obj.carrier or "").strip()
+        if carrier:
+            return carrier
+        method = getattr(obj, "shipping_method", None)
+        if method and method.carrier:
+            return method.carrier
+        return None
+
+    def get_tracking_url(self, obj):
+        from apps.shipping.models import (
+            CARRIER_TRACKING_URLS,
+            ShippingCarrier,
+        )
+
+        carrier = self.get_carrier(obj)
+        if not carrier:
+            return None
+        return CARRIER_TRACKING_URLS.get(
+            carrier,
+            CARRIER_TRACKING_URLS[ShippingCarrier.POST],
+        )
 
     def get_payment_intent(self, obj):
         payment_intent = (
@@ -200,8 +246,6 @@ class OrderDetailSerializer(serializers.ModelSerializer):
                 status__in=[
                     PaymentIntentStatus.PENDING_PAYMENT,
                     PaymentIntentStatus.RECEIPT_SUBMITTED,
-                    PaymentIntentStatus.UNDER_REVIEW,
-                    PaymentIntentStatus.MANUAL_REVIEW,
                     PaymentIntentStatus.REJECTED,
                 ]
             )

@@ -24,7 +24,7 @@ def build_track_payload(order: Order) -> dict:
 
     timestamps = {
         "created": order.created_at,
-        "waiting_payment": order.created_at if status != OrderStatus.CREATED else None,
+        "waiting_payment": order.created_at,
         "paid": order.prepared_at if paid else None,
         "preparing": order.prepared_at,
         "shipped": order.shipped_at,
@@ -34,7 +34,7 @@ def build_track_payload(order: Order) -> dict:
     done_map = {
         "created": True,
         "waiting_payment": status
-        not in (OrderStatus.CREATED, OrderStatus.CANCELED, OrderStatus.EXPIRED)
+        not in (OrderStatus.CANCELED, OrderStatus.EXPIRED)
         or status == OrderStatus.WAITING_PAYMENT
         or status == OrderStatus.PAYMENT_REJECTED
         or paid,

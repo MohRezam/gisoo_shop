@@ -1,9 +1,30 @@
+from django.conf import settings
 from django.db import models
-from django.utils.translation import (
-    gettext_lazy as _,
-)
+from django.utils.translation import gettext_lazy as _
 
 from apps.shared.models.base import BaseModel
+
+
+class ShippingCarrier(models.TextChoices):
+    POST = (
+        "post",
+        "پست",
+    )
+    TIPAX = (
+        "tipax",
+        "تیپاکس",
+    )
+
+
+CARRIER_TRACKING_URLS = {
+    ShippingCarrier.POST: "https://tracking.post.ir/",
+    ShippingCarrier.TIPAX: "https://tipaxco.com/tracking",
+}
+
+CARRIER_SHIPPED_LABELS = {
+    ShippingCarrier.POST: "ارسال با پست",
+    ShippingCarrier.TIPAX: "ارسال با تیپاکس",
+}
 
 
 class ShippingMethod(BaseModel):
@@ -13,9 +34,16 @@ class ShippingMethod(BaseModel):
         unique=True,
     )
 
+    carrier = models.CharField(
+        max_length=16,
+        choices=ShippingCarrier.choices,
+        default=ShippingCarrier.POST,
+        verbose_name="حامل",
+    )
+
     price = models.PositiveBigIntegerField(
         verbose_name="قیمت",
-        default=0
+        default=0,
     )
 
     free_shipping_minimum = models.PositiveBigIntegerField(
@@ -41,15 +69,18 @@ class ShippingMethod(BaseModel):
             "price",
         ]
 
-    def __str__(
-            self,
-    ):
+    def __str__(self):
         return self.title
 
+    @property
+    def tracking_url(self) -> str:
+        return CARRIER_TRACKING_URLS.get(
+            self.carrier,
+            CARRIER_TRACKING_URLS[ShippingCarrier.POST],
+        )
 
-class ShipmentStatus(
-    models.TextChoices,
-):
+
+class ShipmentStatus(models.TextChoices):
     PENDING = (
         "pending",
         "در انتظار",
@@ -69,9 +100,6 @@ class ShipmentStatus(
         "returned",
         "مرجوع شده",
     )
-
-
-from django.conf import settings
 
 
 class Shipment(BaseModel):
@@ -123,9 +151,5 @@ class Shipment(BaseModel):
             "-created_at",
         ]
 
-    def __str__(
-            self,
-    ):
-        return (
-            f"Shipment #{self.pk}"
-        )
+    def __str__(self):
+        return f"Shipment #{self.pk}"

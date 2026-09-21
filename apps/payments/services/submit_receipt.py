@@ -29,8 +29,6 @@ ALLOWED_EXTENSIONS = {
 ALLOWED_STATUSES = {
     PaymentIntentStatus.PENDING_PAYMENT,
     PaymentIntentStatus.RECEIPT_SUBMITTED,
-    PaymentIntentStatus.UNDER_REVIEW,
-    PaymentIntentStatus.MANUAL_REVIEW,
 }
 
 

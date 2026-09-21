@@ -9,6 +9,7 @@ class ProductsConfig(AppConfig):
 
     def ready(self):
         from apps.products.signals import stock_notify  # noqa: F401
+        from apps.products.signals import discount_campaign  # noqa: F401
         from apps.products.signals.cache_invalidation import (
             register_product_cache_signals,
         )

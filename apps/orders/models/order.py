@@ -2,17 +2,12 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from apps.shared.models.base import BaseModel
-from apps.shipping.models import ShippingMethod
+from apps.shipping.models import ShippingCarrier, ShippingMethod
 from apps.users.models import User
 from apps.products.models import ProductVariant
 
 
 class OrderStatus(models.TextChoices):
-    CREATED = (
-        "created",
-        "ایجاد شده",
-    )
-
     WAITING_PAYMENT = (
         "waiting_payment",
         "در انتظار پرداخت",
@@ -83,6 +78,14 @@ class Order(BaseModel):
         blank=True,
         default="",
         verbose_name="کد پیگیری",
+    )
+
+    carrier = models.CharField(
+        max_length=16,
+        choices=ShippingCarrier.choices,
+        blank=True,
+        default="",
+        verbose_name="حامل",
     )
 
     description = models.TextField(

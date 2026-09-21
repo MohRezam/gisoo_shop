@@ -93,6 +93,7 @@ def create_order(
         postal_code=address.postal_code,
         address=address.address,
         shipping_method=shipping_method,
+        carrier=shipping_method.carrier,
     )
 
     order.public_number = generate_order_public_number(order.id)

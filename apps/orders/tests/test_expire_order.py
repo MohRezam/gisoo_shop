@@ -155,7 +155,7 @@ class ExpireOrderTests(TestCase):
         mock_change_status.assert_not_called()
 
     @patch("apps.orders.tasks.change_order_status")
-    def test_skip_expire_when_receipt_under_review(
+    def test_skip_expire_when_receipt_submitted(
             self,
             mock_change_status,
     ):

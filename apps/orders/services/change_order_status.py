@@ -17,6 +17,7 @@ from apps.payments.models import (
     PaymentIntent,
     PaymentIntentStatus,
 )
+from apps.shipping.models import ShippingCarrier
 
 
 STATUS_NOTIFICATIONS = {
@@ -95,7 +96,7 @@ def change_order_status(
     order = (
         Order.objects
         .select_for_update()
-        .select_related("user")
+        .select_related("user", "shipping_method")
         .prefetch_related(
             "items__variant",
             "bundles__variant",
@@ -122,7 +123,7 @@ def change_order_status(
         )
 
     # Preparing requires a paid payment intent so unpaid
-    # waiting_payment/created orders cannot skip payment.
+    # waiting_payment orders cannot skip payment.
     if new_status == OrderStatus.PREPARING:
         has_paid_intent = PaymentIntent.objects.filter(
             order=order,
@@ -137,9 +138,39 @@ def change_order_status(
                 )
             )
 
+    if new_status == OrderStatus.SHIPPED:
+        tracking = (order.tracking_code or "").strip()
+        if not tracking:
+            raise ValidationError(
+                _(
+                    "کد رهگیری قبل از علامت‌گذاری به‌عنوان "
+                    "ارسال‌شده الزامی است."
+                )
+            )
+        order.tracking_code = tracking
+
+        carrier = (order.carrier or "").strip()
+        if not carrier:
+            method = order.shipping_method
+            carrier = (getattr(method, "carrier", None) or "").strip()
+        if carrier not in {
+            ShippingCarrier.POST,
+            ShippingCarrier.TIPAX,
+        }:
+            raise ValidationError(
+                _(
+                    "حامل ارسال (پست یا تیپاکس) قبل از "
+                    "علامت‌گذاری به‌عنوان ارسال‌شده الزامی است."
+                )
+            )
+        order.carrier = carrier
+
     update_fields = [
         "status",
     ]
+
+    if new_status == OrderStatus.SHIPPED:
+        update_fields.extend(["tracking_code", "carrier"])
 
     order.status = new_status
 

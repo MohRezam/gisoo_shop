@@ -81,6 +81,7 @@ class BulkTrackingImportTests(TestCase):
         self.assertEqual(result.errors, [])
         self.assertEqual(self.order.tracking_code, "1234567890")
         self.assertEqual(self.order.status, OrderStatus.SHIPPED)
+        self.assertEqual(self.order.carrier, "post")
         self.assertIsNotNone(self.order.shipped_at)
 
     def test_letters_in_tracking_code_rejected(self):

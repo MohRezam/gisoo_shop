@@ -23,7 +23,6 @@ from apps.orders.services.create_order import create_order
 from utils.paginators import StandardResultPagination
 
 CUSTOMER_ORDER_STATUSES = [
-    OrderStatus.CREATED,
     OrderStatus.WAITING_PAYMENT,
     OrderStatus.PAYMENT_REJECTED,
     OrderStatus.PREPARING,

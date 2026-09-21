@@ -29,4 +29,8 @@ app.conf.beat_schedule = {
         "task": "apps.orders.tasks.expire_overdue_orders",
         "schedule": 60.0,
     },
+    "sweep-expired-discount-campaigns-every-minute": {
+        "task": "apps.products.tasks.sweep_expired_discount_campaigns",
+        "schedule": 60.0,
+    },
 }

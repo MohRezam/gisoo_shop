@@ -188,11 +188,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
     def _action_links(self, obj):
         links = []
 
-        if obj.status in {
-            "receipt_submitted",
-            "under_review",
-            "manual_review",
-        }:
+        if obj.status == "receipt_submitted":
             approve_url = reverse(
                 "admin:payments_paymentintent_approve",
                 args=[obj.pk],

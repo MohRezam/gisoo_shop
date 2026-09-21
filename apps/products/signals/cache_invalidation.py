@@ -25,6 +25,7 @@ def register_product_cache_signals():
         Brand,
         Bundle,
         Category,
+        DiscountCampaign,
         HairProblem,
         HairType,
         Product,
@@ -41,6 +42,7 @@ def register_product_cache_signals():
         HairProblem,
         HairType,
         Bundle,
+        DiscountCampaign,
     ):
         _connect(model)
 
