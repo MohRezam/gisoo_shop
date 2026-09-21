@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
 
 class UserPhoneNumber(models.Model):
@@ -8,37 +7,37 @@ class UserPhoneNumber(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="phone_numbers",
-        verbose_name=_("user"),
+        verbose_name="کاربر",
     )
 
     phone_number = models.CharField(
-        _("phone number"),
+        "شماره تلفن",
         max_length=15,
     )
 
     is_verified = models.BooleanField(
-        _("is verified"),
+        "تأییدشده",
         default=False,
     )
 
     is_primary = models.BooleanField(
-        _("is primary"),
+        "اصلی",
         default=False,
     )
 
     created_at = models.DateTimeField(
-        _("created at"),
+        "تاریخ ایجاد",
         auto_now_add=True,
     )
 
     updated_at = models.DateTimeField(
-        _("updated at"),
+        "تاریخ به‌روزرسانی",
         auto_now=True,
     )
 
     class Meta:
-        verbose_name = _("user phone number")
-        verbose_name_plural = _("user phone numbers")
+        verbose_name = "شماره تلفن کاربر"
+        verbose_name_plural = "شماره‌های تلفن کاربر"
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "phone_number"],

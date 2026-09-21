@@ -2,11 +2,14 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
 
+from apps.users.admin.forms import GisooPasswordChangeForm
+
 admin.site.site_header = "گیسو سنتر"
 admin.site.site_title = "گیسو سنتر | پنل مدیریت"
 admin.site.index_title = "پیشخوان مدیریت فروشگاه"
 admin.site.site_url = "https://gisoocenter.ir/"
 admin.site.enable_nav_sidebar = True
+admin.site.password_change_form = GisooPasswordChangeForm
 
 admin_urlpatterns = [
     path("admin/", admin.site.urls, name="admin"),

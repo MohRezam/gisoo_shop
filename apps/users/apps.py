@@ -1,5 +1,4 @@
 ﻿from django.apps import AppConfig
-from django.utils.translation import gettext_lazy as _
 
 
 class UsersConfig(AppConfig):
@@ -7,3 +6,18 @@ class UsersConfig(AppConfig):
     name = "apps.users"
     verbose_name = "کاربران"
 
+    def ready(self):
+        from apps.users.models import User
+
+        field_labels = {
+            "password": "رمز عبور",
+            "last_login": "آخرین ورود",
+            "is_superuser": "مدیر کل",
+            "groups": "گروه‌ها",
+            "user_permissions": "مجوزهای کاربر",
+        }
+        for name, label in field_labels.items():
+            try:
+                User._meta.get_field(name).verbose_name = label
+            except Exception:
+                pass
