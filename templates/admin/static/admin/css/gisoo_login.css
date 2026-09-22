@@ -85,12 +85,15 @@ body.login.gisoo-login {
 }
 
 .gisoo-login-brand-logo {
-  width: 72px;
-  height: 72px;
-  border-radius: 20px;
+  width: auto;
+  height: 56px;
+  max-width: 200px;
+  border-radius: 0;
   display: block;
   margin-bottom: 22px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  box-shadow: none;
 }
 
 .gisoo-login-kicker {
@@ -206,10 +209,13 @@ body.login.gisoo-login {
 .gisoo-login-mobile-logo {
   display: none;
   margin: 0 0 14px auto;
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  box-shadow: 0 10px 24px rgba(23, 61, 237, 0.18);
+  width: auto;
+  height: 40px;
+  max-width: 140px;
+  border-radius: 0;
+  object-fit: contain;
+  background: transparent !important;
+  box-shadow: none;
 }
 
 .gisoo-login-eyebrow {

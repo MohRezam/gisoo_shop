@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.orders.apis import (
+    CancelOrderAPIView,
     CreateOrderAPIView,
     LatestOrderAPIView,
     OrderDetailAPIView,
@@ -24,6 +25,11 @@ urlpatterns = [
         "v1/my/latest/",
         LatestOrderAPIView.as_view(),
         name="latest-order",
+    ),
+    path(
+        "v1/<int:id>/cancel/",
+        CancelOrderAPIView.as_view(),
+        name="cancel-order",
     ),
     path(
         "v1/<int:id>/",

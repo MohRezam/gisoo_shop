@@ -176,21 +176,22 @@ body {
 .gisoo-logo-wrap {
   display: grid;
   place-items: center;
-  padding: 3px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 4px 8px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
 .gisoo-logo,
 .gisoo-side-logo {
-  width: 46px;
-  height: 46px;
-  border-radius: 13px;
+  width: auto;
+  height: 36px;
+  max-width: 140px;
+  border-radius: 0;
   display: block;
-  object-fit: cover;
-  background: #1a2e5a;
+  object-fit: contain;
+  background: transparent;
 }
 
 .gisoo-mark {
@@ -782,10 +783,11 @@ input:focus, textarea:focus, select:focus {
 }
 
 .gisoo-side-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(23, 61, 237, 0.16);
+  width: auto;
+  height: 32px;
+  max-width: 120px;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .gisoo-side-mark {

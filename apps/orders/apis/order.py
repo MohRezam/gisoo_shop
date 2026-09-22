@@ -20,6 +20,7 @@ from apps.orders.serializers import (
     OrderListSerializer,
 )
 from apps.orders.services.create_order import create_order
+from apps.orders.services.change_order_status import change_order_status
 from utils.paginators import StandardResultPagination
 
 CUSTOMER_ORDER_STATUSES = [
@@ -33,6 +34,12 @@ CUSTOMER_ORDER_STATUSES = [
 ]
 
 VALID_STATUS_FILTERS = {choice.value for choice in OrderStatus}
+
+
+CUSTOMER_CANCELABLE_STATUSES = {
+    OrderStatus.WAITING_PAYMENT,
+    OrderStatus.PAYMENT_REJECTED,
+}
 
 
 def get_customer_orders_queryset(user, *, statuses=None):
@@ -199,6 +206,76 @@ class OrderDetailAPIView(APIView):
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+        return Response(
+            OrderDetailSerializer(
+                order,
+                context={
+                    "request": request,
+                },
+            ).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(
+    tags=["Orders"],
+    summary="Cancel My Order",
+    description=(
+        "Cancels one of the authenticated user's unpaid orders "
+        "(waiting_payment or payment_rejected)."
+    ),
+    responses={
+        200: OrderDetailSerializer,
+        400: OpenApiResponse(
+            description="Order cannot be canceled in its current status.",
+        ),
+        401: OpenApiResponse(
+            description="Authentication required.",
+        ),
+        404: OpenApiResponse(
+            description="Order not found.",
+        ),
+    },
+)
+class CancelOrderAPIView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def post(self, request, id):
+        order = (
+            get_customer_orders_queryset(
+                request.user,
+            )
+            .filter(
+                id=id,
+            )
+            .first()
+        )
+
+        if order is None:
+            return Response(
+                {
+                    "detail": "Order not found.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if order.status not in CUSTOMER_CANCELABLE_STATUSES:
+            return Response(
+                {
+                    "detail": "این سفارش قابل لغو نیست.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        order = change_order_status(
+            order=order,
+            new_status=OrderStatus.CANCELED,
+            changed_by=request.user,
+            reason="canceled_by_customer",
+        )
 
         return Response(
             OrderDetailSerializer(
