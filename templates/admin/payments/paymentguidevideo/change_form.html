@@ -1,0 +1,36 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_guide_video.css' %}">
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} gisoo-guide-video-page{% endblock %}
+
+{% block form_top %}
+<div class="gisoo-guide-intro">
+  <header class="gisoo-guide-head">
+    <p class="gisoo-eyebrow">پرداخت کارت‌به‌کارت</p>
+    <h1>ویدیوی آموزش پرداخت</h1>
+    <p class="gisoo-guide-sub">
+      همین ویدیو در فروشگاه، وقتی مشتری روی «آموزش پرداخت آسان» می‌زند، پخش می‌شود.
+    </p>
+  </header>
+
+  <div class="gisoo-guide-info-grid">
+    <article class="gisoo-guide-info-card">
+      <strong>۱. عنوان</strong>
+      <p>نامی که بالای شیت آموزش در صفحه پرداخت دیده می‌شود.</p>
+    </article>
+    <article class="gisoo-guide-info-card">
+      <strong>۲. منبع</strong>
+      <p>یا فایل mp4 آپلود کنید، یا لینک آپارات / یوتیوب / فایل مستقیم بگذارید.</p>
+    </article>
+    <article class="gisoo-guide-info-card">
+      <strong>۳. کاور</strong>
+      <p>تصویر اختیاری قبل از شروع پخش؛ اگر خالی باشد، خود پخش‌کننده تصمیم می‌گیرد.</p>
+    </article>
+  </div>
+</div>
+{% endblock %}

@@ -1,6 +1,5 @@
 from django.core.validators import FileExtensionValidator
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
 from apps.shared.models.base import SingletonModel
 from core_gisoo_backend.storage_backends.locations import (
@@ -18,7 +17,7 @@ class PaymentGuideVideo(SingletonModel):
     title = models.CharField(
         max_length=255,
         default="آموزش پرداخت آسان",
-        verbose_name=_("title"),
+        verbose_name="عنوان نمایشی",
     )
 
     video = models.FileField(
@@ -27,28 +26,30 @@ class PaymentGuideVideo(SingletonModel):
         validators=[
             FileExtensionValidator(allowed_extensions=["mp4", "webm", "mov"]),
         ],
-        verbose_name=_("video file"),
-        help_text=_("Upload an mp4/webm/mov file, or leave empty and use external URL."),
+        verbose_name="فایل ویدیو",
+        help_text="فرمت‌های مجاز: mp4، webm، mov. اگر فایل بگذارید، لینک خارجی استفاده نمی‌شود.",
     )
 
     external_url = models.URLField(
         max_length=1000,
         blank=True,
         default="",
-        verbose_name=_("external video url"),
-        help_text=_("Optional. Used when no uploaded file is set (e.g. CDN / direct mp4 link)."),
+        verbose_name="لینک خارجی ویدیو",
+        help_text="مثال: لینک آپارات، یوتیوب، یا آدرس مستقیم فایل mp4.",
     )
 
     poster = models.ImageField(
         upload_to=payment_guide_poster_path(),
         blank=True,
         null=True,
-        verbose_name=_("poster image"),
+        verbose_name="تصویر کاور",
+        help_text="اختیاری — تصویر پیش‌نمایش قبل از پخش.",
     )
 
     is_active = models.BooleanField(
         default=True,
-        verbose_name=_("is active"),
+        verbose_name="فعال در فروشگاه",
+        help_text="اگر خاموش باشد، دکمه آموزش ویدیو در صفحه پرداخت ویدیو نشان نمی‌دهد.",
     )
 
     class Meta:
