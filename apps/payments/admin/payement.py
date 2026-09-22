@@ -115,8 +115,9 @@ class PaymentIntentAdmin(admin.ModelAdmin):
     list_display_links = ("order",)
     fieldsets = (
         (
-            "Payment",
+            "پرداخت",
             {
+                "description": "اطلاعات مبلغ و کارت مقصد برای کارت‌به‌کارت.",
                 "fields": (
                     "order",
                     "destination_card",
@@ -130,8 +131,11 @@ class PaymentIntentAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Review",
+            "بررسی رسید",
             {
+                "description": (
+                    "رفرنس بانک = شماره پیگیری تراکنش در صورتحساب مقصد."
+                ),
                 "fields": (
                     "submitted_at",
                     "reviewed_at",
@@ -142,7 +146,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "System",
+            "سیستم",
             {
                 "fields": (
                     "token",
@@ -174,11 +178,11 @@ class PaymentIntentAdmin(admin.ModelAdmin):
             )
         )
 
-    @admin.display(description="Actions")
+    @admin.display(description="عملیات")
     def admin_actions(self, obj):
         return self._action_links(obj)
 
-    @admin.display(description="Payment actions")
+    @admin.display(description="تأیید / رد رسید")
     def admin_action_links(self, obj):
         return format_html(
             '<div style="display:flex;gap:8px;flex-wrap:wrap;">{}</div>',
@@ -200,11 +204,11 @@ class PaymentIntentAdmin(admin.ModelAdmin):
             )
 
             links.append(
-                (approve_url, "Approve")
+                (approve_url, "تأیید رسید")
             )
 
             links.append(
-                (reject_url, "Reject")
+                (reject_url, "رد رسید")
             )
 
         if not links:
@@ -245,7 +249,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
         if payment_intent is None:
             self.message_user(
                 request,
-                "Payment intent not found.",
+                "پرداخت یافت نشد.",
                 level=messages.ERROR,
             )
             return HttpResponseRedirect(
@@ -276,7 +280,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
                 else:
                     self.message_user(
                         request,
-                        "Payment approved successfully.",
+                        "رسید با موفقیت تأیید شد.",
                         level=messages.SUCCESS,
                     )
 
@@ -291,7 +295,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
 
         context = {
             **self.admin_site.each_context(request),
-            "title": "Approve payment",
+            "title": "تأیید رسید پرداخت",
             "form": form,
             "payment_intent": payment_intent,
             "opts": self.model._meta,
@@ -313,7 +317,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
         if payment_intent is None:
             self.message_user(
                 request,
-                "Payment intent not found.",
+                "پرداخت یافت نشد.",
                 level=messages.ERROR,
             )
             return HttpResponseRedirect(
@@ -342,7 +346,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
                 else:
                     self.message_user(
                         request,
-                        "Payment rejected successfully.",
+                        "رسید رد شد.",
                         level=messages.SUCCESS,
                     )
 
@@ -357,7 +361,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
 
         context = {
             **self.admin_site.each_context(request),
-            "title": "Reject payment",
+            "title": "رد رسید پرداخت",
             "form": form,
             "payment_intent": payment_intent,
             "opts": self.model._meta,

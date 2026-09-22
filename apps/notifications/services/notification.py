@@ -46,6 +46,22 @@ class NotificationService:
             idempotency_key=idempotency_key,
         )
 
+        if not getattr(settings, "SMS_ENABLED", False):
+            notification.status = NotificationStatus.FAILED
+            notification.error_message = "SMS_ENABLED is False; SMS not sent."
+            notification.save(
+                update_fields=["status", "error_message"]
+            )
+            return notification
+
+        if not pattern_id:
+            notification.status = NotificationStatus.FAILED
+            notification.error_message = "SMS pattern id is not configured."
+            notification.save(
+                update_fields=["status", "error_message"]
+            )
+            return notification
+
         result = cls.sms_provider.send_pattern(
             recipient=recipient,
             pattern_id=pattern_id,
@@ -266,4 +282,33 @@ class NotificationService:
             args=[
                 str(order_id),
             ],
+        )
+
+    @classmethod
+    def send_payment_reminder(
+        cls,
+        *,
+        user,
+        recipient,
+        order_id,
+        minutes_left,
+        idempotency_key=None,
+    ):
+        pattern_id = getattr(
+            settings,
+            "SMS_PATTERN_PAYMENT_REMINDER",
+            0,
+        )
+        return cls.send_sms_pattern(
+            user=user,
+            notification_type=(
+                NotificationType.PAYMENT_REMINDER
+            ),
+            recipient=recipient,
+            pattern_id=pattern_id,
+            args=[
+                str(order_id),
+                str(minutes_left),
+            ],
+            idempotency_key=idempotency_key,
         )

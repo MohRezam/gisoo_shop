@@ -1,4 +1,4 @@
-﻿from django.apps import AppConfig
+from django.apps import AppConfig
 
 
 def _patch_field_labels(model, labels: dict[str, str]) -> None:

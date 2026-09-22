@@ -48,26 +48,28 @@ class RequestOTPAPIView(APIView):
 
         phone_number = serializer.validated_data["phone_number"]
 
-        # TODO: enable real OTP + SMS when SMS panel is available
-        # otp = str(secrets.randbelow(900000) + 100000)
-        otp = "123456"
-        otp_key = f"login:otp_{phone_number}"
+        from django.conf import settings
 
-        # notification = NotificationService.send_otp(
-        #     user=None,
-        #     recipient=phone_number,
-        #     otp=otp,
-        # )
-        #
-        # if notification.status != NotificationStatus.SENT:
-        #     return Response(
-        #         {
-        #             "detail": _(
-        #                 "Failed to send OTP. Please try again later."
-        #             )
-        #         },
-        #         status=status.HTTP_503_SERVICE_UNAVAILABLE,
-        #     )
+        otp_key = f"login:otp_{phone_number}"
+        if getattr(settings, "SMS_ENABLED", False):
+            otp = str(secrets.randbelow(900000) + 100000)
+            notification = NotificationService.send_otp(
+                user=None,
+                recipient=phone_number,
+                otp=otp,
+            )
+            if notification.status != NotificationStatus.SENT:
+                return Response(
+                    {
+                        "detail": _(
+                            "Failed to send OTP. Please try again later."
+                        )
+                    },
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+        else:
+            # Dev / pre-Melipayamak: fixed OTP until SMS panel is live.
+            otp = "123456"
 
         cache.set(
             otp_key,
@@ -117,26 +119,27 @@ class ResendOTPAPIView(APIView):
                 )
             )
 
-        # TODO: enable real OTP + SMS when SMS panel is available
-        # otp = str(secrets.randbelow(900000) + 100000)
-        otp = "123456"
-        # notification = NotificationService.send_otp(
-        #     user=None,
-        #     recipient=phone_number,
-        #     otp=otp,
-        # )
-        #
-        # if notification.status != NotificationStatus.SENT:
-        #     return Response(
-        #         {
-        #             "detail": _(
-        #                 "Failed to send OTP. Please try again later."
-        #             )
-        #         },
-        #         status=status.HTTP_503_SERVICE_UNAVAILABLE,
-        #     )
+        from django.conf import settings
 
         otp_key = f"login:otp_{phone_number}"
+        if getattr(settings, "SMS_ENABLED", False):
+            otp = str(secrets.randbelow(900000) + 100000)
+            notification = NotificationService.send_otp(
+                user=None,
+                recipient=phone_number,
+                otp=otp,
+            )
+            if notification.status != NotificationStatus.SENT:
+                return Response(
+                    {
+                        "detail": _(
+                            "Failed to send OTP. Please try again later."
+                        )
+                    },
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+        else:
+            otp = "123456"
 
         cache.set(
             otp_key,

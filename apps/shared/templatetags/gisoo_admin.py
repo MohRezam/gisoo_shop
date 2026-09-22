@@ -27,6 +27,8 @@ def gisoo_dashboard_stats(context):
         "users_total": 0,
         "products_total": 0,
         "unread_inbox": 0,
+        "admin_alerts_unread": 0,
+        "admin_alerts": [],
     }
 
     try:
@@ -34,8 +36,20 @@ def gisoo_dashboard_stats(context):
 
         stats["orders_total"] = Order.objects.count()
         stats["orders_today"] = Order.objects.filter(created_at__date=today).count()
-        stats["waiting_payment"] = Order.objects.filter(
-            status=OrderStatus.WAITING_PAYMENT
+        from apps.payments.models import PaymentIntent, PaymentIntentStatus
+
+        # Orders still waiting for the customer to pay / upload a receipt.
+        # Exclude those already in receipt review so they are not double-counted.
+        review_order_ids = PaymentIntent.objects.filter(
+            status=PaymentIntentStatus.RECEIPT_SUBMITTED,
+        ).values_list("order_id", flat=True)
+        stats["waiting_payment"] = (
+            Order.objects.filter(status=OrderStatus.WAITING_PAYMENT)
+            .exclude(id__in=review_order_ids)
+            .count()
+        )
+        stats["payment_review"] = PaymentIntent.objects.filter(
+            status=PaymentIntentStatus.RECEIPT_SUBMITTED,
         ).count()
         stats["preparing"] = Order.objects.filter(status=OrderStatus.PREPARING).count()
         stats["shipped"] = Order.objects.filter(status=OrderStatus.SHIPPED).count()
@@ -51,15 +65,6 @@ def gisoo_dashboard_stats(context):
             ).aggregate(total=Sum("total_price"))["total"]
             or 0
         )
-    except Exception:
-        pass
-
-    try:
-        from apps.payments.models import PaymentIntent, PaymentIntentStatus
-
-        stats["payment_review"] = PaymentIntent.objects.filter(
-            status=PaymentIntentStatus.RECEIPT_SUBMITTED,
-        ).count()
     except Exception:
         pass
 
@@ -83,6 +88,21 @@ def gisoo_dashboard_stats(context):
         stats["unread_inbox"] = InAppNotification.objects.filter(is_read=False).count()
     except Exception:
         pass
+
+    try:
+        from apps.notifications.models import AdminAlert
+
+        stats["admin_alerts_unread"] = AdminAlert.objects.filter(
+            is_read=False
+        ).count()
+        stats["admin_alerts"] = list(
+            AdminAlert.objects.filter(is_read=False)
+            .order_by("-created_at")[:8]
+            .values("id", "title", "body", "type", "link", "created_at")
+        )
+    except Exception:
+        stats["admin_alerts_unread"] = 0
+        stats["admin_alerts"] = []
 
     status_rows = [
         ("در انتظار پرداخت", stats["waiting_payment"], "#f59e0b"),

@@ -235,6 +235,18 @@ def create_order(
             order_id=order_id,
             amount=amount,
         )
+        try:
+            from apps.notifications.models import AdminAlertType
+            from apps.notifications.services.admin_alerts import notify_admin
+
+            notify_admin(
+                title="سفارش جدید",
+                body=f"سفارش {public_number} ثبت شد.",
+                type=AdminAlertType.ORDER,
+                link=f"/admin/orders/order/{order_id}/change/",
+            )
+        except Exception:
+            pass
 
     transaction.on_commit(_notify_order_created)
 

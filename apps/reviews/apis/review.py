@@ -50,7 +50,7 @@ class ProductReviewListCreateAPIView(generics.ListCreateAPIView):
             )
 
         try:
-            serializer.save(
+            review = serializer.save(
                 user=self.request.user,
                 product=product,
                 status=ReviewStatus.PENDING,
@@ -63,6 +63,18 @@ class ProductReviewListCreateAPIView(generics.ListCreateAPIView):
                     )
                 }
             )
+        try:
+            from apps.notifications.models import AdminAlertType
+            from apps.notifications.services.admin_alerts import notify_admin
+
+            notify_admin(
+                title="نظر جدید محصول",
+                body=f"نظر برای «{product.title}» ثبت شد و در انتظار تأیید است.",
+                type=AdminAlertType.REVIEW,
+                link=f"/admin/reviews/productreview/{review.pk}/change/",
+            )
+        except Exception:
+            pass
 
 
 class HomepageReviewListAPIView(generics.ListAPIView):

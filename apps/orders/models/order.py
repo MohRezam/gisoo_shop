@@ -97,7 +97,23 @@ class Order(BaseModel):
         null=True,
         blank=True,
         verbose_name="تاریخ انقضا",
+        help_text="مهلت پرداخت سفارش؛ بعد از این زمان سفارش منقضی می‌شود.",
     )
+
+    payment_reminder_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="زمان ارسال یادآوری پرداخت",
+        help_text="اولین یادآوری SMS/اعلان برای سفارش نیمه‌کاره.",
+    )
+
+    payment_reminder_mid_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="زمان یادآوری میانی پرداخت",
+        help_text="یادآوری دوم نزدیک به نیمهٔ مهلت پرداخت.",
+    )
+
     prepared_at = models.DateTimeField(
         null=True,
         blank=True,

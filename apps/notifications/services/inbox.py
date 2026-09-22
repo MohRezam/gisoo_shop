@@ -10,6 +10,7 @@ def notify_user(
     type: str = NotificationType.SYSTEM,
     link: str | None = None,
     order_id: int | None = None,
+    expires_at=None,
 ):
     if user is None:
         return None
@@ -20,6 +21,7 @@ def notify_user(
         type=type,
         link=link,
         order_id=order_id,
+        expires_at=expires_at,
     )
     invalidate_unread_count(user.id)
     return notif

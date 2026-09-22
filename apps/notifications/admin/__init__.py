@@ -2,7 +2,7 @@ from .notification import *
 from django.contrib import admin
 
 from apps.notifications.cache import invalidate_unread_count
-from apps.notifications.models import InAppNotification
+from apps.notifications.models import AdminAlert, InAppNotification
 from apps.shared.admin import BaseModelAdmin
 
 
@@ -28,3 +28,12 @@ class InAppNotificationAdmin(BaseModelAdmin):
         super().delete_queryset(request, queryset)
         for user_id in user_ids:
             invalidate_unread_count(user_id)
+
+
+@admin.register(AdminAlert)
+class AdminAlertAdmin(BaseModelAdmin):
+    list_display = ["id", "title", "type", "is_read", "created_at"]
+    list_filter = ["type", "is_read", "created_at"]
+    list_editable = ["is_read"]
+    search_fields = ["title", "body"]
+    readonly_fields = ["created_at", "updated_at"]

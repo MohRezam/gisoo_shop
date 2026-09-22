@@ -15,6 +15,7 @@ class InAppNotificationSerializer(serializers.ModelSerializer):
             "type",
             "link",
             "order_id",
+            "expires_at",
             "is_read",
             "created_at",
         ]

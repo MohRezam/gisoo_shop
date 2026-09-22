@@ -283,6 +283,19 @@ def submit_receipt(
         ]
     )
 
+    try:
+        from apps.notifications.models import AdminAlertType
+        from apps.notifications.services.admin_alerts import notify_admin
+
+        notify_admin(
+            title="رسید پرداخت جدید",
+            body=f"سفارش #{payment_intent.order_id} — رسید برای بررسی ارسال شد.",
+            type=AdminAlertType.RECEIPT,
+            link=f"/admin/payments/paymentintent/{payment_intent.pk}/change/",
+        )
+    except Exception:
+        pass
+
     return {
         "receipt": receipt,
         "duplicate": duplicate_receipt,

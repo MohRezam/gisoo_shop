@@ -39,7 +39,31 @@
     <span class="gisoo-stat-label">اعلان خوانده‌نشده</span>
     <strong class="gisoo-stat-value">{{ stats.unread_inbox }}</strong>
   </div>
+  <div class="gisoo-stat-card warn">
+    <span class="gisoo-stat-label">اعلان مدیریت (نخوانده)</span>
+    <strong class="gisoo-stat-value">{{ stats.admin_alerts_unread }}</strong>
+  </div>
 </div>
+
+{% if stats.admin_alerts %}
+<section class="gisoo-dash-section" style="margin: 1.25rem 0 0;">
+  <h2>اعلان‌های کارفرما</h2>
+  <ul style="list-style:none;padding:0;margin:0.75rem 0 0;display:grid;gap:0.5rem;">
+    {% for alert in stats.admin_alerts %}
+    <li style="border:1px solid #e5e7eb;border-radius:12px;padding:0.75rem 1rem;background:#fff;">
+      <strong>{{ alert.title }}</strong>
+      {% if alert.body %}<p style="margin:0.35rem 0 0;color:#6b7280;font-size:13px;">{{ alert.body }}</p>{% endif %}
+      {% if alert.link %}
+      <a href="{{ alert.link }}" style="display:inline-block;margin-top:0.4rem;font-size:12px;font-weight:700;">مشاهده</a>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  <p style="margin-top:0.75rem;">
+    <a href="{% url 'admin:notifications_adminalert_changelist' %}">همه اعلان‌های مدیریت</a>
+  </p>
+</section>
+{% endif %}
 
 <section class="gisoo-charts">
   <article class="gisoo-chart-card">

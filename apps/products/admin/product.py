@@ -72,6 +72,8 @@ class ProductAdmin(
         "category",
         "brand",
         "is_available",
+        "is_gisoo_recommended",
+        "recommended_order",
         "show_in_special_offer",
         "created_at",
     )
@@ -80,6 +82,7 @@ class ProductAdmin(
         "category",
         "brand",
         "is_available",
+        "is_gisoo_recommended",
         "show_in_special_offer",
         "created_at",
     )
@@ -108,10 +111,18 @@ class ProductAdmin(
     list_per_page = 15
     list_display_links = ("title",)
 
+    list_editable = (
+        "is_gisoo_recommended",
+        "recommended_order",
+    )
+
     fieldsets = (
         (
-            None,
+            "اطلاعات اصلی",
             {
+                "description": (
+                    "عنوان، دسته و توضیحات محصول در فروشگاه."
+                ),
                 "fields": (
                     "title",
                     "slug",
@@ -120,9 +131,22 @@ class ProductAdmin(
                     "short_description",
                     "description",
                     "is_available",
-                    "show_in_special_offer",
                     "hair_problems",
                     "hair_types",
+                ),
+            },
+        ),
+        (
+            "نمایش در فروشگاه",
+            {
+                "description": (
+                    "پیشنهاد ویژه = کمپین تخفیف. "
+                    "پیشنهادی گیسو = فیلتر «پیشنهادی گیسو سنتر»."
+                ),
+                "fields": (
+                    "show_in_special_offer",
+                    "is_gisoo_recommended",
+                    "recommended_order",
                 ),
             },
         ),
@@ -169,17 +193,20 @@ class ProductVariantAdmin(admin.ModelAdmin):
         "discounted_price",
         "stock",
         "volume",
+        "display_order",
         "expiration_date",
         "is_active",
+    )
+
+    list_editable = (
+        "display_order",
+        "is_active",
+        "volume",
     )
 
     list_filter = (
         "is_active",
         "expiration_date",
-    )
-
-    list_editable = (
-        "volume",
     )
 
     search_fields = (

@@ -46,13 +46,22 @@ class CatalogHomeCacheTests(APITestCase):
         version = get_cache_version(ns.PRODUCTS_LIST)
         self.assertGreaterEqual(version, 1)
 
+        # Same query should be served from cache (stale title until bump).
         self.product.title = "Updated Title"
-        self.product.save()
+        Product = self.product.__class__
+        Product.objects.filter(pk=self.product.pk).update(title="Updated Title")
 
         second = self.client.get(url)
         self.assertEqual(second.status_code, status.HTTP_200_OK)
         titles = [p["title"] for p in second.data.get("results", second.data)]
-        self.assertIn("Updated Title", titles)
+        self.assertIn("Cached Product", titles)
+
+        # Signal bump on save refreshes list cache.
+        self.product.title = "Updated Title"
+        self.product.save()
+        third = self.client.get(url)
+        titles3 = [p["title"] for p in third.data.get("results", third.data)]
+        self.assertIn("Updated Title", titles3)
 
     def test_banner_list_is_cached_and_invalidated(self):
         Banner.objects.create(

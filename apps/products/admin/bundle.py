@@ -41,6 +41,11 @@ class BundleAdmin(admin.ModelAdmin):
         "variant__product__title",
     )
 
+    list_editable = (
+        "display_order",
+        "is_active",
+    )
+
     ordering = (
         "display_order",
         "-created_at",

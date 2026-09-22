@@ -1,10 +1,12 @@
 {% extends "admin/base.html" %}
 {% load i18n static %}
 
-{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | گیسو سنتر{% endblock %}
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | گیسو سنتر | مدیریت{% endblock %}
 
 {% block extrastyle %}
 {{ block.super }}
+<link rel="icon" href="{% static 'admin/img/favicon.ico' %}" sizes="any">
+<link rel="icon" type="image/png" href="{% static 'admin/img/favicon.png' %}">
 <link rel="stylesheet" href="{% static 'admin/css/fonts.css' %}">
 <link rel="stylesheet" href="{% static 'admin/css/gisoo_admin.css' %}">
 <script>

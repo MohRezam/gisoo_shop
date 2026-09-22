@@ -188,6 +188,22 @@ class ConsultationCreateAPIView(
                 ),
             )
 
+            try:
+                from apps.notifications.models import AdminAlertType
+                from apps.notifications.services.admin_alerts import notify_admin
+
+                notify_admin(
+                    title="درخواست مشاوره جدید",
+                    body=f"درخواست مشاوره #{consultation.id} ثبت شد.",
+                    type=AdminAlertType.CONSULTATION,
+                    link=(
+                        f"/admin/consultations/consultationrequest/"
+                        f"{consultation.pk}/change/"
+                    ),
+                )
+            except Exception:
+                pass
+
             return Response(
                 ConsultationCreateResponseSerializer(
                     consultation,
@@ -214,6 +230,22 @@ class ConsultationCreateAPIView(
             # phone consultation.
             request_phone_consultation=True,
         )
+
+        try:
+            from apps.notifications.models import AdminAlertType
+            from apps.notifications.services.admin_alerts import notify_admin
+
+            notify_admin(
+                title="درخواست مشاوره جدید",
+                body=f"درخواست مشاوره مهمان #{consultation.id} ثبت شد.",
+                type=AdminAlertType.CONSULTATION,
+                link=(
+                    f"/admin/consultations/consultationrequest/"
+                    f"{consultation.pk}/change/"
+                ),
+            )
+        except Exception:
+            pass
 
         guest_access = (
             create_guest_device_access(

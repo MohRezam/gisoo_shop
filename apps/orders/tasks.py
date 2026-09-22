@@ -168,3 +168,121 @@ def expire_overdue_orders():
         expire_order.delay(order_id)
 
     return len(overdue_order_ids)
+
+
+FIRST_REMINDER_AFTER_MINUTES = 5
+
+
+@shared_task
+def send_pending_payment_reminders():
+    """
+    Remind users who reached card-to-card / receipt upload
+    but left without completing payment.
+    """
+    from datetime import timedelta
+
+    from apps.notifications.models import InAppNotificationType
+    from apps.notifications.services.inbox import notify_user
+    from apps.notifications.services.notification import NotificationService
+    from apps.payments.models import PaymentIntent, PaymentIntentStatus
+
+    now = timezone.now()
+    qs = (
+        Order.objects
+        .filter(
+            status=OrderStatus.WAITING_PAYMENT,
+            expires_at__gt=now,
+        )
+        .select_related("user")
+    )
+
+    sent = 0
+    for order in qs.iterator():
+        intent = (
+            PaymentIntent.objects
+            .filter(
+                order_id=order.id,
+                status=PaymentIntentStatus.PENDING_PAYMENT,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+        if intent is None:
+            continue
+
+        # Prefer intent creation time; fall back to order.
+        started = intent.created_at or order.created_at
+        if started is None or started > now - timedelta(minutes=FIRST_REMINDER_AFTER_MINUTES):
+            continue
+
+        remaining = order.expires_at - now
+        if remaining.total_seconds() <= 0:
+            continue
+
+        minutes_left = max(1, int(remaining.total_seconds() // 60))
+        link = f"/payment?order={order.id}"
+        title = "سفارش نیمه‌کاره"
+        body = (
+            f"پرداخت سفارش {order.public_number or order.id} "
+            f"هنوز کامل نشده. حدود {minutes_left} دقیقه مهلت دارید."
+        )
+        phone = (order.phone_number or "").strip()
+
+        # Mid-window reminder (second)
+        total_window = None
+        if order.expires_at and started:
+            total_window = order.expires_at - started
+        is_mid = (
+            total_window is not None
+            and remaining <= total_window / 2
+            and order.payment_reminder_mid_sent_at is None
+            and order.payment_reminder_sent_at is not None
+        )
+        is_first = order.payment_reminder_sent_at is None
+
+        if not is_first and not is_mid:
+            continue
+
+        notify_user(
+            user=order.user,
+            title=title,
+            body=body,
+            type=InAppNotificationType.ORDER,
+            link=link,
+            order_id=order.id,
+            expires_at=order.expires_at,
+        )
+
+        if phone:
+            key = (
+                f"payment_reminder_mid:{order.id}"
+                if is_mid
+                else f"payment_reminder:{order.id}"
+            )
+            NotificationService.send_payment_reminder(
+                user=order.user,
+                recipient=phone,
+                order_id=order.public_number or order.id,
+                minutes_left=minutes_left,
+                idempotency_key=key,
+            )
+
+        if is_mid:
+            order.payment_reminder_mid_sent_at = now
+            order.save(
+                update_fields=[
+                    "payment_reminder_mid_sent_at",
+                    "updated_at",
+                ]
+            )
+        else:
+            order.payment_reminder_sent_at = now
+            order.save(
+                update_fields=[
+                    "payment_reminder_sent_at",
+                    "updated_at",
+                ]
+            )
+        sent += 1
+
+    return sent

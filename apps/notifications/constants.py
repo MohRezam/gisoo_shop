@@ -39,6 +39,11 @@ class NotificationType(models.TextChoices):
         "Order Cancelled",
     )
 
+    PAYMENT_REMINDER = (
+        "PAYMENT_REMINDER",
+        "Payment Reminder",
+    )
+
 
 class NotificationChannel(models.TextChoices):
     SMS = "SMS", "SMS"

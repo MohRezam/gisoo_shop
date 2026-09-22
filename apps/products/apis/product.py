@@ -6,8 +6,11 @@ from django.db.models import (
     Prefetch,
     Q,
     Subquery,
+    Sum,
+    Value,
 )
 from django.db.models.functions import Coalesce
+from django.db.models import IntegerField
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -23,6 +26,7 @@ from rest_framework.generics import (
     RetrieveAPIView,
 )
 
+from apps.orders.models import OrderItem, OrderStatus
 from apps.products.filters import ProductFilter
 from apps.products.models import (
     Product,
@@ -34,6 +38,8 @@ from apps.products.serializers import (
     ProductListSerializer, SpecialOfferProductListSerializer, RelatedProductSerializer,
 )
 from apps.reviews.models import ProductReview, ReviewStatus
+from apps.shared.cache.list_cache import CachedListMixin, CachedRetrieveMixin
+from apps.shared.cache import namespaces as ns
 from utils.paginators import StandardResultPagination
 from django.db.models import F
 from rest_framework.permissions import AllowAny
@@ -45,6 +51,65 @@ from apps.products.services.product_viewers import (
     register_viewer,
     VIEWER_COOKIE_NAME,
 )
+
+_SOLD_ORDER_STATUSES = (
+    OrderStatus.PREPARING,
+    OrderStatus.SHIPPED,
+    OrderStatus.DELIVERED,
+)
+
+_SOLD_COUNT_SUBQUERY = (
+    OrderItem.objects.filter(
+        variant__product_id=OuterRef("pk"),
+        order__status__in=_SOLD_ORDER_STATUSES,
+    )
+    .values("variant__product_id")
+    .annotate(total=Sum("quantity"))
+    .values("total")[:1]
+)
+
+
+def _base_product_list_queryset():
+    """Shared annotations for catalog list — sold_count added only when needed."""
+    return (
+        Product.objects
+        .filter(is_available=True)
+        .select_related(
+            "brand",
+            "category",
+        )
+        .prefetch_related(
+            Prefetch(
+                "images",
+                queryset=ProductImage.objects.filter(
+                    is_primary=True,
+                ),
+                to_attr="primary_images",
+            ),
+            Prefetch(
+                "variants",
+                queryset=(
+                    ProductVariant.objects
+                    .filter(is_active=True)
+                    .order_by("display_order", "price")
+                ),
+                to_attr="active_variants",
+            ),
+        )
+        .annotate(
+            price=Min("variants__price"),
+            discounted_price=Min(
+                Coalesce(
+                    "variants__discounted_price",
+                    "variants__price",
+                )
+            ),
+        )
+        .annotate(
+            discount_amount=F("price") - F("discounted_price"),
+        )
+    )
+
 
 
 @extend_schema(
@@ -92,7 +157,11 @@ from apps.products.services.product_viewers import (
             description=(
                 "price, -price, created_at, -created_at, "
                 "discounted_price, -discounted_price, "
-                "discount_amount, -discount_amount, id, -id"
+                "discount_amount, -discount_amount, id, -id, "
+                "sold_count, -sold_count, "
+                "is_gisoo_recommended, -is_gisoo_recommended, "
+                "recommended_order, -recommended_order "
+                "(comma-separated multi-field ok)"
             ),
         ),
     ],
@@ -102,49 +171,11 @@ from apps.products.services.product_viewers import (
         ),
     },
 )
-class ProductListAPIView(ListAPIView):
+class ProductListAPIView(CachedListMixin, ListAPIView):
     serializer_class = ProductListSerializer
     pagination_class = StandardResultPagination
-
-    queryset = (
-        Product.objects
-        .filter(is_available=True)
-        .select_related(
-            "brand",
-            "category",
-        )
-        .prefetch_related(
-            Prefetch(
-                "images",
-                queryset=ProductImage.objects.filter(
-                    is_primary=True,
-                ),
-                to_attr="primary_images",
-            ),
-            Prefetch(
-                "variants",
-                queryset=(
-                    ProductVariant.objects
-                    .filter(is_active=True)
-                    .order_by("price")
-                ),
-                to_attr="active_variants",
-            ),
-        )
-        .annotate(
-            price=Min("variants__price"),
-            discounted_price=Min(
-                Coalesce(
-                    "variants__discounted_price",
-                    "variants__price",
-                )
-            ),
-        )
-        .annotate(
-            discount_amount=F("price") - F("discounted_price"),
-        )
-        .distinct()
-    )
+    cache_namespace = ns.PRODUCTS_LIST
+    cache_ttl = 60 * 5
 
     filter_backends = [
         DjangoFilterBackend,
@@ -168,11 +199,33 @@ class ProductListAPIView(ListAPIView):
         "discount_amount",
         "created_at",
         "id",
+        "sold_count",
+        "is_gisoo_recommended",
+        "recommended_order",
     ]
 
     ordering = [
+        "-is_gisoo_recommended",
+        "recommended_order",
         "-created_at",
     ]
+
+    def get_queryset(self):
+        qs = _base_product_list_queryset()
+        ordering = self.request.query_params.get("ordering") or ""
+        # Heavy sales subquery only when sorting by bestsellers.
+        if "sold_count" in ordering:
+            qs = qs.annotate(
+                sold_count=Coalesce(
+                    Subquery(
+                        _SOLD_COUNT_SUBQUERY,
+                        output_field=IntegerField(),
+                    ),
+                    Value(0),
+                    output_field=IntegerField(),
+                ),
+            )
+        return qs.distinct()
 
 
 @extend_schema(
@@ -182,8 +235,12 @@ class ProductListAPIView(ListAPIView):
         200: ProductDetailSerializer,
     },
 )
-class ProductDetailAPIView(RetrieveAPIView):
+class ProductDetailAPIView(CachedRetrieveMixin, RetrieveAPIView):
     serializer_class = ProductDetailSerializer
+    cache_namespace = ns.PRODUCTS_DETAIL
+    cache_ttl = 60 * 10
+    cache_lookup_kwarg = "slug"
+    lookup_field = "slug"
 
     queryset = (
         Product.objects
@@ -228,6 +285,7 @@ class ProductDetailAPIView(RetrieveAPIView):
                         ),
                     )
                     .order_by(
+                        "display_order",
                         "created_at",
                     )
                 ),
@@ -334,8 +392,6 @@ class ProductDetailAPIView(RetrieveAPIView):
         )
     )
 
-    lookup_field = "slug"
-
 
 @extend_schema(
     tags=["Products"],
@@ -426,9 +482,11 @@ class ProductRelatedProductsAPIView(ListAPIView):
         200: ProductDetailSerializer,
     },
 )
-class SpecialOfferProductListAPIView(ListAPIView):
+class SpecialOfferProductListAPIView(CachedListMixin, ListAPIView):
     serializer_class = SpecialOfferProductListSerializer
     pagination_class = StandardResultPagination
+    cache_namespace = ns.PRODUCTS_SPECIAL
+    cache_ttl = 60 * 5
 
     def get_queryset(self):
         from apps.products.services.discount_campaign import (

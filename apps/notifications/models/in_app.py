@@ -40,6 +40,12 @@ class InAppNotification(BaseModel):
         related_name="in_app_notifications",
         verbose_name="سفارش",
     )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="مهلت اقدام",
+        help_text="اگر تنظیم شود، در اینباکس کاربر شمارندهٔ معکوس نشان داده می‌شود.",
+    )
     is_read = models.BooleanField(
         default=False,
         db_index=True,

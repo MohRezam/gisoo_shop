@@ -16,12 +16,12 @@ PRODUCT_SORT_OPTIONS = [
     {
         "id": "suggested",
         "label": "پیشنهادی گیسو سنتر",
-        "ordering": "",
+        "ordering": "-is_gisoo_recommended,recommended_order,-created_at",
     },
     {
         "id": "bestsellers",
         "label": "پرفروش‌ترین",
-        "ordering": "-id",
+        "ordering": "-sold_count,-id",
     },
     {
         "id": "newest",

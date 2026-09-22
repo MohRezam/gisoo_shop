@@ -70,6 +70,24 @@ class Product(BaseModel):
         ),
     )
 
+    is_gisoo_recommended = models.BooleanField(
+        default=False,
+        verbose_name="پیشنهادی گیسو سنتر",
+        help_text=(
+            "اگر فعال باشد، این محصول در فیلتر «پیشنهادی گیسو سنتر» "
+            "بالای لیست فروشگاه نمایش داده می‌شود."
+        ),
+    )
+
+    recommended_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="ترتیب پیشنهادی",
+        help_text=(
+            "عدد کوچک‌تر = اولویت بالاتر بین محصولات پیشنهادی. "
+            "فقط وقتی «پیشنهادی گیسو سنتر» فعال است معنا دارد."
+        ),
+    )
+
     hair_problems = models.ManyToManyField(
         "products.HairProblem",
         blank=True,
@@ -278,6 +296,7 @@ class ProductVariant(BaseModel):
     display_order = models.PositiveIntegerField(
         default=0,
         verbose_name="ترتیب نمایش",
+        help_text="عدد کوچک‌تر = نمایش زودتر در صفحه محصول.",
     )
 
     is_active = models.BooleanField(
@@ -288,7 +307,7 @@ class ProductVariant(BaseModel):
     class Meta:
         verbose_name = "تنوع محصول"
         verbose_name_plural = "تنوع‌های محصول"
-        ordering = ["-created_at"]
+        ordering = ["display_order", "created_at"]
         constraints = [
             models.CheckConstraint(
                 condition=(

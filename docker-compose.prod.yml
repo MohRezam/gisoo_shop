@@ -48,8 +48,20 @@ services:
       - core_gisoo_backend.wsgi:application
       - --bind
       - 0.0.0.0:8000
+      - --worker-class
+      - gthread
       - --workers
-      - "3"
+      - "2"
+      - --threads
+      - "2"
+      - --timeout
+      - "60"
+      - --max-requests
+      - "500"
+      - --max-requests-jitter
+      - "50"
+      - --keep-alive
+      - "5"
 
     env_file:
       - .env
@@ -79,6 +91,8 @@ services:
       - worker
       - -l
       - info
+      - --concurrency
+      - "1"
 
     env_file:
       - .env
