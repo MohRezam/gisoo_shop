@@ -75,9 +75,8 @@ class CustomUserAdmin(ModelAdminJalaliMixin, UserAdmin):
     preserve_filters = True
     save_on_top = True
 
-    # Avoid loading every Permission into a dual-list widget.
-    filter_horizontal = ("groups",)
-    autocomplete_fields = ("user_permissions",)
+    # Avoid loading every Permission/Group into heavy widgets.
+    raw_id_fields = ("groups", "user_permissions")
 
     readonly_fields = ("last_login", "created_at")
 

@@ -11,11 +11,11 @@ from django.utils import timezone
 
 
 class Product(BaseModel):
-    category = models.ForeignKey(
+    categories = models.ManyToManyField(
         "products.Category",
-        on_delete=models.PROTECT,
+        blank=True,
         related_name="products",
-        verbose_name="دسته‌بندی",
+        verbose_name="دسته‌بندی‌ها",
     )
 
     brand = models.ForeignKey(

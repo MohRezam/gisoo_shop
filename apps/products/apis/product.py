@@ -76,9 +76,9 @@ def _base_product_list_queryset():
         .filter(is_available=True)
         .select_related(
             "brand",
-            "category",
         )
         .prefetch_related(
+            "categories",
             Prefetch(
                 "images",
                 queryset=ProductImage.objects.filter(
@@ -187,7 +187,7 @@ class ProductListAPIView(CachedListMixin, ListAPIView):
 
     search_fields = [
         "title",
-        "category__title",
+        "categories__title",
         "brand__title",
         "hair_problems__title",
         "hair_types__title",
@@ -249,9 +249,9 @@ class ProductDetailAPIView(CachedRetrieveMixin, RetrieveAPIView):
         )
         .select_related(
             "brand",
-            "category",
         )
         .prefetch_related(
+            "categories",
             Prefetch(
                 "images",
                 queryset=ProductImage.objects.order_by(
@@ -411,8 +411,8 @@ class ProductRelatedProductsAPIView(ListAPIView):
                 slug=self.kwargs["slug"],
                 is_available=True,
             )
-            .select_related(
-                "category",
+            .prefetch_related(
+                "categories",
             )
             .first()
         )
@@ -455,11 +455,17 @@ class ProductRelatedProductsAPIView(ListAPIView):
         if manual_products.exists():
             return manual_products
 
+        category_ids = list(
+            product.categories.values_list("id", flat=True)
+        )
+        if not category_ids:
+            return Product.objects.none()
+
         # Automatic fallback
         return (
             Product.objects
             .filter(
-                category=product.category,
+                categories__in=category_ids,
                 is_available=True,
             )
             .exclude(
@@ -469,6 +475,7 @@ class ProductRelatedProductsAPIView(ListAPIView):
                 "images",
                 "variants",
             )
+            .distinct()
             .order_by(
                 "-created_at",
             )

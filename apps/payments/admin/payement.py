@@ -447,6 +447,7 @@ class PaymentReviewAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
+    raw_id_fields = ("payment_intent", "admin")
     list_per_page = 15
     list_display_links = ("payment_intent",)
 

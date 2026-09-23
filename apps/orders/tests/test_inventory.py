@@ -77,7 +77,7 @@ class ReserveStockTests(TestCase):
 
     def test_reduce_stock_multiple_variants(self):
         product2 = create_product(
-            category=self.variant.product.category,
+            category=self.variant.product.categories.first(),
             brand=self.variant.product.brand,
             slug="product-2",
             title="Product 2",

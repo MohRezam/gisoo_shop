@@ -53,12 +53,11 @@ class MagazineAdmin(admin.ModelAdmin):
         "slug": ("title",),
     }
 
-    filter_horizontal = (
+    raw_id_fields = (
+        "category",
         "related_products",
         "related_articles",
     )
-
-    autocomplete_fields = ("category",)
 
     exclude = ("creator", "archived")
     list_per_page = 15

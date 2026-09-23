@@ -22,7 +22,7 @@ def _ensure_effective_price(queryset):
 
 class ProductFilter(filters.FilterSet):
     category = filters.NumberFilter(
-        field_name="category_id",
+        field_name="categories__id",
     )
 
     brand = filters.NumberFilter(

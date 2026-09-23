@@ -54,7 +54,6 @@ def special_offer_products_queryset() -> QuerySet[Product]:
         )
         .select_related(
             "brand",
-            "category",
         )
         .prefetch_related(
             Prefetch(

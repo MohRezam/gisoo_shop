@@ -23,6 +23,7 @@ class ProductAttributeInline(nested_admin.NestedTabularInline):
     model = ProductAttribute
     extra = 0
     exclude = ("creator", "archived")
+    raw_id_fields = ("attribute",)
 
 
 class ProductVariantInline(nested_admin.NestedTabularInline):
@@ -39,6 +40,7 @@ class VariantAttributeInline(admin.TabularInline):
     model = VariantAttribute
     extra = 0
     exclude = ("creator", "archived")
+    raw_id_fields = ("value",)
 
 
 class ProductRelatedProductInline(nested_admin.NestedTabularInline):
@@ -47,9 +49,7 @@ class ProductRelatedProductInline(nested_admin.NestedTabularInline):
 
     extra = 0
 
-    autocomplete_fields = [
-        "related_product",
-    ]
+    raw_id_fields = ("related_product",)
 
     ordering = [
         "display_order",
@@ -69,7 +69,6 @@ class ProductAdmin(
     list_display = (
         "id",
         "title",
-        "category",
         "brand",
         "is_available",
         "is_gisoo_recommended",
@@ -79,7 +78,7 @@ class ProductAdmin(
     )
 
     list_filter = (
-        "category",
+        "categories",
         "brand",
         "is_available",
         "is_gisoo_recommended",
@@ -93,7 +92,6 @@ class ProductAdmin(
     )
 
     list_select_related = (
-        "category",
         "brand",
     )
 
@@ -101,13 +99,13 @@ class ProductAdmin(
         "slug": ("title",)
     }
 
-    autocomplete_fields = [
-        "category",
-        "brand",
-    ]
-
     exclude = ("creator", "archived")
-    raw_id_fields = ("category", "brand")
+    raw_id_fields = (
+        "categories",
+        "brand",
+        "hair_problems",
+        "hair_types",
+    )
     list_per_page = 15
     list_display_links = ("title",)
 
@@ -121,12 +119,15 @@ class ProductAdmin(
             "اطلاعات اصلی",
             {
                 "description": (
-                    "عنوان، دسته و توضیحات محصول در فروشگاه."
+                    "عنوان و توضیحات محصول در فروشگاه. "
+                    "دسته‌بندی اختیاری است و می‌توان چند دسته انتخاب کرد. "
+                    "برند، دسته، مشکل مو و نوع مو را با آیکون ذره‌بین "
+                    "از روی شناسه انتخاب کنید."
                 ),
                 "fields": (
                     "title",
                     "slug",
-                    "category",
+                    "categories",
                     "brand",
                     "short_description",
                     "description",
@@ -150,11 +151,6 @@ class ProductAdmin(
                 ),
             },
         ),
-    )
-
-    filter_horizontal = (
-        "hair_problems",
-        "hair_types",
     )
 
     inlines = [
@@ -331,6 +327,7 @@ class AttributeValueAdmin(admin.ModelAdmin):
     )
 
     exclude = ("creator", "archived")
+    raw_id_fields = ("attribute",)
     list_per_page = 15
     list_display_links = ("attribute",)
 

@@ -11,6 +11,7 @@ class InAppNotificationAdmin(BaseModelAdmin):
     list_display = ["id", "user", "title", "type", "is_read", "created_at"]
     list_filter = ["type", "is_read", "created_at"]
     search_fields = ["title", "body", "user__phone_number"]
+    raw_id_fields = ("user", "order")
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

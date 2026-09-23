@@ -8,7 +8,16 @@ from apps.products.models import (
     VariantAttribute, ProductAttribute, DiscountCampaign
 )
 from apps.reviews.serializers import ProductReviewPublicSerializer
-from django.db import models
+
+
+def _product_category_titles(obj):
+    return [category.title for category in obj.categories.all()]
+
+
+def _product_primary_category_title(obj):
+    titles = _product_category_titles(obj)
+    return titles[0] if titles else ""
+
 
 class AttributeValueSerializer(
     serializers.ModelSerializer,
@@ -81,7 +90,8 @@ class ProductListSerializer(
 ):
     brand = serializers.StringRelatedField()
 
-    category = serializers.StringRelatedField()
+    category = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
 
     thumbnail = serializers.SerializerMethodField()
 
@@ -107,6 +117,7 @@ class ProductListSerializer(
             "slug",
             "brand",
             "category",
+            "categories",
             "thumbnail",
             "price",
             "discounted_price",
@@ -115,6 +126,12 @@ class ProductListSerializer(
             "is_available",
             "is_in_stock"
         )
+
+    def get_category(self, obj):
+        return _product_primary_category_title(obj)
+
+    def get_categories(self, obj):
+        return _product_category_titles(obj)
 
     def get_is_in_stock(
             self,
@@ -224,7 +241,8 @@ class SpecialOfferProductListSerializer(
 ):
     brand = serializers.StringRelatedField()
 
-    category = serializers.StringRelatedField()
+    category = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
 
     thumbnail = serializers.SerializerMethodField()
 
@@ -250,6 +268,7 @@ class SpecialOfferProductListSerializer(
             "slug",
             "brand",
             "category",
+            "categories",
             "thumbnail",
             "price",
             "discounted_price",
@@ -258,6 +277,12 @@ class SpecialOfferProductListSerializer(
             "stock",
             "is_available",
         )
+
+    def get_category(self, obj):
+        return _product_primary_category_title(obj)
+
+    def get_categories(self, obj):
+        return _product_category_titles(obj)
 
     def _first_variant(
             self,
@@ -541,7 +566,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         source="brand.title",
         read_only=True,
     )
-    category = serializers.StringRelatedField()
+    category = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
 
     images = ProductImageSerializer(
         many=True,
@@ -583,6 +609,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "slug",
             "brand",
             "category",
+            "categories",
             "short_description",
             "description",
             "is_available",
@@ -603,6 +630,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "is_favorited",
             "is_in_stock"
         ]
+
+    def get_category(self, obj):
+        return _product_primary_category_title(obj)
+
+    def get_categories(self, obj):
+        return _product_category_titles(obj)
 
     def get_rating(self, obj):
         return {
@@ -713,24 +746,30 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             ).data
 
         # Automatic fallback:
-        # products from the same category.
-        products = (
-            Product.objects
-            .filter(
-                category=obj.category,
-                is_available=True,
-            )
-            .exclude(
-                pk=obj.pk,
-            )
-            .prefetch_related(
-                "images",
-                "variants",
-            )
-            .order_by(
-                "-created_at",
-            )[:4]
+        # products that share at least one category.
+        category_ids = list(
+            obj.categories.values_list("id", flat=True)
         )
+        products = Product.objects.none()
+        if category_ids:
+            products = (
+                Product.objects
+                .filter(
+                    categories__in=category_ids,
+                    is_available=True,
+                )
+                .exclude(
+                    pk=obj.pk,
+                )
+                .prefetch_related(
+                    "images",
+                    "variants",
+                )
+                .distinct()
+                .order_by(
+                    "-created_at",
+                )[:4]
+            )
 
         return RelatedProductSerializer(
             products,
