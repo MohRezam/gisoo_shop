@@ -135,6 +135,10 @@ def calculate_discount(
         eligible_price = products_price
 
     if discount.discount_type == DiscountType.PERCENTAGE:
+        if discount.value > 100:
+            raise ValidationError(
+                "تنظیمات این کد تخفیف نامعتبر است."
+            )
         discount_amount = (
             eligible_price * discount.value
         ) // 100

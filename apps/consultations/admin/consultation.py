@@ -1,3 +1,4 @@
+import nested_admin
 from django.contrib import admin
 
 from apps.consultations.forms import (
@@ -16,15 +17,18 @@ from apps.shared.admin_filters import (
 )
 
 
+def _consultation_id_from_request(request):
+    if not request or not request.resolver_match:
+        return None
+    return request.resolver_match.kwargs.get("object_id")
+
+
 class ConsultationRecommendationInline(
-    admin.TabularInline
+    nested_admin.NestedTabularInline,
 ):
     model = ConsultationRecommendation
-
     form = ConsultationRecommendationAdminForm
-
     extra = 0
-
     fields = (
         "variant",
         "explanation",
@@ -40,7 +44,7 @@ class ConsultationRecommendationInline(
 
 
 class ConsultationRecommendationPackItemInline(
-    admin.TabularInline
+    nested_admin.NestedTabularInline,
 ):
     model = ConsultationRecommendationPackItem
     extra = 0
@@ -48,37 +52,71 @@ class ConsultationRecommendationPackItemInline(
         "recommendation",
         "display_order",
     )
-    autocomplete_fields = ("recommendation",)
     verbose_name = "محصول داخل گروه"
-    verbose_name_plural = "محصولات این گروه"
+    verbose_name_plural = (
+        "محصولات این گروه "
+        "(فقط از پیشنهادهای همین درخواست)"
+    )
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
-        if db_field.name != "recommendation":
-            return field
-
-        pack_id = request.resolver_match.kwargs.get("object_id") if request.resolver_match else None
-        consultation_id = None
-        if pack_id:
-            consultation_id = (
-                ConsultationRecommendationPack.objects
-                .filter(pk=pack_id)
-                .values_list("consultation_id", flat=True)
-                .first()
+    def formfield_for_foreignkey(
+        self,
+        db_field,
+        request,
+        **kwargs,
+    ):
+        if db_field.name == "recommendation":
+            consultation_id = _consultation_id_from_request(
+                request,
             )
-        elif request.method == "GET":
-            consultation_id = request.GET.get("consultation")
+            if consultation_id:
+                kwargs["queryset"] = (
+                    ConsultationRecommendation.objects
+                    .filter(
+                        consultation_id=consultation_id,
+                    )
+                    .select_related(
+                        "variant",
+                        "variant__product",
+                    )
+                    .order_by(
+                        "display_order",
+                        "created_at",
+                    )
+                )
+            else:
+                kwargs["queryset"] = (
+                    ConsultationRecommendation.objects.none()
+                )
+        return super().formfield_for_foreignkey(
+            db_field,
+            request,
+            **kwargs,
+        )
 
-        if consultation_id and field is not None:
-            field.queryset = ConsultationRecommendation.objects.filter(
-                consultation_id=consultation_id,
-            ).select_related("variant", "variant__product")
-        return field
+
+class ConsultationRecommendationPackInline(
+    nested_admin.NestedStackedInline,
+):
+    model = ConsultationRecommendationPack
+    extra = 0
+    fields = (
+        "title",
+        "description",
+        "display_order",
+    )
+    inlines = (
+        ConsultationRecommendationPackItemInline,
+    )
+    verbose_name = "گروه / روتین"
+    verbose_name_plural = (
+        "۲) گروه‌بندی محصولات "
+        "(اختیاری — متن مشترک برای چند محصول)"
+    )
 
 
 @admin.register(ConsultationRequest)
 class ConsultationRequestAdmin(
-    admin.ModelAdmin
+    nested_admin.NestedModelAdmin,
 ):
     list_display = (
         "full_name",
@@ -109,7 +147,6 @@ class ConsultationRequestAdmin(
         "id",
         "created_at",
         "updated_at",
-        "packs_help",
     )
 
     raw_id_fields = ("user", "guest", "hair_problem")
@@ -117,6 +154,7 @@ class ConsultationRequestAdmin(
 
     inlines = (
         ConsultationRecommendationInline,
+        ConsultationRecommendationPackInline,
     )
 
     fieldsets = (
@@ -132,6 +170,11 @@ class ConsultationRequestAdmin(
                     "status",
                     "request_phone_consultation",
                 ),
+                "description": (
+                    "۱) پایین صفحه محصولات پیشنهادی را اضافه کنید و ذخیره کنید. "
+                    "۲) دوباره همین صفحه را باز کنید و در بخش گروه، "
+                    "محصولات همین درخواست را به روتین وصل کنید و متن مشترک بنویسید."
+                ),
             },
         ),
         (
@@ -140,17 +183,6 @@ class ConsultationRequestAdmin(
                 "fields": (
                     "user",
                     "guest",
-                ),
-            },
-        ),
-        (
-            "گروه‌بندی پیشنهادها",
-            {
-                "fields": ("packs_help",),
-                "description": (
-                    "ابتدا محصولات را با توضیح و روش مصرف در اینلاین پایین اضافه کنید، "
-                    "سپس از بخش «گروه‌های پیشنهاد محصول» یک گروه بسازید و محصولات را "
-                    "به آن وصل کنید. متن کلی گروه (مثلاً توصیه روتین) در همانجا نوشته می‌شود."
                 ),
             },
         ),
@@ -165,16 +197,6 @@ class ConsultationRequestAdmin(
             },
         ),
     )
-
-    @admin.display(description="راهنما")
-    def packs_help(self, obj):
-        if not obj or not obj.pk:
-            return "پس از ذخیره درخواست، می‌توانید گروه بسازید."
-        count = obj.recommendation_packs.count()
-        return (
-            f"{count} گروه ثبت‌شده — "
-            "از منوی «گروه‌های پیشنهاد محصول» گروه جدید بسازید و مشاوره را انتخاب کنید."
-        )
 
     @admin.display(
         description="مالک"
@@ -191,6 +213,8 @@ class ConsultationRequestAdmin(
 
 @admin.register(ConsultationRecommendation)
 class ConsultationRecommendationAdmin(admin.ModelAdmin):
+    """Managed via ConsultationRequest inlines; hidden from sidebar."""
+
     list_display = (
         "consultation",
         "variant",
@@ -206,13 +230,16 @@ class ConsultationRecommendationAdmin(admin.ModelAdmin):
     raw_id_fields = ("consultation", "variant")
     list_per_page = 15
 
+    def has_module_permission(self, request):
+        return False
+
 
 @admin.register(ConsultationRecommendationPack)
-class ConsultationRecommendationPackAdmin(
-    admin.ModelAdmin
-):
+class ConsultationRecommendationPackAdmin(admin.ModelAdmin):
+    """Managed via ConsultationRequest inlines; hidden from sidebar."""
+
     list_display = (
-        "title_or_note",
+        "title",
         "consultation",
         "display_order",
         "created_at",
@@ -223,57 +250,27 @@ class ConsultationRecommendationPackAdmin(
         "consultation__full_name",
         "consultation__phone_number",
     )
-    list_filter = (
-        ("consultation", PersianRelatedFilter),
-    )
-    autocomplete_fields = ("consultation",)
-    list_editable = ("display_order",)
+    raw_id_fields = ("consultation",)
     list_per_page = 15
-    inlines = (
-        ConsultationRecommendationPackItemInline,
-    )
-    fieldsets = (
-        (
-            None,
-            {
-                "fields": (
-                    "consultation",
-                    "title",
-                    "description",
-                    "display_order",
-                ),
-                "description": (
-                    "متن کلی گروه برای همه محصولات این گروه نمایش داده می‌شود. "
-                    "توضیح و روش مصرف هر محصول را در پیشنهاد محصول مربوطه بنویسید."
-                ),
-            },
-        ),
-    )
 
-    @admin.display(description="عنوان / متن گروه")
-    def title_or_note(self, obj):
-        if obj.title.strip():
-            return obj.title
-        note = (obj.description or "").strip()
-        return (note[:60] + "…") if len(note) > 60 else (note or "—")
+    def has_module_permission(self, request):
+        return False
 
 
 @admin.register(ConsultationRecommendationPackItem)
 class ConsultationRecommendationPackItemAdmin(
-    admin.ModelAdmin
+    admin.ModelAdmin,
 ):
+    """Managed via ConsultationRequest inlines; hidden from sidebar."""
+
     list_display = (
         "pack",
         "recommendation",
         "display_order",
         "created_at",
     )
-    search_fields = (
-        "pack__title",
-        "pack__description",
-        "recommendation__variant__sku",
-        "recommendation__variant__product__title",
-    )
     raw_id_fields = ("pack", "recommendation")
-    list_editable = ("display_order",)
     list_per_page = 15
+
+    def has_module_permission(self, request):
+        return False

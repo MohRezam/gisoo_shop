@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -26,6 +27,12 @@ class Discount(BaseModel):
     value = models.PositiveBigIntegerField(
         verbose_name="مقدار",
         default=0,
+        help_text=(
+            "اگر نوع «درصدی» است عدد ۰ تا ۱۰۰ بگذارید "
+            "(مثلاً ۱۰ یعنی ۱۰٪). "
+            "اگر «مبلغ ثابت» است مبلغ به تومان "
+            "(مثلاً ۳۰۰۰۰۰)."
+        ),
     )
 
     minimum_order_amount = models.PositiveBigIntegerField(
@@ -88,9 +95,26 @@ class Discount(BaseModel):
     def __str__(self):
         return self.code
 
+    def clean(self):
+        super().clean()
+        if (
+            self.discount_type == DiscountType.PERCENTAGE
+            and self.value > 100
+        ):
+            raise ValidationError(
+                {
+                    "value": (
+                        "برای تخفیف درصدی، مقدار باید بین "
+                        "۰ تا ۱۰۰ باشد. برای ۳۰۰ هزار تومان "
+                        "نوع را «مبلغ ثابت» انتخاب کنید."
+                    ),
+                }
+            )
+
     def save(self, *args, **kwargs):
         if self.code:
             self.code = self.code.strip().upper()
+        self.full_clean()
         super().save(*args, **kwargs)
 
     @property

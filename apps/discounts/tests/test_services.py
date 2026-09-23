@@ -3,12 +3,12 @@ from unittest.mock import patch
 import pytest
 from rest_framework.exceptions import ValidationError
 
+from apps.discounts.models import Discount, DiscountType
 from apps.discounts.services.discount import calculate_discount
 
 from .factories import DiscountFactory, UserFactory
 from datetime import timedelta
 from django.utils import timezone
-from apps.discounts.models import DiscountType
 
 
 @pytest.mark.django_db
@@ -240,6 +240,25 @@ class TestCalculateDiscountAmount:
         )
 
         assert result["discount_amount"] == 20_000
+
+    def test_percentage_over_100_is_rejected(self):
+        discount = DiscountFactory(
+            discount_type=DiscountType.PERCENTAGE,
+            value=10,
+        )
+        # Bypass model validation to simulate a misconfigured row.
+        Discount.objects.filter(pk=discount.pk).update(
+            value=300_000,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            calculate_discount(
+                user=None,
+                code=discount.code,
+                products_price=960_000,
+            )
+
+        assert "نامعتبر" in str(exc_info.value)
 
     def test_fixed_discount(self):
         discount = DiscountFactory(

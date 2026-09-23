@@ -273,10 +273,13 @@ class ConsultationRecommendation(models.Model):
         verbose_name_plural = "پیشنهادهای محصول مشاوره"
 
     def __str__(self):
-        return (
-            f"{self.consultation.full_name} "
-            f"→ {self.variant}"
-        )
+        variant = self.variant
+        product = getattr(variant, "product", None)
+        title = getattr(product, "title", None) or str(variant)
+        sku = getattr(variant, "sku", "") or ""
+        if sku:
+            return f"{title} ({sku})"
+        return title
 
 
 class ConsultationRecommendationPack(models.Model):
