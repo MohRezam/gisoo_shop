@@ -21,6 +21,10 @@ from apps.orders.serializers import (
 )
 from apps.orders.services.create_order import create_order
 from apps.orders.services.change_order_status import change_order_status
+from apps.orders.services.delivery_confirm import (
+    customer_can_confirm_delivery,
+)
+from apps.payments.models import PaymentIntentStatus
 from utils.paginators import StandardResultPagination
 
 CUSTOMER_ORDER_STATUSES = [
@@ -40,6 +44,19 @@ CUSTOMER_CANCELABLE_STATUSES = {
     OrderStatus.WAITING_PAYMENT,
     OrderStatus.PAYMENT_REJECTED,
 }
+
+
+def customer_can_cancel_order(order) -> bool:
+    """
+    Customer may cancel only before uploading a payment receipt.
+    Once a receipt is submitted (under review), cancel is blocked
+    even while the order status is still waiting_payment.
+    """
+    if order.status not in CUSTOMER_CANCELABLE_STATUSES:
+        return False
+    return not order.payment_intents.filter(
+        status=PaymentIntentStatus.RECEIPT_SUBMITTED,
+    ).exists()
 
 
 def get_customer_orders_queryset(user, *, statuses=None):
@@ -223,7 +240,9 @@ class OrderDetailAPIView(APIView):
     summary="Cancel My Order",
     description=(
         "Cancels one of the authenticated user's unpaid orders "
-        "(waiting_payment or payment_rejected)."
+        "(waiting_payment or payment_rejected) only before a "
+        "payment receipt has been submitted. Orders with a "
+        "receipt under review cannot be canceled."
     ),
     responses={
         200: OrderDetailSerializer,
@@ -262,7 +281,7 @@ class CancelOrderAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if order.status not in CUSTOMER_CANCELABLE_STATUSES:
+        if not customer_can_cancel_order(order):
             return Response(
                 {
                     "detail": "این سفارش قابل لغو نیست.",
@@ -275,6 +294,77 @@ class CancelOrderAPIView(APIView):
             new_status=OrderStatus.CANCELED,
             changed_by=request.user,
             reason="canceled_by_customer",
+        )
+
+        return Response(
+            OrderDetailSerializer(
+                order,
+                context={
+                    "request": request,
+                },
+            ).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+@extend_schema(
+    tags=["Orders"],
+    summary="Confirm Delivery",
+    description=(
+        "Marks a shipped order as delivered after the customer "
+        "confirms receipt. Available from the shipping min estimate "
+        "until the auto-deliver deadline."
+    ),
+    responses={
+        200: OrderDetailSerializer,
+        400: OpenApiResponse(
+            description="Order cannot be confirmed in its current state.",
+        ),
+        401: OpenApiResponse(
+            description="Authentication required.",
+        ),
+        404: OpenApiResponse(
+            description="Order not found.",
+        ),
+    },
+)
+class ConfirmDeliveryAPIView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+    ]
+
+    def post(self, request, id):
+        order = (
+            get_customer_orders_queryset(
+                request.user,
+            )
+            .filter(
+                id=id,
+            )
+            .first()
+        )
+
+        if order is None:
+            return Response(
+                {
+                    "detail": "Order not found.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if not customer_can_confirm_delivery(order):
+            return Response(
+                {
+                    "detail": "تأیید تحویل برای این سفارش در دسترس نیست.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        order = change_order_status(
+            order=order,
+            new_status=OrderStatus.DELIVERED,
+            changed_by=request.user,
+            reason="confirmed_by_customer",
         )
 
         return Response(

@@ -52,9 +52,16 @@ class ShippingMethod(BaseModel):
         help_text="۰ یعنی ارسال رایگان غیرفعال است.",
     )
 
-    estimated_days = models.PositiveSmallIntegerField(
-        verbose_name="روزهای تخمینی",
+    estimated_days_min = models.PositiveSmallIntegerField(
+        verbose_name="حداقل روز تخمینی",
         default=3,
+        help_text="شروع بازه تحویل (مثلاً ۳ در «۳ تا ۵ روز»).",
+    )
+
+    estimated_days = models.PositiveSmallIntegerField(
+        verbose_name="حداکثر روز تخمینی",
+        default=5,
+        help_text="پایان بازه تحویل و زمان پیامک تأیید تحویل (مثلاً ۵).",
     )
 
     is_active = models.BooleanField(

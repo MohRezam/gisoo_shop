@@ -42,7 +42,7 @@ class ConsultationOptionsSerializer(
             .filter(
                 is_active=True,
             )
-            .order_by("created_at")
+            .order_by("display_order", "title")
         )
 
         return [

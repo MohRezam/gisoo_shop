@@ -6,6 +6,10 @@ from apps.orders.models import (
     OrderItem,
     OrderStatus,
 )
+from apps.orders.services.delivery_confirm import (
+    customer_can_confirm_delivery,
+    get_estimate_bounds,
+)
 from apps.payments.models import PaymentIntentStatus
 from apps.payments.services.submit_receipt import (
     ALLOWED_STATUSES as RECEIPT_UPLOAD_STATUSES,
@@ -94,6 +98,10 @@ class OrderListSerializer(serializers.ModelSerializer):
     tracking_code = serializers.SerializerMethodField()
     carrier = serializers.SerializerMethodField()
     tracking_url = serializers.SerializerMethodField()
+    shipped_at = serializers.DateTimeField(read_only=True)
+    estimated_days_min = serializers.SerializerMethodField()
+    estimated_days = serializers.SerializerMethodField()
+    can_confirm_delivery = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -112,6 +120,10 @@ class OrderListSerializer(serializers.ModelSerializer):
             "tracking_code",
             "carrier",
             "tracking_url",
+            "shipped_at",
+            "estimated_days_min",
+            "estimated_days",
+            "can_confirm_delivery",
         ]
         read_only_fields = fields
 
@@ -152,6 +164,15 @@ class OrderListSerializer(serializers.ModelSerializer):
     def get_tracking_url(self, obj):
         return OrderDetailSerializer.get_tracking_url(self, obj)
 
+    def get_estimated_days_min(self, obj):
+        return OrderDetailSerializer.get_estimated_days_min(self, obj)
+
+    def get_estimated_days(self, obj):
+        return OrderDetailSerializer.get_estimated_days(self, obj)
+
+    def get_can_confirm_delivery(self, obj):
+        return OrderDetailSerializer.get_can_confirm_delivery(self, obj)
+
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     items_count = serializers.SerializerMethodField()
@@ -161,6 +182,10 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     carrier = serializers.SerializerMethodField()
     tracking_url = serializers.SerializerMethodField()
     payment_intent = serializers.SerializerMethodField()
+    shipped_at = serializers.DateTimeField(read_only=True)
+    estimated_days_min = serializers.SerializerMethodField()
+    estimated_days = serializers.SerializerMethodField()
+    can_confirm_delivery = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -185,6 +210,10 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "city",
             "address",
             "expires_at",
+            "shipped_at",
+            "estimated_days_min",
+            "estimated_days",
+            "can_confirm_delivery",
         ]
         read_only_fields = fields
 
@@ -208,7 +237,23 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             context=self.context,
         ).data
 
+    def get_estimated_days_min(self, obj):
+        min_days, _ = get_estimate_bounds(obj)
+        return min_days
+
+    def get_estimated_days(self, obj):
+        _, max_days = get_estimate_bounds(obj)
+        return max_days
+
+    def get_can_confirm_delivery(self, obj):
+        return customer_can_confirm_delivery(obj)
+
     def get_tracking_code(self, obj):
+        if obj.status in (
+            OrderStatus.CANCELED,
+            OrderStatus.EXPIRED,
+        ):
+            return None
         if obj.status not in (
             OrderStatus.SHIPPED,
             OrderStatus.DELIVERED,
@@ -227,6 +272,16 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         return None
 
     def get_tracking_url(self, obj):
+        if obj.status in (
+            OrderStatus.CANCELED,
+            OrderStatus.EXPIRED,
+        ):
+            return None
+        if obj.status not in (
+            OrderStatus.SHIPPED,
+            OrderStatus.DELIVERED,
+        ):
+            return None
         from apps.shipping.models import (
             CARRIER_TRACKING_URLS,
             ShippingCarrier,

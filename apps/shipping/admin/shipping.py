@@ -16,6 +16,7 @@ class ShippingMethodAdmin(
         "carrier",
         "price",
         "free_shipping_minimum",
+        "estimated_days_min",
         "estimated_days",
         "is_active",
     ]
@@ -31,6 +32,7 @@ class ShippingMethodAdmin(
 
     list_editable = [
         "price",
+        "estimated_days_min",
         "estimated_days",
         "is_active",
     ]

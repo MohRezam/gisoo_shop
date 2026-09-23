@@ -44,6 +44,11 @@ class NotificationType(models.TextChoices):
         "Payment Reminder",
     )
 
+    DELIVERY_CONFIRM = (
+        "DELIVERY_CONFIRM",
+        "Delivery Confirm",
+    )
+
 
 class NotificationChannel(models.TextChoices):
     SMS = "SMS", "SMS"

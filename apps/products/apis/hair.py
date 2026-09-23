@@ -80,7 +80,10 @@ PRODUCT_PRICE_PRESETS = [
 )
 class HairProblemAPIView(CachedListMixin, ListAPIView):
     serializer_class = HairProblemSerializer
-    queryset = HairProblem.objects.filter(is_active=True)
+    queryset = HairProblem.objects.filter(is_active=True).order_by(
+        "display_order",
+        "title",
+    )
     filter_backends = []
     pagination_class = StandardResultPagination
     cache_namespace = ns.PRODUCTS_HAIR_PROBLEMS

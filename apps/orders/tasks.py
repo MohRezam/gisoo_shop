@@ -286,3 +286,88 @@ def send_pending_payment_reminders():
         sent += 1
 
     return sent
+
+
+@shared_task
+def process_shipped_delivery_followups():
+    """
+    For shipped orders:
+    - At shipping max estimate (e.g. day 5): SMS asking to confirm delivery
+    - At max + 5 days (e.g. day 10): auto-mark as delivered
+    """
+    from apps.notifications.models import InAppNotificationType
+    from apps.notifications.services.inbox import notify_user
+    from apps.notifications.services.notification import NotificationService
+    from apps.orders.services.delivery_confirm import (
+        should_auto_deliver,
+        should_send_delivery_confirm_sms,
+    )
+
+    now = timezone.now()
+    qs = (
+        Order.objects
+        .filter(
+            status=OrderStatus.SHIPPED,
+            shipped_at__isnull=False,
+        )
+        .select_related("user", "shipping_method")
+    )
+
+    sms_sent = 0
+    auto_delivered = 0
+
+    for order in qs.iterator():
+        if should_auto_deliver(order, now=now):
+            try:
+                change_order_status(
+                    order=order,
+                    new_status=OrderStatus.DELIVERED,
+                    reason="auto_delivered_after_estimate",
+                )
+                auto_delivered += 1
+            except Exception:
+                continue
+            continue
+
+        if not should_send_delivery_confirm_sms(order, now=now):
+            continue
+
+        label = order.public_number or order.id
+        link = f"/account/orders/{order.id}"
+        title = "تأیید تحویل سفارش"
+        body = (
+            f"اگر سفارش {label} را تحویل گرفته‌اید، "
+            "وارد سایت شوید و دکمه «تحویل گرفتم» را بزنید."
+        )
+
+        notify_user(
+            user=order.user,
+            title=title,
+            body=body,
+            type=InAppNotificationType.ORDER,
+            link=link,
+            order_id=order.id,
+        )
+
+        phone = (order.phone_number or "").strip()
+        if phone:
+            NotificationService.send_delivery_confirm(
+                user=order.user,
+                recipient=phone,
+                order_id=label,
+                idempotency_key=f"delivery_confirm:{order.id}",
+            )
+
+        order.delivery_confirm_sms_sent_at = now
+        order.save(
+            update_fields=[
+                "delivery_confirm_sms_sent_at",
+                "updated_at",
+            ]
+        )
+        sms_sent += 1
+
+    return {
+        "sms_sent": sms_sent,
+        "auto_delivered": auto_delivered,
+    }

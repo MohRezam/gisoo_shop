@@ -114,6 +114,13 @@ class Order(BaseModel):
         help_text="یادآوری دوم نزدیک به نیمهٔ مهلت پرداخت.",
     )
 
+    delivery_confirm_sms_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="زمان پیامک تأیید تحویل",
+        help_text="پیامک درخواست تأیید تحویل پس از پایان بازه تخمینی ارسال.",
+    )
+
     prepared_at = models.DateTimeField(
         null=True,
         blank=True,

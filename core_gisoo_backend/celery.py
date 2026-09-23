@@ -33,6 +33,10 @@ app.conf.beat_schedule = {
         "task": "apps.orders.tasks.send_pending_payment_reminders",
         "schedule": 60.0,
     },
+    "process-shipped-delivery-followups-hourly": {
+        "task": "apps.orders.tasks.process_shipped_delivery_followups",
+        "schedule": 60.0 * 60,
+    },
     "sweep-expired-discount-campaigns-every-minute": {
         "task": "apps.products.tasks.sweep_expired_discount_campaigns",
         "schedule": 60.0,

@@ -69,10 +69,12 @@ def build_track_payload(order: Order) -> dict:
     else:
         items_summary = None
 
-    tracking_code = order.tracking_code or None
-    shipment = order.shipments.order_by("-created_at").first()
-    if shipment and shipment.tracking_code:
-        tracking_code = shipment.tracking_code
+    tracking_code = None
+    if status not in (OrderStatus.CANCELED, OrderStatus.EXPIRED):
+        tracking_code = order.tracking_code or None
+        shipment = order.shipments.order_by("-created_at").first()
+        if shipment and shipment.tracking_code:
+            tracking_code = shipment.tracking_code
 
     return {
         "public_number": order.public_number,

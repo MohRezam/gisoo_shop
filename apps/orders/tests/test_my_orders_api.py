@@ -146,3 +146,62 @@ class MyOrdersListAPITests(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], self.order.id)
+
+    def test_cancel_order_while_waiting_payment(self):
+        url = reverse("apps.orders:cancel-order", kwargs={"id": self.order.id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, OrderStatus.CANCELED)
+
+    def test_cancel_blocked_when_receipt_submitted(self):
+        from apps.payments.models import PaymentIntentStatus
+
+        intent = self.order.payment_intents.first()
+        self.assertIsNotNone(intent)
+        intent.status = PaymentIntentStatus.RECEIPT_SUBMITTED
+        intent.save(update_fields=["status"])
+
+        url = reverse("apps.orders:cancel-order", kwargs={"id": self.order.id})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, OrderStatus.WAITING_PAYMENT)
+
+    def test_confirm_delivery_in_window(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.orders.services.change_order_status import change_order_status
+        from apps.payments.models import PaymentIntent, PaymentIntentStatus
+
+        PaymentIntent.objects.filter(order=self.order).update(
+            status=PaymentIntentStatus.PAID,
+        )
+        self.order.tracking_code = "1234567890"
+        self.order.carrier = "post"
+        self.order.save(update_fields=["tracking_code", "carrier"])
+        change_order_status(
+            order=self.order,
+            new_status=OrderStatus.PREPARING,
+            reason="test_paid",
+        )
+        self.order.refresh_from_db()
+        change_order_status(
+            order=self.order,
+            new_status=OrderStatus.SHIPPED,
+            reason="test_ship",
+        )
+        self.order.refresh_from_db()
+        self.order.shipped_at = timezone.now() - timedelta(days=4)
+        self.order.save(update_fields=["shipped_at"])
+
+        url = reverse(
+            "apps.orders:confirm-delivery",
+            kwargs={"id": self.order.id},
+        )
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, OrderStatus.DELIVERED)

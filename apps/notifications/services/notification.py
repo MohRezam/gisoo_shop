@@ -312,3 +312,30 @@ class NotificationService:
             ],
             idempotency_key=idempotency_key,
         )
+
+    @classmethod
+    def send_delivery_confirm(
+        cls,
+        *,
+        user,
+        recipient,
+        order_id,
+        idempotency_key=None,
+    ):
+        pattern_id = getattr(
+            settings,
+            "SMS_PATTERN_DELIVERY_CONFIRM",
+            0,
+        )
+        return cls.send_sms_pattern(
+            user=user,
+            notification_type=(
+                NotificationType.DELIVERY_CONFIRM
+            ),
+            recipient=recipient,
+            pattern_id=pattern_id,
+            args=[
+                str(order_id),
+            ],
+            idempotency_key=idempotency_key,
+        )

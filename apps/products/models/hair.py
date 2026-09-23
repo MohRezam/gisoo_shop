@@ -28,10 +28,15 @@ class HairProblem(BaseModel):
         verbose_name="فعال",
     )
 
+    display_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="ترتیب نمایش",
+    )
+
     class Meta:
         verbose_name = "مشکل مو"
         verbose_name_plural = "مشکلات مو"
-        ordering = ["title"]
+        ordering = ["display_order", "title"]
 
     def __str__(self):
         return self.title

@@ -61,7 +61,15 @@ SMS_PATTERN_ORDER_CANCELLED = config(
     cast=int,
 )
 
+SMS_PATTERN_DELIVERY_CONFIRM = config(
+    "SMS_PATTERN_DELIVERY_CONFIRM",
+    default=0,
+    cast=int,
+)
+
 # When Melipayamak is live, OTP SMS body/pattern should include the domain
 # so mobile autofill works, e.g.:
 #   کد ورود: @gisoo.example #123456
 # Pattern args for OTP remain: [otp] (and optionally domain as second arg).
+# Delivery confirm pattern args: [order_id] — text should ask the customer
+# to open the site and tap «تحویل گرفتم».

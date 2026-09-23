@@ -8,14 +8,23 @@ class HairProblemAdmin(admin.ModelAdmin):
         "id",
         "title",
         "slug",
+        "display_order",
         "is_active",
     )
     list_filter = (
         "is_active",
     )
+    list_editable = (
+        "display_order",
+        "is_active",
+    )
     search_fields = (
         "title",
         "slug",
+    )
+    ordering = (
+        "display_order",
+        "title",
     )
     prepopulated_fields = {
         "slug": ("title",),
