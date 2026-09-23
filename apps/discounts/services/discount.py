@@ -1,7 +1,6 @@
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
 from apps.discounts.models import (
@@ -63,7 +62,7 @@ def calculate_discount(
     """
 
     qs = Discount.objects.filter(
-        code=code.upper(),
+        code__iexact=code.strip(),
     )
     if for_update:
         qs = qs.select_for_update()
@@ -72,24 +71,24 @@ def calculate_discount(
 
     if discount is None:
         raise ValidationError(
-            _("Discount code not found.")
+            "کد تخفیف نامعتبر میباشد"
         )
 
     if not discount.is_active:
         raise ValidationError(
-            _("Discount code is inactive.")
+            "کد تخفیف نامعتبر میباشد"
         )
 
     now = timezone.now()
 
     if discount.starts_at > now:
         raise ValidationError(
-            _("Discount code has not started yet.")
+            "کد تخفیف نامعتبر میباشد"
         )
 
     if discount.expires_at < now:
         raise ValidationError(
-            _("Discount code has expired.")
+            "کد تخفیف منقضی شده است"
         )
 
     effective_used = discount.used_count
@@ -103,16 +102,12 @@ def calculate_discount(
         and effective_used >= discount.usage_limit
     ):
         raise ValidationError(
-            _("Discount usage limit reached.")
+            "سقف استفاده از این کد تخفیف تکمیل شده است."
         )
 
     if products_price < discount.minimum_order_amount:
         raise ValidationError(
-            _(
-                "Minimum order amount is %(amount)s."
-            ) % {
-                "amount": discount.minimum_order_amount,
-            }
+            "مبلغ سبد برای این کد تخفیف کافی نیست."
         )
 
     if (
@@ -133,7 +128,7 @@ def calculate_discount(
 
         if user_usage_count >= discount.per_user_limit:
             raise ValidationError(
-                _("You have already used this discount.")
+                "شما قبلاً از این کد تخفیف استفاده کرده‌اید."
             )
 
     if eligible_price is None:
@@ -181,7 +176,7 @@ def register_discount_usage(*, discount, user, order):
         and locked.used_count >= locked.usage_limit
     ):
         raise ValidationError(
-            _("Discount usage limit reached.")
+            "سقف استفاده از این کد تخفیف تکمیل شده است."
         )
 
     if locked.per_user_limit > 0:
@@ -192,7 +187,7 @@ def register_discount_usage(*, discount, user, order):
 
         if user_usage_count >= locked.per_user_limit:
             raise ValidationError(
-                _("You have already used this discount.")
+                "شما قبلاً از این کد تخفیف استفاده کرده‌اید."
             )
 
     usage, created = DiscountUsage.objects.get_or_create(

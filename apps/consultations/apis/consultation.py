@@ -16,6 +16,8 @@ from rest_framework.views import APIView
 
 from apps.consultations.models.consultation import (
     ConsultationRecommendation,
+    ConsultationRecommendationPack,
+    ConsultationRecommendationPackItem,
     ConsultationRequest,
 )
 from apps.consultations.serializers import (
@@ -315,6 +317,35 @@ class ConsultationListAPIView(
                 ),
             )
         )
+        pack_items_qs = (
+            ConsultationRecommendationPackItem.objects
+            .select_related(
+                "recommendation",
+                "recommendation__variant",
+                "recommendation__variant__product",
+                "recommendation__variant__product__brand",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "recommendation__variant__product__images",
+                    queryset=ProductImage.objects.filter(
+                        is_primary=True
+                    ),
+                    to_attr="primary_images",
+                ),
+            )
+            .order_by("display_order", "created_at")
+        )
+        packs_qs = (
+            ConsultationRecommendationPack.objects
+            .prefetch_related(
+                Prefetch(
+                    "items",
+                    queryset=pack_items_qs,
+                ),
+            )
+            .order_by("display_order", "created_at")
+        )
 
         return (
             ConsultationRequest.objects
@@ -325,6 +356,10 @@ class ConsultationListAPIView(
                 Prefetch(
                     "recommendations",
                     queryset=recommendations_qs,
+                ),
+                Prefetch(
+                    "recommendation_packs",
+                    queryset=packs_qs,
                 ),
             )
             .filter(

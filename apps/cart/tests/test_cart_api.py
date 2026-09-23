@@ -504,3 +504,79 @@ class CartStockAggregationAPITests(APITestCase):
             response.status_code,
             status.HTTP_400_BAD_REQUEST,
         )
+
+
+class CartDiscountAPITests(APITestCase):
+    def setUp(self):
+        self.url = reverse("apps.cart:cart-discount")
+        self.add_url = reverse("apps.cart:add-to-cart")
+        self.category = create_category(slug="disc-cat")
+        self.brand = create_brand(slug="disc-brand")
+        self.product = create_product(
+            category=self.category,
+            brand=self.brand,
+            slug="disc-product",
+        )
+        self.variant = create_product_variant(
+            product=self.product,
+            sku="disc-sku",
+            stock=10,
+            price=100_000,
+        )
+
+    def _make_cart(self):
+        response = self.client.post(
+            self.add_url,
+            {
+                "variant_id": self.variant.id,
+                "quantity": 1,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return response.data["cart_uuid"]
+
+    def test_invalid_discount_code_message(self):
+        from apps.discounts.tests.factories import DiscountFactory
+
+        cart_uuid = self._make_cart()
+        DiscountFactory(code="REALCODE")
+
+        response = self.client.post(
+            self.url,
+            {"code": "WRONGCODE"},
+            format="json",
+            HTTP_X_CART_UUID=cart_uuid,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        detail = response.data.get("error", {}).get("detail") or response.data
+        self.assertIn("کد تخفیف نامعتبر میباشد", str(detail))
+
+    def test_apply_valid_discount(self):
+        from apps.discounts.tests.factories import DiscountFactory
+        from apps.cart.models import Cart
+
+        cart_uuid = self._make_cart()
+        DiscountFactory(
+            code="SAVE10",
+            discount_type="percentage",
+            value=10,
+            applies_to_discounted_products=True,
+        )
+
+        response = self.client.post(
+            self.url,
+            {"code": "save10"},
+            format="json",
+            HTTP_X_CART_UUID=cart_uuid,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["discount"], "SAVE10")
+        self.assertEqual(response.data["cart_uuid"], cart_uuid)
+        self.assertEqual(response.data["coupon_discount"], 10_000)
+        self.assertEqual(response.data["total"], 90_000)
+
+        cart = Cart.objects.get(uuid=cart_uuid)
+        self.assertEqual(cart.discount.code, "SAVE10")

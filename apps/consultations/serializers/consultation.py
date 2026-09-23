@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from apps.consultations.models.consultation import (
     ConsultationRecommendation,
+    ConsultationRecommendationPack,
     ConsultationRequest,
 )
 from apps.products.models import HairProblem
@@ -199,6 +200,32 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
         return 1
 
 
+class ConsultationRecommendationPackSerializer(serializers.ModelSerializer):
+    products = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ConsultationRecommendationPack
+        fields = (
+            "id",
+            "title",
+            "description",
+            "display_order",
+            "products",
+        )
+
+    def get_products(self, obj):
+        recommendations = [
+            item.recommendation
+            for item in obj.items.all()
+            if item.recommendation_id
+        ]
+        return ConsultationRecommendationSerializer(
+            recommendations,
+            many=True,
+            context=self.context,
+        ).data
+
+
 class ConsultationListSerializer(
     serializers.ModelSerializer,
 ):
@@ -207,6 +234,7 @@ class ConsultationListSerializer(
     )
 
     products = serializers.SerializerMethodField()
+    recommendation_packs = serializers.SerializerMethodField()
 
     class Meta:
         model = ConsultationRequest
@@ -219,6 +247,7 @@ class ConsultationListSerializer(
             "created_at",
             "updated_at",
             "products",
+            "recommendation_packs",
         )
 
     def get_products(self, obj):
@@ -229,6 +258,23 @@ class ConsultationListSerializer(
 
         return ConsultationRecommendationSerializer(
             obj.recommendations.all(),
+            many=True,
+            context=self.context,
+        ).data
+
+    def get_recommendation_packs(self, obj):
+        if obj.status != (
+                ConsultationRequest.Status.COMPLETED
+        ):
+            return []
+
+        packs = [
+            pack
+            for pack in obj.recommendation_packs.all()
+            if len(pack.items.all()) > 0
+        ]
+        return ConsultationRecommendationPackSerializer(
+            packs,
             many=True,
             context=self.context,
         ).data

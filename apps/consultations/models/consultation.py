@@ -289,13 +289,20 @@ class ConsultationRecommendationPack(models.Model):
 
     title = models.CharField(
         max_length=255,
-        verbose_name="عنوان",
+        blank=True,
+        default="",
+        verbose_name="عنوان گروه",
+        help_text="اختیاری — مثلاً «روتین روزانه»",
     )
 
     description = models.TextField(
         blank=True,
         default="",
-        verbose_name="توضیحات",
+        verbose_name="متن کلی گروه",
+        help_text=(
+            "متن مشترک برای کل گروه محصولات — "
+            "مثلاً «این محصولات را به‌صورت روتین استفاده کنید»"
+        ),
     )
 
     display_order = models.PositiveIntegerField(
@@ -314,13 +321,14 @@ class ConsultationRecommendationPack(models.Model):
             "created_at",
         ]
 
-        verbose_name = "پک پیشنهادی مشاوره"
-        verbose_name_plural = "پک‌های پیشنهادی مشاوره"
+        verbose_name = "گروه پیشنهاد محصول"
+        verbose_name_plural = "گروه‌های پیشنهاد محصول"
 
     def __str__(self):
+        label = self.title.strip() or (self.description[:40] if self.description else "گروه")
         return (
             f"{self.consultation.full_name} "
-            f"→ {self.title}"
+            f"→ {label}"
         )
 
 
@@ -329,14 +337,14 @@ class ConsultationRecommendationPackItem(models.Model):
         ConsultationRecommendationPack,
         on_delete=models.CASCADE,
         related_name="items",
-        verbose_name="پک",
+        verbose_name="گروه",
     )
 
     recommendation = models.ForeignKey(
         ConsultationRecommendation,
         on_delete=models.CASCADE,
         related_name="pack_items",
-        verbose_name="پیشنهاد",
+        verbose_name="پیشنهاد محصول",
     )
 
     display_order = models.PositiveIntegerField(
@@ -365,8 +373,8 @@ class ConsultationRecommendationPackItem(models.Model):
             ),
         ]
 
-        verbose_name = "آیتم پک مشاوره"
-        verbose_name_plural = "آیتم‌های پک مشاوره"
+        verbose_name = "محصول داخل گروه"
+        verbose_name_plural = "محصولات داخل گروه"
 
     def clean(self):
         if (
@@ -377,8 +385,7 @@ class ConsultationRecommendationPackItem(models.Model):
         ):
             raise ValidationError(
                 _(
-                    "Pack and recommendation "
-                    "must belong to the same consultation."
+                    "گروه و پیشنهاد محصول باید متعلق به یک مشاوره باشند."
                 )
             )
 
@@ -387,8 +394,9 @@ class ConsultationRecommendationPackItem(models.Model):
         return super().save(*args, **kwargs)
 
     def __str__(self):
+        pack_label = self.pack.title.strip() or "گروه"
         return (
-            f"{self.pack.title} → "
+            f"{pack_label} → "
             f"{self.recommendation}"
         )
 
