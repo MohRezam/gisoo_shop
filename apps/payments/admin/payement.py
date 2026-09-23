@@ -457,4 +457,6 @@ class PaymentReviewAdmin(admin.ModelAdmin):
         return False
 
     def has_delete_permission(self, request, obj=None):
-        return False
+        # Superuser must be able to delete so PaymentIntent cascade
+        # delete is not blocked by related PaymentReview rows.
+        return bool(request.user and request.user.is_superuser)
