@@ -49,10 +49,12 @@
         </ul>
     {% endblock %}
     {% if cl.formset and cl.formset.errors %}
-        <p class="errornote">
-        لطفاً خطاهای زیر را برطرف کنید.
-        </p>
-        {{ cl.formset.non_form_errors }}
+        <div class="gisoo-error-panel" role="alert">
+          <p class="errornote">
+            لطفاً خطاهای لیست را برطرف کنید.
+          </p>
+          {{ cl.formset.non_form_errors }}
+        </div>
     {% endif %}
     <div class="module{% if cl.has_filters %} filtered{% endif %}" id="changelist">
       <div class="changelist-form-container">

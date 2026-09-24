@@ -107,7 +107,7 @@ body {
   border: none !important;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.12) inset,
-    0 14px 36px rgba(18, 36, 71, 0.28);
+    0 4px 14px rgba(18, 36, 71, 0.2);
   padding: 14px 28px !important;
   align-items: center;
   gap: 18px;
@@ -399,11 +399,13 @@ body {
 /* ========== Breadcrumbs ========== */
 div.breadcrumbs {
   position: relative;
+  z-index: 1;
   background: linear-gradient(90deg, #0c1f3f 0%, #122447 55%, #173087 100%) !important;
   color: rgba(255, 255, 255, 0.82) !important;
   padding: 11px 28px !important;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 0.84rem;
+  margin: 0 !important;
 }
 
 div.breadcrumbs a {
@@ -684,6 +686,10 @@ input:focus, textarea:focus, select:focus {
   position: sticky !important;
   top: 0;
   z-index: 40;
+  /* Keep shadow short so it doesn't cover breadcrumbs */
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 4px 14px rgba(18, 36, 71, 0.2) !important;
 }
 
 .main,
@@ -719,11 +725,12 @@ input:focus, textarea:focus, select:focus {
   border-right: none !important;
   box-shadow: -8px 0 24px rgba(15, 23, 42, 0.04);
   text-align: right !important;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
+  overflow: hidden !important;
   visibility: visible !important;
   z-index: 20 !important;
   box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 [dir="rtl"] #nav-sidebar,
@@ -749,7 +756,7 @@ input:focus, textarea:focus, select:focus {
   width: 100% !important;
   padding: 20px 24px 40px !important;
   background: #f3f5f9 !important;
-  overflow-x: auto !important;
+  overflow-x: hidden !important;
   box-sizing: border-box !important;
 }
 
@@ -1609,15 +1616,11 @@ a.gisoo-btn-ghost:hover {
   padding: 18px 12px 28px;
 }
 
-/* ========== Messages ========== */
+/* ========== Messages (base) — detailed styles in gisoo_admin_errors.css ========== */
 .messagelist li {
   border-radius: 12px;
   color: #111827 !important;
 }
-
-.messagelist li.success { background: #ecfdf5 !important; }
-.messagelist li.error { background: #fef2f2 !important; }
-.messagelist li.warning { background: #fffbeb !important; }
 
 @media (max-width: 1200px) {
   .gisoo-stats-grid {
@@ -1629,49 +1632,9 @@ a.gisoo-btn-ghost:hover {
 }
 
 @media (max-width: 900px) {
-  .toggle-nav-sidebar {
-    display: flex !important;
-    position: fixed !important;
-    z-index: 50;
-    top: 76px;
-    left: 12px;
-    width: 42px !important;
-    height: 42px !important;
-    flex: none !important;
-    border-radius: 12px !important;
-    border: 1px solid #dbe4ff !important;
-    background: #fff !important;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
-    color: #0f2fb8 !important;
-  }
-
-  #nav-sidebar {
-    display: block !important;
-    position: fixed !important;
-    top: 64px !important;
-    right: 0 !important;
-    left: auto !important;
-    height: calc(100vh - 64px) !important;
-    width: min(300px, 86vw) !important;
-    max-width: min(300px, 86vw) !important;
-    flex: none !important;
-    z-index: 45 !important;
-    transform: translateX(110%) !important;
-    transition: transform 0.22s ease !important;
-    box-shadow: -12px 0 32px rgba(15, 23, 42, 0.18);
-    visibility: visible !important;
-  }
-
-  [dir="rtl"] #nav-sidebar,
-  .main > #nav-sidebar,
-  .main.shifted > #nav-sidebar {
-    transform: translateX(110%) !important;
-    margin: 0 !important;
-  }
-
-  .main.shifted > #nav-sidebar,
-  [dir="rtl"] .main.shifted > #nav-sidebar {
-    transform: translateX(0) !important;
+  /* Mobile toggle lives in header — see gisoo_admin_mobile_sidebar.css */
+  .toggle-nav-sidebar:not(.gisoo-nav-toggle) {
+    display: none !important;
   }
 
   .main > #nav-sidebar + .content,
@@ -1692,25 +1655,7 @@ a.gisoo-btn-ghost:hover {
 }
 
 @media (max-width: 767px) {
-  #header {
-    padding: 12px 14px !important;
-    min-height: auto;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .gisoo-name { font-size: 1.15rem; }
-  .gisoo-header-badge { display: none; }
-  .gisoo-tagline { display: none; }
-  #user-tools {
-    width: 100%;
-    border-radius: 16px;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-  .gisoo-user-actions {
-    width: 100%;
-    justify-content: flex-start;
-  }
+  /* Compact header rules live in gisoo_admin_mobile_header.css */
   .gisoo-stats-grid {
     grid-template-columns: 1fr 1fr;
   }

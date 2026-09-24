@@ -1,0 +1,649 @@
+/* Gisoo admin — mobile: changelist, filters, search, pagination, change forms */
+/* Owned by mobile-lists agent. Breakpoints: 900px / 767px / 480px. RTL. */
+
+/* ---------- Shared: keep page from sideways-scrolling ---------- */
+@media (max-width: 900px) {
+  body.change-list,
+  body.change-form {
+    overflow-x: hidden;
+  }
+
+  body.change-list #content,
+  body.change-form #content,
+  body.change-list #content-main,
+  body.change-form #content-main {
+    max-width: 100% !important;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  /* Object tools: wrap, no overflow */
+  .object-tools {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    float: none !important;
+    margin: 0 0 14px !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .object-tools li {
+    float: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .object-tools a {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 8px 14px !important;
+    white-space: normal !important;
+    word-break: break-word;
+    text-align: center;
+    box-sizing: border-box;
+  }
+
+  /* Search toolbar */
+  #toolbar {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    padding: 12px !important;
+  }
+
+  #toolbar form > div {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  #toolbar label {
+    display: none;
+  }
+
+  #toolbar #searchbar,
+  #toolbar form input[type="text"] {
+    flex: 1 1 160px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 42px;
+    box-sizing: border-box;
+  }
+
+  #toolbar form input[type="submit"] {
+    flex: 0 0 auto !important;
+    min-height: 42px;
+    margin: 0 !important;
+    padding: 8px 16px !important;
+  }
+
+  #toolbar .small.quiet,
+  #toolbar .help {
+    flex: 1 1 100%;
+    margin: 4px 0 0;
+  }
+
+  /* Changelist layout */
+  #changelist {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  #changelist .changelist-form-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  #changelist .changelist-form-container > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* Filters: full-width band (not sidebar) */
+  #changelist-filter,
+  #changelist-filter.gisoo-filter {
+    float: none !important;
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    order: -1 !important;
+    position: static !important;
+    top: auto !important;
+    max-height: none !important;
+    margin: 0 0 4px !important;
+    overflow: visible !important;
+    box-sizing: border-box;
+  }
+
+  #changelist-filter h2 {
+    font-size: 0.92rem !important;
+    padding: 12px 14px !important;
+  }
+
+  #changelist-filter details summary {
+    min-height: 44px;
+    display: flex !important;
+    align-items: center;
+    padding: 10px 14px !important;
+    font-size: 0.86rem !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #changelist-filter a {
+    min-height: 40px;
+    display: flex !important;
+    align-items: center;
+    padding: 8px 12px !important;
+  }
+
+  /* Collapsible feel: scroll long filter panels */
+  #changelist-filter details[open] ul {
+    max-height: 220px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Actions bar */
+  #changelist .actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  #changelist .actions label {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin: 0 !important;
+  }
+
+  #changelist .actions select {
+    flex: 1 1 160px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 42px;
+    font-size: 0.9rem !important;
+    box-sizing: border-box;
+  }
+
+  #changelist .actions button,
+  #changelist .actions button.button,
+  #changelist .actions .button {
+    min-height: 42px;
+    min-width: 72px;
+    padding: 8px 16px !important;
+    margin: 0 !important;
+  }
+
+  #changelist .actions .action-counter,
+  #changelist .actions span.all,
+  #changelist .actions span.question,
+  #changelist .actions span.clear {
+    flex: 1 1 100%;
+    margin: 0 !important;
+  }
+
+  /* Results table: scroll inside wrapper only */
+  #changelist .results {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  #changelist #result_list,
+  #changelist .results table {
+    width: max-content !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  #changelist #result_list th,
+  #changelist #result_list td {
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  /* Sticky action / first column (RTL: right edge) */
+  #changelist #result_list th:first-child,
+  #changelist #result_list td:first-child {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background: #fff !important;
+    box-shadow: -4px 0 8px rgba(15, 23, 42, 0.06);
+  }
+
+  #changelist #result_list thead th:first-child {
+    background: #f3f4f6 !important;
+    z-index: 3;
+  }
+
+  #changelist #result_list tbody tr:nth-child(odd) td:first-child {
+    background: #fcfbf8 !important;
+  }
+
+  #changelist #result_list tbody tr:hover td:first-child {
+    background: #eef3ff !important;
+  }
+
+  /* Pagination */
+  #changelist .changelist-footer {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    padding: 10px 12px !important;
+  }
+
+  .paginator,
+  #changelist .paginator {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    gap: 6px 8px;
+    width: 100%;
+    line-height: 1.4;
+  }
+
+  .paginator ul {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+    width: 100%;
+  }
+
+  .paginator li {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .paginator a,
+  .paginator span,
+  .paginator .this-page,
+  .paginator .end {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 6px 10px !important;
+    border-radius: 10px;
+    box-sizing: border-box;
+  }
+
+  .paginator a {
+    background: #eef3ff !important;
+    text-decoration: none !important;
+  }
+
+  .paginator .this-page {
+    background: #173ded !important;
+    color: #fff !important;
+    font-weight: 700;
+  }
+
+  .paginator a.showall,
+  .paginator .showall {
+    min-width: auto;
+    padding: 8px 12px !important;
+  }
+
+  /* Date hierarchy */
+  .xfull {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+  }
+
+  /* ========== Change form ========== */
+  .gisoo-change,
+  .gisoo-change-form #content-main {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .gisoo-form-head h1 {
+    font-size: 1.25rem !important;
+  }
+
+  .gisoo-change-form fieldset.module,
+  .change-form fieldset.module {
+    margin-bottom: 12px !important;
+  }
+
+  .gisoo-change-form .form-row,
+  .change-form .form-row,
+  .aligned .form-row {
+    display: block !important;
+    float: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 12px 14px !important;
+    box-sizing: border-box;
+    overflow: visible;
+  }
+
+  .gisoo-change-form .form-row label,
+  .change-form .form-row label,
+  .aligned label,
+  .aligned .form-row > div {
+    float: none !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 0 8px !important;
+    text-align: right !important;
+    box-sizing: border-box;
+  }
+
+  .aligned .form-row > div {
+    margin-bottom: 0 !important;
+  }
+
+  .gisoo-change-form .vTextField,
+  .gisoo-change-form .vLargeTextField,
+  .gisoo-change-form input[type="text"],
+  .gisoo-change-form input[type="number"],
+  .gisoo-change-form input[type="url"],
+  .gisoo-change-form input[type="email"],
+  .gisoo-change-form input[type="password"],
+  .gisoo-change-form input[type="date"],
+  .gisoo-change-form input[type="time"],
+  .gisoo-change-form select,
+  .gisoo-change-form textarea,
+  .change-form .vTextField,
+  .change-form input[type="text"],
+  .change-form input[type="number"],
+  .change-form input[type="url"],
+  .change-form input[type="email"],
+  .change-form select,
+  .change-form textarea {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 42px;
+    box-sizing: border-box;
+  }
+
+  .gisoo-change-form textarea,
+  .change-form textarea,
+  .gisoo-change-form .vLargeTextField {
+    min-height: 110px;
+  }
+
+  /* Related widget (FK / M2M) */
+  .related-widget-wrapper {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center;
+    gap: 8px;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .related-widget-wrapper select,
+  .related-widget-wrapper > a {
+    max-width: 100%;
+  }
+
+  .related-widget-wrapper select {
+    flex: 1 1 180px;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  /* Dual selector */
+  .gisoo-change-form .selector,
+  .change-form .selector {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px;
+  }
+
+  .selector .selector-available,
+  .selector .selector-chosen {
+    width: 100% !important;
+    float: none !important;
+    margin: 0 !important;
+  }
+
+  .selector ul.selector-chooser {
+    width: 100% !important;
+    float: none !important;
+    display: flex !important;
+    justify-content: center;
+    gap: 12px;
+    margin: 4px 0 !important;
+    padding: 0 !important;
+  }
+
+  .selector select {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Datetime / split fields */
+  .datetime,
+  .form-row .datetime {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .datetime input {
+    flex: 1 1 120px;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Submit row: sticky + stacked full-width */
+  .submit-row,
+  .gisoo-submit-row {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 12px 0 0 !important;
+    padding: 12px !important;
+    box-sizing: border-box;
+    background: #fff !important;
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
+  }
+
+  .submit-row input,
+  .submit-row a,
+  .submit-row a.button,
+  .gisoo-submit-row input,
+  .gisoo-submit-row a {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    min-height: 44px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-sizing: border-box;
+    float: none !important;
+  }
+
+  .submit-row .deletelink-box {
+    width: 100%;
+    margin: 0 !important;
+    float: none !important;
+  }
+
+  /* Inlines: horizontal scroll inside group, page stays clean */
+  .inline-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+
+  .inline-group .tabular,
+  .inline-group .module {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    max-width: 100%;
+  }
+
+  .inline-group .tabular table,
+  .inline-group table {
+    width: max-content !important;
+    min-width: 100% !important;
+  }
+
+  .inline-related {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .inline-related .form-row {
+    overflow-x: auto;
+  }
+}
+
+/* ---------- Phone refinements ---------- */
+@media (max-width: 767px) {
+  .object-tools a {
+    width: 100%;
+  }
+
+  .object-tools li {
+    width: 100%;
+  }
+
+  #toolbar form > div {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #toolbar #searchbar,
+  #toolbar form input[type="text"],
+  #toolbar form input[type="submit"] {
+    width: 100% !important;
+    flex: 1 1 auto !important;
+  }
+
+  #changelist-filter details[open] ul {
+    max-height: 180px;
+  }
+
+  #changelist .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #changelist .actions label {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #changelist .actions select,
+  #changelist .actions button,
+  #changelist .actions button.button {
+    width: 100% !important;
+    flex: 1 1 auto !important;
+  }
+
+  .paginator a,
+  .paginator span,
+  .paginator .this-page {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .gisoo-change-form fieldset.module h2,
+  .gisoo-change-form .fieldset-heading {
+    padding: 12px 14px !important;
+    font-size: 0.92rem !important;
+  }
+
+  .gisoo-change-form .form-row,
+  .change-form .form-row {
+    padding: 10px 12px !important;
+  }
+}
+
+/* ---------- Narrow phones ---------- */
+@media (max-width: 480px) {
+  #toolbar {
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+
+  #changelist-filter,
+  #changelist-filter.gisoo-filter,
+  #changelist .results,
+  #changelist .actions,
+  #changelist .changelist-footer {
+    border-radius: 12px !important;
+  }
+
+  #changelist #result_list th,
+  #changelist #result_list td {
+    padding: 8px 10px !important;
+    font-size: 0.82rem;
+  }
+
+  .paginator {
+    font-size: 0.84rem;
+  }
+
+  .gisoo-form-head {
+    margin-bottom: 12px;
+  }
+
+  .gisoo-form-head h1 {
+    font-size: 1.12rem !important;
+  }
+
+  .submit-row,
+  .gisoo-submit-row {
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+
+  .related-widget-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .related-widget-wrapper select {
+    width: 100% !important;
+  }
+}

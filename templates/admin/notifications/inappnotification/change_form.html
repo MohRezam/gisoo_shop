@@ -1,0 +1,36 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls %}
+
+{% block bodyclass %}{{ block.super }} gisoo-notif-admin{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">خانه</a>
+  <span class="gisoo-bc-sep" aria-hidden="true">/</span>
+  <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  <span class="gisoo-bc-sep" aria-hidden="true">/</span>
+  {% if has_view_permission %}
+    <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural }}</a>
+  {% else %}
+    {{ opts.verbose_name_plural }}
+  {% endif %}
+  <span class="gisoo-bc-sep" aria-hidden="true">/</span>
+  {% if add %}افزودن اعلان جدید{% else %}ویرایش اعلان{% endif %}
+</div>
+{% endblock %}
+
+{% block form_header %}
+<header class="gisoo-form-head gisoo-notif-head">
+  <div>
+    <p class="gisoo-eyebrow">{% if add %}ایجاد اعلان{% else %}ویرایش اعلان{% endif %}</p>
+    <h1>{% if add %}ارسال اعلان درون‌برنامه‌ای{% else %}ویرایش اعلان{% endif %}</h1>
+    <p class="gisoo-dash-sub">
+      {% if add %}
+        اعلان جدید بلافاصله در اینباکس کاربر داخل اپ نمایش داده می‌شود.
+      {% else %}
+        تغییرات پس از ذخیره برای کاربر اعمال می‌شود.
+      {% endif %}
+    </p>
+  </div>
+</header>
+{% endblock %}

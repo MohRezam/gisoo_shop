@@ -1,0 +1,507 @@
+/* Gisoo admin — mobile: index dashboard, stats, app list, charts */
+/* Owned by mobile-dashboard agent. Breakpoints: 900px / 767px / 480px. RTL. */
+
+@media (max-width: 900px) {
+  /* —— Dashboard shell / padding —— */
+  .gisoo-dashboard-page .main > #nav-sidebar + .content,
+  .gisoo-dashboard-page .main.shifted > #nav-sidebar + .content,
+  body.dashboard .main > #nav-sidebar + .content,
+  body.dashboard .main.shifted > #nav-sidebar + .content {
+    padding: 14px 16px !important;
+  }
+
+  .gisoo-dashboard-page #content,
+  .dashboard #content,
+  .gisoo-dash,
+  .dashboard #content-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden;
+  }
+
+  .gisoo-dash {
+    gap: 16px;
+  }
+
+  .gisoo-dash-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 0;
+  }
+
+  .gisoo-dash-head h1 {
+    font-size: 1.35rem;
+    line-height: 1.35;
+  }
+
+  .gisoo-dash-sub {
+    font-size: 0.88rem;
+  }
+
+  .gisoo-dash-actions {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .gisoo-dash-actions .gisoo-btn,
+  .gisoo-dash-actions a.gisoo-btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+    padding: 10px 14px;
+    text-align: center;
+  }
+
+  .gisoo-dash-section {
+    margin: 0;
+  }
+
+  .gisoo-dash-section h2 {
+    margin: 4px 0 10px !important;
+    font-size: 1rem;
+  }
+
+  /* —— Stats cards: 2 cols (tablet-ish) —— */
+  .gisoo-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .gisoo-stat-card {
+    min-height: 0;
+    padding: 14px 12px 12px;
+    border-radius: 14px;
+    min-width: 0;
+  }
+
+  .gisoo-stat-label {
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+    line-height: 1.35;
+  }
+
+  .gisoo-stat-value {
+    font-size: 1.35rem;
+    line-height: 1.2;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* —— Charts: single column, no page scroll —— */
+  .gisoo-charts {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .gisoo-chart-card {
+    padding: 14px;
+    border-radius: 16px;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .gisoo-chart-head {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    margin-bottom: 12px;
+  }
+
+  .gisoo-chart-head h3 {
+    font-size: 0.95rem;
+  }
+
+  .gisoo-chart-body {
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .gisoo-donut {
+    width: min(148px, 42vw);
+    height: min(148px, 42vw);
+    flex: 0 0 auto;
+    max-width: 100%;
+  }
+
+  .gisoo-donut-hole {
+    width: 58%;
+    height: 58%;
+  }
+
+  .gisoo-chart-legend {
+    width: 100%;
+    flex: 1 1 auto;
+    gap: 6px;
+  }
+
+  .gisoo-chart-legend li {
+    grid-template-columns: 10px minmax(0, 1fr) auto auto;
+    font-size: 0.8rem;
+    gap: 6px;
+  }
+
+  .gisoo-legend-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .gisoo-bars {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .gisoo-bar-meta {
+    font-size: 0.8rem;
+    gap: 8px;
+  }
+
+  .gisoo-bar-meta span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .gisoo-chart-card canvas,
+  .gisoo-charts canvas,
+  .gisoo-chart-body canvas {
+    display: block;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* —— Quick action grids (tap-friendly) —— */
+  .gisoo-quick-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .gisoo-side-quick a,
+  .gisoo-quick-grid a {
+    min-height: 44px;
+    padding: 10px 10px !important;
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+
+  .gisoo-quick-label {
+    margin-bottom: 8px;
+  }
+
+  /* —— App modules: stack vertically —— */
+  .gisoo-app-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .gisoo-app-card {
+    padding: 12px 12px 6px;
+    border-radius: 14px;
+  }
+
+  .gisoo-app-card h3 {
+    font-size: 0.9rem;
+    padding-bottom: 8px;
+  }
+
+  .gisoo-app-card li {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    padding: 10px 2px;
+    min-height: 44px;
+  }
+
+  .gisoo-app-card a {
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .gisoo-add {
+    min-height: 32px;
+    padding: 6px 10px 6px 8px;
+    font-size: 0.8rem !important;
+  }
+
+  /* Classic Django app_list modules on dashboard */
+  .gisoo-dashboard-page #content-main .module,
+  .dashboard #content-main .module {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 10px !important;
+    float: none !important;
+    box-sizing: border-box;
+  }
+
+  .gisoo-dashboard-page #content-main .module table,
+  .dashboard #content-main .module table {
+    width: 100% !important;
+    max-width: 100%;
+    table-layout: fixed;
+  }
+
+  .gisoo-dashboard-page #content-main .module caption,
+  .dashboard #content-main .module caption {
+    padding: 10px 12px;
+    font-size: 0.92rem;
+    text-align: right;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .gisoo-dashboard-page #content-main .module caption a,
+  .dashboard #content-main .module caption a {
+    display: inline-block;
+    line-height: 1.4;
+  }
+
+  .gisoo-dashboard-page #content-main .module th,
+  .gisoo-dashboard-page #content-main .module td,
+  .dashboard #content-main .module th,
+  .dashboard #content-main .module td {
+    padding: 10px 8px;
+    font-size: 0.88rem;
+    vertical-align: middle;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .gisoo-dashboard-page #content-main .module th a,
+  .gisoo-dashboard-page #content-main .module td a,
+  .dashboard #content-main .module th a,
+  .dashboard #content-main .module td a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    line-height: 1.35;
+  }
+}
+
+@media (max-width: 767px) {
+  .gisoo-dashboard-page .main > #nav-sidebar + .content,
+  .gisoo-dashboard-page .main.shifted > #nav-sidebar + .content,
+  body.dashboard .main > #nav-sidebar + .content,
+  body.dashboard .main.shifted > #nav-sidebar + .content {
+    padding: 12px 14px !important;
+  }
+
+  .gisoo-dash {
+    gap: 14px;
+  }
+
+  .gisoo-dash-head h1 {
+    font-size: 1.22rem;
+  }
+
+  .gisoo-dash-actions .gisoo-btn,
+  .gisoo-dash-actions a.gisoo-btn {
+    flex: 1 1 calc(50% - 4px);
+    font-size: 0.84rem;
+  }
+
+  /* Still 2 cols — keep numbers readable */
+  .gisoo-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .gisoo-stat-card {
+    padding: 12px 10px 10px;
+  }
+
+  .gisoo-stat-label {
+    font-size: 0.72rem;
+    margin-bottom: 6px;
+  }
+
+  .gisoo-stat-value {
+    font-size: 1.25rem;
+  }
+
+  .gisoo-chart-card {
+    padding: 12px;
+  }
+
+  .gisoo-donut {
+    width: min(132px, 48vw);
+    height: min(132px, 48vw);
+  }
+
+  .gisoo-donut-hole strong {
+    font-size: 1.15rem;
+  }
+
+  .gisoo-chart-legend li {
+    font-size: 0.78rem;
+  }
+
+  .gisoo-quick-grid {
+    gap: 8px;
+  }
+
+  .gisoo-app-card li {
+    padding: 9px 2px;
+  }
+
+  .gisoo-dashboard-page #content-main .module caption,
+  .dashboard #content-main .module caption {
+    font-size: 0.88rem;
+    padding: 9px 10px;
+  }
+
+  .gisoo-dashboard-page #content-main .module th,
+  .gisoo-dashboard-page #content-main .module td,
+  .dashboard #content-main .module th,
+  .dashboard #content-main .module td {
+    padding: 9px 6px;
+    font-size: 0.84rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gisoo-dashboard-page .main > #nav-sidebar + .content,
+  .gisoo-dashboard-page .main.shifted > #nav-sidebar + .content,
+  body.dashboard .main > #nav-sidebar + .content,
+  body.dashboard .main.shifted > #nav-sidebar + .content {
+    padding: 12px !important;
+  }
+
+  .gisoo-dash {
+    gap: 12px;
+  }
+
+  .gisoo-dash-head h1 {
+    font-size: 1.12rem;
+  }
+
+  .gisoo-eyebrow {
+    font-size: 0.72rem;
+  }
+
+  .gisoo-dash-sub {
+    font-size: 0.82rem;
+  }
+
+  .gisoo-dash-actions {
+    flex-direction: column;
+  }
+
+  .gisoo-dash-actions .gisoo-btn,
+  .gisoo-dash-actions a.gisoo-btn {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  /* Phone: keep 2 cols when numbers fit; allow wrap without crush */
+  .gisoo-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .gisoo-stat-card {
+    padding: 11px 9px 9px;
+    border-radius: 12px;
+  }
+
+  .gisoo-stat-label {
+    font-size: 0.68rem;
+    margin-bottom: 5px;
+  }
+
+  .gisoo-stat-value {
+    font-size: 1.12rem;
+    letter-spacing: -0.01em;
+  }
+
+  /* Wide currency / long values: full width so digits stay readable */
+  .gisoo-stat-card.accent {
+    grid-column: 1 / -1;
+  }
+
+  .gisoo-stat-card.accent .gisoo-stat-value {
+    font-size: 1.2rem;
+  }
+
+  .gisoo-chart-card {
+    padding: 12px 10px;
+    border-radius: 14px;
+  }
+
+  .gisoo-chart-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .gisoo-donut {
+    width: min(120px, 56vw);
+    height: min(120px, 56vw);
+  }
+
+  .gisoo-chart-legend li {
+    grid-template-columns: 8px minmax(0, 1fr) auto auto;
+    gap: 5px;
+    font-size: 0.75rem;
+  }
+
+  .gisoo-bar-meta {
+    font-size: 0.75rem;
+  }
+
+  .gisoo-quick-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .gisoo-side-quick a,
+  .gisoo-quick-grid a {
+    min-height: 42px;
+    padding: 8px 6px !important;
+    font-size: 0.78rem;
+  }
+
+  .gisoo-app-card {
+    padding: 10px 10px 4px;
+  }
+
+  .gisoo-app-card h3 {
+    font-size: 0.86rem;
+  }
+
+  .gisoo-app-card a {
+    font-size: 0.86rem;
+  }
+
+  .gisoo-app-card li {
+    flex-direction: column;
+    align-items: flex-start;
+    min-height: 0;
+    padding: 10px 2px;
+  }
+
+  .gisoo-add {
+    align-self: flex-start;
+  }
+
+  .gisoo-dashboard-page #content-main .module caption,
+  .dashboard #content-main .module caption {
+    font-size: 0.84rem;
+    padding: 8px 10px;
+  }
+
+  .gisoo-dashboard-page #content-main .module th,
+  .gisoo-dashboard-page #content-main .module td,
+  .dashboard #content-main .module th,
+  .dashboard #content-main .module td {
+    padding: 8px 5px;
+    font-size: 0.8rem;
+  }
+
+  .gisoo-dashboard-page #content-main .module td a.addlink,
+  .gisoo-dashboard-page #content-main .module td a.changelink,
+  .gisoo-dashboard-page #content-main .module td a.viewlink,
+  .dashboard #content-main .module td a.addlink,
+  .dashboard #content-main .module td a.changelink,
+  .dashboard #content-main .module td a.viewlink {
+    white-space: nowrap;
+  }
+}

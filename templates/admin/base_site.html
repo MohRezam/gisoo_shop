@@ -9,6 +9,12 @@
 <link rel="icon" type="image/png" href="{% static 'admin/img/favicon.png' %}">
 <link rel="stylesheet" href="{% static 'admin/css/fonts.css' %}">
 <link rel="stylesheet" href="{% static 'admin/css/gisoo_admin.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_header.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_sidebar.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_lists.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_integrate.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_errors.css' %}">
 <script>
   (function () {
     try {
@@ -33,6 +39,19 @@
 
 {% block branding %}
 <div id="gisoo-brand">
+  <button type="button"
+          class="gisoo-nav-toggle toggle-nav-sidebar"
+          id="toggle-nav-sidebar"
+          aria-label="باز کردن منو"
+          aria-controls="nav-sidebar"
+          aria-expanded="false">
+    <svg class="gisoo-nav-toggle-icon gisoo-nav-toggle-icon--menu" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+      <path d="M4 7h16M4 12h16M4 17h16"/>
+    </svg>
+    <svg class="gisoo-nav-toggle-icon gisoo-nav-toggle-icon--close" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+      <path d="M6 6l12 12M18 6L6 18"/>
+    </svg>
+  </button>
   <a href="{% url 'admin:index' %}" class="gisoo-brand-link">
     <span class="gisoo-logo-wrap">
       <img class="gisoo-logo" src="{% static 'admin/img/gisoo-logo.png' %}" alt="گیسو سنتر" width="140" height="54">
@@ -47,6 +66,11 @@
     پنل مدیریت
   </span>
 </div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="{% static 'admin/js/gisoo_nav_mobile.js' %}" defer></script>
 {% endblock %}
 
 {% block nav-global %}{% endblock %}
@@ -92,8 +116,11 @@
       </a>
     {% endif %}
     {% if user.has_usable_password %}
-      <a class="gisoo-header-link gisoo-header-link--key" href="{% url 'admin:password_change' %}">
-        <svg class="gisoo-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.6 7.6a5 5 0 1 1-2 2L4 18v3h3l1-1v-2h2l3.4-3.4"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+      <a class="gisoo-header-link gisoo-header-link--key" href="{% url 'admin:password_change' %}" title="تغییر رمز">
+        <svg class="gisoo-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="11" width="14" height="10" rx="2"/>
+          <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+        </svg>
         تغییر رمز
       </a>
     {% endif %}

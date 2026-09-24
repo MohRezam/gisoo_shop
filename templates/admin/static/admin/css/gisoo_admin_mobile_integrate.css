@@ -1,0 +1,30 @@
+/* Gisoo admin — mobile integration glue */
+
+@media (max-width: 900px) {
+  html,
+  body {
+    overflow-x: clip !important;
+    max-width: 100% !important;
+  }
+
+  /* Do NOT set overflow-x on #container — it breaks position:sticky on #header */
+
+  .main,
+  #main,
+  .content,
+  #content {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .main,
+  #main {
+    overflow-x: clip !important;
+  }
+
+  .content,
+  #content {
+    overflow-x: hidden !important;
+  }
+}

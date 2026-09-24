@@ -39,6 +39,16 @@ def unset_special_offer_when_discount_removed(
     instance: ProductVariant,
     **kwargs,
 ):
+    # A variant that itself carries a valid discount must not clear the
+    # flag mid-save while other inlines are still being written.
+    if (
+        instance.is_active
+        and instance.discounted_price is not None
+        and instance.price is not None
+        and instance.discounted_price < instance.price
+    ):
+        return
+
     _sync_special_offer_flag_for_product(instance.product)
 
 

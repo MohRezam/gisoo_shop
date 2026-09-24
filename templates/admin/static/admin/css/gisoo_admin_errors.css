@@ -1,0 +1,283 @@
+/* Gisoo admin — prominent, precise errors & flash messages */
+
+/* ---------- Flash messages (after save / actions) ---------- */
+ul.messagelist {
+  margin: 0 0 16px !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+ul.messagelist li {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 10px !important;
+  margin: 0 0 10px !important;
+  padding: 14px 16px 14px 16px !important;
+  border-radius: 14px !important;
+  border: 1px solid transparent !important;
+  border-right: 5px solid transparent !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  line-height: 1.55 !important;
+  color: #111827 !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08) !important;
+  background-image: none !important;
+  background-position: unset !important;
+  background-repeat: unset !important;
+}
+
+ul.messagelist li::before {
+  content: "" !important;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: center / 14px 14px no-repeat;
+}
+
+ul.messagelist li.error,
+ul.messagelist li.errornote {
+  background: #fff1f2 !important;
+  border-color: #fecdd3 !important;
+  border-right-color: #e11d48 !important;
+  color: #9f1239 !important;
+}
+
+ul.messagelist li.error::before {
+  background-color: #e11d48;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M18 6L6 18M6 6l12 12'/%3E%3C/svg%3E");
+}
+
+ul.messagelist li.warning {
+  background: #fffbeb !important;
+  border-color: #fde68a !important;
+  border-right-color: #d97706 !important;
+  color: #92400e !important;
+}
+
+ul.messagelist li.warning::before {
+  background-color: #d97706;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3Cpath d='M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'/%3E%3C/svg%3E");
+}
+
+ul.messagelist li.success {
+  background: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+  border-right-color: #059669 !important;
+  color: #065f46 !important;
+}
+
+ul.messagelist li.success::before {
+  background-color: #059669;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E");
+}
+
+ul.messagelist li.info {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  border-right-color: #2563eb !important;
+  color: #1e3a8a !important;
+}
+
+ul.messagelist li.info::before {
+  background-color: #2563eb;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 8h.01M11 12h1v5h1'/%3E%3C/svg%3E");
+}
+
+/* ---------- Form error banner ---------- */
+.gisoo-error-panel,
+p.errornote,
+.errornote {
+  display: block !important;
+  position: relative !important;
+  margin: 0 0 16px !important;
+  padding: 16px 18px 16px 18px !important;
+  border-radius: 14px !important;
+  border: 1px solid #fecdd3 !important;
+  border-right: 6px solid #e11d48 !important;
+  background: #fff1f2 !important;
+  color: #9f1239 !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  line-height: 1.55 !important;
+  box-shadow: 0 10px 28px rgba(225, 29, 72, 0.12) !important;
+  background-image: none !important;
+}
+
+.gisoo-error-panel {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.gisoo-error-panel > .errornote {
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border-right: 0 !important;
+  padding: 16px 18px !important;
+  background: transparent !important;
+}
+
+.gisoo-error-panel > .errornote::before {
+  content: "⚠";
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 1.1em;
+}
+
+/* ---------- Field / non-field error lists ---------- */
+ul.errorlist,
+.errorlist {
+  display: block !important;
+  margin: 8px 0 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+  clear: both !important;
+  color: #9f1239 !important;
+  background: transparent !important;
+}
+
+ul.errorlist li,
+.errorlist li {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  margin: 0 0 6px !important;
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid #fecdd3 !important;
+  background: #fff !important;
+  color: #9f1239 !important;
+  font-size: 0.88rem !important;
+  font-weight: 600 !important;
+  line-height: 1.5 !important;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.06);
+}
+
+ul.errorlist li::before,
+.errorlist li::before {
+  content: "!" !important;
+  flex: 0 0 auto;
+  display: grid !important;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: #e11d48 !important;
+  color: #fff !important;
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+
+/* Summary list inside banner */
+.gisoo-error-summary {
+  margin: 0 !important;
+  padding: 0 14px 14px !important;
+  border-top: 1px solid #fecdd3 !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+}
+
+.gisoo-error-summary li {
+  background: #fff !important;
+}
+
+.gisoo-error-summary li strong {
+  color: #881337 !important;
+  margin-left: 4px;
+}
+
+/* Non-field errors under banner */
+.gisoo-error-panel > ul.errorlist {
+  margin: 0 !important;
+  padding: 0 14px 14px !important;
+}
+
+/* ---------- Highlight rows / fields with errors ---------- */
+.form-row.errors,
+.form-row.errors > div,
+fieldset .form-row.errors,
+.inline-group .form-row.errors,
+td.errors,
+.errors {
+  background: #fff7f8 !important;
+}
+
+.form-row.errors {
+  border-radius: 12px !important;
+  border: 1px solid #fecdd3 !important;
+  border-right: 4px solid #e11d48 !important;
+  margin: 8px 0 !important;
+  padding: 12px 14px !important;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.06);
+}
+
+.form-row.errors label,
+.form-row.errors .inline {
+  color: #9f1239 !important;
+  font-weight: 700 !important;
+}
+
+.form-row.errors input,
+.form-row.errors select,
+.form-row.errors textarea,
+.errors input,
+.errors select,
+.errors textarea,
+input:invalid,
+select:invalid,
+textarea:invalid {
+  border-color: #fb7185 !important;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12) !important;
+  background: #fff !important;
+}
+
+.form-row.errors input:focus,
+.form-row.errors select:focus,
+.form-row.errors textarea:focus {
+  border-color: #e11d48 !important;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.2) !important;
+  outline: none !important;
+}
+
+/* Inline tabular errors */
+.inline-group tr.row-form-errors,
+.inline-related .errors {
+  background: #fff1f2 !important;
+}
+
+.inline-group ul.errorlist {
+  margin-top: 4px !important;
+}
+
+/* Sticky error panel while editing — stays visible on long forms */
+@media (min-width: 901px) {
+  .gisoo-error-panel {
+    position: sticky !important;
+    top: 72px !important;
+    z-index: 25 !important;
+  }
+}
+
+@media (max-width: 900px) {
+  ul.messagelist li,
+  .gisoo-error-panel > .errornote,
+  p.errornote,
+  .errornote {
+    font-size: 0.92rem !important;
+    padding: 12px 14px !important;
+  }
+
+  ul.errorlist li,
+  .errorlist li {
+    font-size: 0.84rem !important;
+    padding: 9px 10px !important;
+  }
+
+  .form-row.errors {
+    padding: 10px 12px !important;
+  }
+}

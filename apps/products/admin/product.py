@@ -164,18 +164,29 @@ class ProductAdmin(
         super().save_related(request, form, formsets, change)
 
         product = form.instance
-        if not product.show_in_special_offer:
+        want_special = bool(form.cleaned_data.get("show_in_special_offer"))
+
+        # Re-read after inlines (and any post_save signals) settled.
+        product.refresh_from_db(fields=["show_in_special_offer"])
+
+        if not want_special:
             return
 
         if product.has_active_discount():
+            if not product.show_in_special_offer:
+                product.show_in_special_offer = True
+                product.save(update_fields=["show_in_special_offer", "updated_at"])
             return
 
-        product.show_in_special_offer = False
-        product.save(update_fields=["show_in_special_offer", "updated_at"])
+        if product.show_in_special_offer:
+            product.show_in_special_offer = False
+            product.save(update_fields=["show_in_special_offer", "updated_at"])
+
         messages.error(
             request,
-            "تیک پیشنهاد ویژه برداشته شد؛ محصول باید حداقل یک واریانت "
-            "فعال با قیمت تخفیف‌خورده داشته باشد.",
+            "تیک پیشنهاد ویژه اعمال نشد؛ محصول باید حداقل یک واریانت "
+            "فعال با «قیمت تخفیف‌خورده» کمتر از قیمت اصلی داشته باشد. "
+            "تخفیف واریانت را در همین فرم پر کنید و دوباره ذخیره کنید.",
         )
 
 

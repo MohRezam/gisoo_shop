@@ -37,12 +37,15 @@
 {% endif %}
 {% endblock %}
 
+{% block form_header %}
 <header class="gisoo-form-head">
   <div>
     <p class="gisoo-eyebrow">{% if add %}ایجاد جدید{% else %}ویرایش{% endif %}</p>
     <h1>{% if add %}اضافه کردن {{ opts.verbose_name }}{% else %}ویرایش {{ opts.verbose_name }}{% endif %}</h1>
+    {% block form_header_sub %}{% endblock %}
   </div>
 </header>
+{% endblock %}
 
 <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}{% if form_url %}action="{{ form_url }}" {% endif %}method="post" id="{{ opts.model_name }}_form" novalidate>{% csrf_token %}{% block form_top %}{% endblock %}
 <div>
@@ -50,10 +53,33 @@
 {% if to_field %}<input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">{% endif %}
 {% if save_on_top %}{% block submit_buttons_top %}{% submit_row %}{% endblock %}{% endif %}
 {% if errors %}
-    <p class="errornote">
-    لطفاً خطاهای زیر را برطرف کنید.
-    </p>
-    {{ adminform.form.non_field_errors }}
+<div class="gisoo-error-panel" role="alert" id="gisoo-form-errors">
+  <p class="errornote">
+    {% if errors|length == 1 %}
+      یک خطا پیدا شد — لطفاً آن را برطرف کنید.
+    {% else %}
+      {{ errors|length }} خطا پیدا شد — لطفاً موارد زیر را برطرف کنید.
+    {% endif %}
+  </p>
+  {{ adminform.form.non_field_errors }}
+  {% if adminform.form.errors %}
+  <ul class="errorlist gisoo-error-summary">
+    {% for field in adminform.form %}
+      {% for error in field.errors %}
+        <li><strong>{% firstof field.label field.name %}:</strong> {{ error }}</li>
+      {% endfor %}
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+<script>
+  (function () {
+    var panel = document.getElementById("gisoo-form-errors");
+    if (panel) {
+      panel.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  })();
+</script>
 {% endif %}
 
 {% block field_sets %}

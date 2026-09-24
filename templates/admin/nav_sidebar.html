@@ -1,48 +1,56 @@
 {% load i18n static %}
+<button type="button" class="gisoo-nav-backdrop" id="gisoo-nav-backdrop" aria-label="بستن منو" tabindex="-1"></button>
 <nav class="sticky" id="nav-sidebar" aria-label="{% translate 'Sidebar' %}">
   <div class="gisoo-side-brand">
     <img class="gisoo-side-logo" src="{% static 'admin/img/gisoo-logo.png' %}" alt="گیسو سنتر" width="120" height="46">
-    <div>
+    <div class="gisoo-side-brand-text">
       <strong>گیسو سنتر</strong>
       <span>پنل مدیریت</span>
     </div>
+    <button type="button" class="gisoo-side-close" id="gisoo-side-close" aria-label="بستن منو">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
   </div>
 
-  <div class="gisoo-side-quick">
-    <p class="gisoo-side-quick-title">میانبرها</p>
+  <div class="gisoo-side-scroll">
+    <div class="gisoo-side-quick">
+      <p class="gisoo-side-quick-title">میانبرها</p>
 
-    <div class="gisoo-quick-group">
-      <p class="gisoo-quick-label">عملیات روزانه</p>
-      <div class="gisoo-quick-grid">
-        <a href="{% url 'admin:index' %}">پیشخوان</a>
-        <a href="{% url 'admin:orders_order_changelist' %}">سفارش‌ها</a>
-        <a href="{% url 'admin:payments_paymentintent_changelist' %}">رسیدها</a>
-        <a href="{% url 'admin:consultations_consultationrequest_changelist' %}">درخواست‌های مشاوره</a>
+      <div class="gisoo-quick-group">
+        <p class="gisoo-quick-label">عملیات روزانه</p>
+        <div class="gisoo-quick-grid">
+          <a href="{% url 'admin:index' %}">پیشخوان</a>
+          <a href="{% url 'admin:orders_order_changelist' %}">سفارش‌ها</a>
+          <a href="{% url 'admin:payments_paymentintent_changelist' %}">رسیدها</a>
+          <a href="{% url 'admin:consultations_consultationrequest_changelist' %}">درخواست‌های مشاوره</a>
+        </div>
+      </div>
+
+      <div class="gisoo-quick-group">
+        <p class="gisoo-quick-label">کاتالوگ و محتوا</p>
+        <div class="gisoo-quick-grid">
+          <a href="{% url 'admin:products_product_changelist' %}">محصولات</a>
+          <a href="{% url 'admin:home_banner_changelist' %}">بنرها</a>
+          <a href="{% url 'admin:magazine_magazine_changelist' %}">مجله</a>
+        </div>
+      </div>
+
+      <div class="gisoo-quick-group">
+        <p class="gisoo-quick-label">کاربران و پیام‌ها</p>
+        <div class="gisoo-quick-grid">
+          <a href="{% url 'admin:users_user_changelist' %}">کاربران</a>
+          <a href="{% url 'admin:notifications_inappnotification_changelist' %}">اعلان‌ها</a>
+        </div>
       </div>
     </div>
 
-    <div class="gisoo-quick-group">
-      <p class="gisoo-quick-label">کاتالوگ و محتوا</p>
-      <div class="gisoo-quick-grid">
-        <a href="{% url 'admin:products_product_changelist' %}">محصولات</a>
-        <a href="{% url 'admin:home_banner_changelist' %}">بنرها</a>
-        <a href="{% url 'admin:magazine_magazine_changelist' %}">مجله</a>
-      </div>
+    <input type="search" id="nav-filter"
+           placeholder="جستجو در منو…"
+           aria-label="{% translate 'Filter navigation items' %}">
+    <div class="gisoo-side-apps">
+      {% include 'admin/app_list.html' with app_list=available_apps show_changelinks=False %}
     </div>
-
-    <div class="gisoo-quick-group">
-      <p class="gisoo-quick-label">کاربران و پیام‌ها</p>
-      <div class="gisoo-quick-grid">
-        <a href="{% url 'admin:users_user_changelist' %}">کاربران</a>
-        <a href="{% url 'admin:notifications_inappnotification_changelist' %}">اعلان‌ها</a>
-      </div>
-    </div>
-  </div>
-
-  <input type="search" id="nav-filter"
-         placeholder="جستجو در منو…"
-         aria-label="{% translate 'Filter navigation items' %}">
-  <div class="gisoo-side-apps">
-    {% include 'admin/app_list.html' with app_list=available_apps show_changelinks=False %}
   </div>
 </nav>

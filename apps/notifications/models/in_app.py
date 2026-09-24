@@ -31,6 +31,7 @@ class InAppNotification(BaseModel):
         blank=True,
         null=True,
         verbose_name="لینک",
+        help_text="آدرس نسبی یا کامل؛ مثلاً /orders/12 یا صفحه محصول.",
     )
     order = models.ForeignKey(
         "orders.Order",
@@ -38,18 +39,19 @@ class InAppNotification(BaseModel):
         null=True,
         blank=True,
         related_name="in_app_notifications",
-        verbose_name="سفارش",
+        verbose_name="سفارش مرتبط",
     )
     expires_at = models.DateTimeField(
         null=True,
         blank=True,
         verbose_name="مهلت اقدام",
-        help_text="اگر تنظیم شود، در اینباکس کاربر شمارندهٔ معکوس نشان داده می‌شود.",
+        help_text="اختیاری — اگر پر شود، در اینباکس کاربر شمارندهٔ معکوس دیده می‌شود.",
     )
     is_read = models.BooleanField(
         default=False,
         db_index=True,
         verbose_name="خوانده‌شده",
+        help_text="اگر فعال باشد، اعلان در لیست خوانده‌شده‌های کاربر قرار می‌گیرد.",
     )
 
     class Meta:
@@ -58,4 +60,4 @@ class InAppNotification(BaseModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.title} → {self.user_id}"
+        return self.title or f"اعلان #{self.pk}"

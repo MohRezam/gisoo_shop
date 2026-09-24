@@ -65,8 +65,9 @@ class Product(BaseModel):
         default=False,
         verbose_name="نمایش در پیشنهاد ویژه",
         help_text=(
-            "فقط محصولاتی که حداقل یک واریانت با قیمت تخفیف‌خورده دارند "
-            "می‌توانند در پیشنهاد ویژه نمایش داده شوند."
+            "همراه با قیمت تخفیف‌خورده روی واریانت‌ها قابل تنظیم است "
+            "(حتی هنگام ایجاد محصول). فقط محصولاتی که حداقل یک واریانت "
+            "فعال با قیمت تخفیف‌خورده دارند در پیشنهاد ویژه می‌مانند."
         ),
     )
 
@@ -119,18 +120,6 @@ class Product(BaseModel):
             discounted_price__isnull=False,
             discounted_price__lt=F("price"),
         ).exists()
-
-    def clean(self):
-        super().clean()
-
-        if self.show_in_special_offer and self.pk:
-            if not self.has_active_discount():
-                raise ValidationError({
-                    "show_in_special_offer": (
-                        "برای افزودن به پیشنهاد ویژه، محصول باید "
-                        "حداقل یک واریانت فعال با قیمت تخفیف‌خورده داشته باشد."
-                    ),
-                })
 
 
 class ProductRelatedProduct(BaseModel):

@@ -1,0 +1,324 @@
+/* Gisoo admin — mobile: nav sidebar, header toggle, scroll, backdrop */
+/* Breakpoints: 900px / 767px / 480px. RTL. Desktop (>900px) untouched. */
+
+/* Backdrop + in-drawer close: hidden on desktop */
+.gisoo-nav-backdrop,
+.gisoo-side-close {
+  display: none !important;
+}
+
+/* Header hamburger — hidden on desktop (Django toggle also display:none) */
+.gisoo-nav-toggle {
+  display: none !important;
+}
+
+/* Scroll region used on all widths */
+.gisoo-side-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+#nav-sidebar {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#nav-sidebar .gisoo-side-brand {
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+#nav-sidebar .gisoo-side-brand-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+#nav-sidebar .gisoo-side-apps {
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+  min-height: 0 !important;
+}
+
+@media (max-width: 900px) {
+  /* Keep header + hamburger above the drawer (like front shop header) */
+  #header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 130 !important;
+  }
+
+  #gisoo-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+  }
+
+  /* Hamburger in header — same role as front Menu button */
+  .gisoo-nav-toggle.toggle-nav-sidebar,
+  #toggle-nav-sidebar.gisoo-nav-toggle {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    z-index: 1 !important;
+    flex: 0 0 auto !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.14) !important;
+    box-shadow: none !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .gisoo-nav-toggle:hover,
+  .gisoo-nav-toggle:focus-visible {
+    background: rgba(255, 255, 255, 0.24) !important;
+    outline: none;
+  }
+
+  .gisoo-nav-toggle:focus-visible {
+    outline: 2px solid #fff !important;
+    outline-offset: 2px;
+  }
+
+  /* Kill Django «» pseudo on our icon button */
+  .gisoo-nav-toggle::before,
+  .gisoo-nav-toggle::after,
+  #toggle-nav-sidebar::before,
+  #toggle-nav-sidebar::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .gisoo-nav-toggle-icon {
+    display: block;
+  }
+
+  .gisoo-nav-toggle-icon--close {
+    display: none !important;
+  }
+
+  body.gisoo-nav-open .gisoo-nav-toggle-icon--menu {
+    display: none !important;
+  }
+
+  body.gisoo-nav-open .gisoo-nav-toggle-icon--close {
+    display: block !important;
+  }
+
+  /* Dimmed backdrop — tap to close */
+  .gisoo-nav-backdrop {
+    display: none !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 90 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: rgba(15, 23, 42, 0.42) !important;
+    cursor: pointer !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body.gisoo-nav-open .gisoo-nav-backdrop,
+  .main.shifted .gisoo-nav-backdrop {
+    display: block !important;
+  }
+
+  /* Remove old ::before dim from previous mobile pass */
+  .main.shifted::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* Off-canvas drawer — RTL from the right */
+  #nav-sidebar,
+  .main > #nav-sidebar,
+  [dir="rtl"] #nav-sidebar,
+  [dir="rtl"] .main > #nav-sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: auto !important;
+    width: min(340px, 88vw) !important;
+    max-width: min(340px, 88vw) !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    flex: none !important;
+    z-index: 100 !important;
+    background: #ffffff !important;
+    border-left: 1px solid #e5e7eb !important;
+    border-right: none !important;
+    box-shadow: -16px 0 40px rgba(15, 23, 42, 0.2) !important;
+    box-sizing: border-box !important;
+    text-align: right !important;
+    overflow: hidden !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+    transform: translateX(110%) !important;
+    transition: transform 0.22s ease !important;
+    /* Prevent off-screen drawer from creating page/content scrollbars */
+    contain: layout paint !important;
+  }
+
+  .main.shifted > #nav-sidebar,
+  [dir="rtl"] .main.shifted > #nav-sidebar,
+  [dir="rtl"] .main.shifted > #nav-sidebar.sticky {
+    transform: translateX(0) !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+  }
+
+  /* Brand row + close (X) like front drawer */
+  #nav-sidebar .gisoo-side-brand {
+    position: relative !important;
+    padding: 14px 14px 14px 48px !important;
+    border-bottom: 1px solid #eef2f7 !important;
+  }
+
+  .gisoo-side-close {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 10px !important;
+    right: auto !important;
+    transform: translateY(-50%) !important;
+    width: 36px !important;
+    height: 36px !important;
+    border: 0 !important;
+    border-radius: 10px !important;
+    background: #f3f4f6 !important;
+    color: #111827 !important;
+    cursor: pointer !important;
+  }
+
+  .gisoo-side-close:hover,
+  .gisoo-side-close:focus-visible {
+    background: #eef3ff !important;
+    color: #0f2fb8 !important;
+  }
+
+  /* THIS is the scrollable area — brand stays fixed */
+  #nav-sidebar .gisoo-side-scroll {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain;
+    padding-bottom: 28px !important;
+  }
+
+  #nav-sidebar #nav-filter {
+    width: calc(100% - 24px) !important;
+    margin: 10px 12px !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+  }
+
+  #nav-sidebar .gisoo-side-quick {
+    flex-shrink: 0 !important;
+  }
+
+  #nav-sidebar .gisoo-quick-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  #nav-sidebar .module {
+    margin: 0 8px 10px !important;
+  }
+
+  .main > #nav-sidebar + .content,
+  .main.shifted > #nav-sidebar + .content,
+  #nav-sidebar + .content,
+  .main > .content {
+    max-width: 100% !important;
+    width: 100% !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  body.gisoo-nav-open {
+    overflow: hidden !important;
+  }
+
+  #main.main {
+    overflow: hidden !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .gisoo-nav-toggle.toggle-nav-sidebar,
+  #toggle-nav-sidebar.gisoo-nav-toggle {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+  }
+
+  #nav-sidebar,
+  .main > #nav-sidebar,
+  [dir="rtl"] #nav-sidebar {
+    width: min(320px, 90vw) !important;
+    max-width: min(320px, 90vw) !important;
+  }
+
+  #nav-sidebar .gisoo-side-logo {
+    height: 28px !important;
+  }
+
+  #nav-sidebar .gisoo-quick-grid a {
+    font-size: 0.82rem !important;
+    padding: 8px 10px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #nav-sidebar,
+  .main > #nav-sidebar,
+  [dir="rtl"] #nav-sidebar {
+    width: min(100vw - 40px, 300px) !important;
+    max-width: min(100vw - 40px, 300px) !important;
+  }
+
+  #nav-sidebar .gisoo-quick-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  #nav-sidebar th,
+  #nav-sidebar td {
+    font-size: 0.82rem !important;
+  }
+}
