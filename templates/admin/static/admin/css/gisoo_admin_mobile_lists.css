@@ -505,35 +505,17 @@
     float: none !important;
   }
 
-  /* Inlines: horizontal scroll inside group, page stays clean */
+  /* Inlines: card layout on mobile is in gisoo_admin_inline_mobile.css.
+     Keep a soft fallback so older pages don't explode. */
   .inline-group {
     width: 100% !important;
     max-width: 100% !important;
-    overflow: hidden;
     box-sizing: border-box;
-  }
-
-  .inline-group .tabular,
-  .inline-group .module {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-    max-width: 100%;
-  }
-
-  .inline-group .tabular table,
-  .inline-group table {
-    width: max-content !important;
-    min-width: 100% !important;
   }
 
   .inline-related {
     max-width: 100%;
     box-sizing: border-box;
-  }
-
-  .inline-related .form-row {
-    overflow-x: auto;
   }
 }
 

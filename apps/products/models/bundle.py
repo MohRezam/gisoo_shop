@@ -1,9 +1,9 @@
 from django.core.exceptions import ValidationError
-
-from apps.products.models import Product, ProductVariant
-from apps.shared.models.base import BaseModel
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from apps.products.models import ProductVariant
+from apps.shared.models.base import BaseModel
 
 
 class Bundle(BaseModel):
@@ -11,36 +11,36 @@ class Bundle(BaseModel):
         ProductVariant,
         on_delete=models.CASCADE,
         related_name="bundles",
-        verbose_name=_("variant"),
+        verbose_name="تنوع محصول",
     )
 
     title = models.CharField(
         max_length=255,
-        verbose_name=_("title"),
+        verbose_name="عنوان",
     )
 
     description = models.TextField(
         blank=True,
-        verbose_name=_("description"),
+        verbose_name="توضیحات",
     )
 
     quantity = models.PositiveIntegerField(
         default=1,
-        verbose_name=_("quantity"),
+        verbose_name="تعداد",
     )
 
     price = models.PositiveBigIntegerField(
-        verbose_name=_("price"),
+        verbose_name="قیمت",
     )
 
     is_active = models.BooleanField(
         default=True,
-        verbose_name=_("is_active"),
+        verbose_name="فعال",
     )
 
     display_order = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("display_order"),
+        verbose_name="ترتیب نمایش",
     )
 
     class Meta:

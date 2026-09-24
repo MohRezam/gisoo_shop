@@ -8,6 +8,8 @@ import nested_admin
 class BundleInline(nested_admin.NestedTabularInline):
     model = Bundle
     extra = 0
+    verbose_name = "بسته"
+    verbose_name_plural = "بسته‌ها"
 
     fields = (
         "title",

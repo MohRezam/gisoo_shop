@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_lists.css' %}">
 <link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_integrate.css' %}">
 <link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_errors.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_inline_mobile.css' %}">
 <script>
   (function () {
     try {
@@ -23,6 +24,12 @@
     } catch (e) {}
   })();
 </script>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="{% static 'admin/js/gisoo_nav_mobile.js' %}" defer></script>
+<script src="{% static 'admin/js/gisoo_admin_inline_mobile.js' %}" defer></script>
 {% endblock %}
 
 {% block dark-mode-vars %}
@@ -66,11 +73,6 @@
     پنل مدیریت
   </span>
 </div>
-{% endblock %}
-
-{% block extrahead %}
-{{ block.super }}
-<script src="{% static 'admin/js/gisoo_nav_mobile.js' %}" defer></script>
 {% endblock %}
 
 {% block nav-global %}{% endblock %}

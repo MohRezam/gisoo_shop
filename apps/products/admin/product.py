@@ -29,11 +29,23 @@ class ProductAttributeInline(nested_admin.NestedTabularInline):
 class ProductVariantInline(nested_admin.NestedTabularInline):
     model = ProductVariant
     extra = 0
+    verbose_name = "تنوع محصول"
+    verbose_name_plural = "تنوع‌های محصول"
 
     inlines = [
         BundleInline,
     ]
     exclude = ("creator", "archived")
+    fields = (
+        "sku",
+        "price",
+        "discounted_price",
+        "stock",
+        "volume",
+        "expiration_date",
+        "display_order",
+        "is_active",
+    )
 
 
 class VariantAttributeInline(admin.TabularInline):
