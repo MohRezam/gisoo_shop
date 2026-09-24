@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.products.models import (
     AttributeValue,
     Product,
+    ProductFAQ,
     ProductImage,
     ProductVariant,
     VariantAttribute, ProductAttribute, DiscountCampaign
@@ -17,6 +18,16 @@ def _product_category_titles(obj):
 def _product_primary_category_title(obj):
     titles = _product_category_titles(obj)
     return titles[0] if titles else ""
+
+
+class ProductFAQSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductFAQ
+        fields = (
+            "id",
+            "question",
+            "answer",
+        )
 
 
 class AttributeValueSerializer(
@@ -591,6 +602,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    faqs = serializers.SerializerMethodField()
+
     min_price = serializers.SerializerMethodField()
     max_price = serializers.SerializerMethodField()
     has_multiple_variants = serializers.SerializerMethodField()
@@ -625,11 +638,21 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
             "related_products",
             "reviews",
+            "faqs",
             "has_multiple_variants",
             "rating",
             "is_favorited",
             "is_in_stock"
         ]
+
+    def get_faqs(self, obj):
+        rows = getattr(obj, "active_faqs", None)
+        if rows is None:
+            rows = (
+                obj.faqs.filter(is_active=True)
+                .order_by("ordering", "id")[:6]
+            )
+        return ProductFAQSerializer(rows, many=True).data
 
     def get_category(self, obj):
         return _product_primary_category_title(obj)

@@ -17,6 +17,7 @@ HOME_BANNERS = "home:banners"
 HOME_SLIDERS = "home:sliders"
 HOME_ABOUT = "home:about"
 HOME_FAQ = "home:faq"
+HOME_CONTACT_FAQ = "home:contact_faq"
 HOME_SATISFACTION = "home:satisfaction"
 HOME_SOCIAL_LINKS = "home:social_links"
 

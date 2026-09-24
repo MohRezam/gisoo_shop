@@ -6,6 +6,7 @@ from apps.products.models import (
     AttributeValue,
     Product,
     ProductAttribute,
+    ProductFAQ,
     ProductImage,
     ProductVariant,
     VariantAttribute, ProductRelatedProduct, DiscountCampaign,
@@ -24,6 +25,24 @@ class ProductAttributeInline(nested_admin.NestedTabularInline):
     extra = 0
     exclude = ("creator", "archived")
     raw_id_fields = ("attribute",)
+
+
+class ProductFAQInline(nested_admin.NestedTabularInline):
+    model = ProductFAQ
+    extra = 0
+    max_num = 6
+    fields = (
+        "question",
+        "answer",
+        "is_active",
+        "ordering",
+    )
+    ordering = (
+        "ordering",
+        "id",
+    )
+    verbose_name = "سوال متداول"
+    verbose_name_plural = "سوالات متداول محصول (حداکثر ۶ مورد)"
 
 
 class ProductVariantInline(nested_admin.NestedTabularInline):
@@ -170,6 +189,7 @@ class ProductAdmin(
         ProductAttributeInline,
         ProductVariantInline,
         ProductRelatedProductInline,
+        ProductFAQInline,
     ]
 
     def save_related(self, request, form, formsets, change):

@@ -5,3 +5,4 @@ from .bundle import *
 from .category import *
 from .wishlist import *
 from .stock_notify import WishlistStockNotify
+from .faq import ProductFAQ, MAX_PRODUCT_FAQS

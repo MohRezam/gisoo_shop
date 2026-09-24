@@ -30,6 +30,7 @@ from apps.orders.models import OrderItem, OrderStatus
 from apps.products.filters import ProductFilter
 from apps.products.models import (
     Product,
+    ProductFAQ,
     ProductImage,
     ProductVariant, Bundle, ProductAttribute, ProductRelatedProduct,
 )
@@ -320,6 +321,16 @@ class ProductDetailAPIView(CachedRetrieveMixin, RetrieveAPIView):
                     )[:5]
                 ),
                 to_attr="approved_reviews",
+            ),
+
+            Prefetch(
+                "faqs",
+                queryset=(
+                    ProductFAQ.objects
+                    .filter(is_active=True)
+                    .order_by("ordering", "id")[:6]
+                ),
+                to_attr="active_faqs",
             ),
 
             # Related products

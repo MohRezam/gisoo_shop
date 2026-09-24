@@ -29,12 +29,14 @@ def register_product_cache_signals():
         HairProblem,
         HairType,
         Product,
+        ProductFAQ,
         ProductImage,
         ProductVariant,
     )
 
     for model in (
         Product,
+        ProductFAQ,
         ProductVariant,
         ProductImage,
         Brand,

@@ -7,6 +7,7 @@ from apps.shared.cache import namespaces as ns
 def register_home_cache_signals():
     from apps.home.models import (
         Banner,
+        ContactFAQ,
         CustomerSatisfaction,
         FAQ,
         FAQCategory,
@@ -23,6 +24,7 @@ def register_home_cache_signals():
         CustomerSatisfaction: ns.HOME_SATISFACTION,
         FAQ: ns.HOME_FAQ,
         FAQCategory: ns.HOME_FAQ,
+        ContactFAQ: ns.HOME_CONTACT_FAQ,
         SocialLinks: ns.HOME_SOCIAL_LINKS,
     }
 
