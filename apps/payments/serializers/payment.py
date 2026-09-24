@@ -46,6 +46,7 @@ class PaymentIntentSerializer(serializers.ModelSerializer):
             "submitted_at",
             "reviewed_at",
             "paid_at",
+            "rejection_reason",
         ]
         read_only_fields = fields
 

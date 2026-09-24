@@ -1,10 +1,13 @@
 from django.urls import path
 
 from apps.consultations.apis import (
+    AddAllRecommendationsToCartAPIView,
+    AddSelectedRecommendationsToCartAPIView,
     ConsultationCreateAPIView,
+    ConsultationFAQListAPIView,
     ConsultationListAPIView,
     ConsultationOptionsAPIView,
-    ConsultationUpdateAPIView, AddAllRecommendationsToCartAPIView, AddSelectedRecommendationsToCartAPIView,
+    ConsultationUpdateAPIView,
 )
 
 app_name = "apps.consultations"
@@ -15,19 +18,21 @@ urlpatterns = [
         ConsultationOptionsAPIView.as_view(),
         name="options",
     ),
-
+    path(
+        "faqs/",
+        ConsultationFAQListAPIView.as_view(),
+        name="faqs",
+    ),
     path(
         "",
         ConsultationCreateAPIView.as_view(),
         name="create",
     ),
-
     path(
         "my/",
         ConsultationListAPIView.as_view(),
         name="my",
     ),
-
     path(
         "<uuid:pk>/",
         ConsultationUpdateAPIView.as_view(),
@@ -38,7 +43,6 @@ urlpatterns = [
         AddAllRecommendationsToCartAPIView.as_view(),
         name="consultation-add-all-recommendations-to-cart",
     ),
-
     path(
         "<uuid:pk>/recommendations/add-selected-to-cart/",
         AddSelectedRecommendationsToCartAPIView.as_view(),

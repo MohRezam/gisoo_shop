@@ -50,6 +50,7 @@ ALLOW_MODELS = {
         "consultationrequest",
         "consultationrecommendation",
         "consultationpack",
+        "consultationfaq",
     },
     "magazine": {"magazinepost", "magazinecategory"},
     "shipping": {"shippingmethod", "shippingcarrier"},

@@ -331,6 +331,7 @@ class OrderDetailSerializer(serializers.ModelSerializer):
                 "status": payment_intent.status,
                 "expires_at": None,
                 "can_upload_receipt": False,
+                "rejection_reason": "",
             }
 
         now = timezone.now()
@@ -352,5 +353,10 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "expires_at": payment_intent.expires_at,
             "can_upload_receipt": (
                 payment_intent.status in RECEIPT_UPLOAD_STATUSES
+            ),
+            "rejection_reason": (
+                payment_intent.rejection_reason or ""
+                if payment_intent.status == PaymentIntentStatus.REJECTED
+                else ""
             ),
         }
