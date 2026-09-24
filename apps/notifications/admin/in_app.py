@@ -182,10 +182,12 @@ class InAppNotificationAdmin(BaseModelAdmin):
     def read_badge(self, obj):
         if obj.is_read:
             return format_html(
-                '<span class="gisoo-notif-badge gisoo-notif-badge--read">خوانده‌شده</span>'
+                '<span class="gisoo-notif-badge gisoo-notif-badge--read">{}</span>',
+                "خوانده‌شده",
             )
         return format_html(
-            '<span class="gisoo-notif-badge gisoo-notif-badge--unread">خوانده‌نشده</span>'
+            '<span class="gisoo-notif-badge gisoo-notif-badge--unread">{}</span>',
+            "خوانده‌نشده",
         )
 
     @admin.display(description="سفارش", ordering="order")

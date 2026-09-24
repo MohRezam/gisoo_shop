@@ -90,8 +90,6 @@ class ProductAdmin(
     )
 
     list_filter = (
-        "categories",
-        "brand",
         "is_available",
         "is_gisoo_recommended",
         "show_in_special_offer",
@@ -101,6 +99,7 @@ class ProductAdmin(
     search_fields = (
         "title",
         "slug",
+        "brand__title",
     )
 
     list_select_related = (
@@ -119,6 +118,7 @@ class ProductAdmin(
         "hair_types",
     )
     list_per_page = 15
+    show_full_result_count = False
     list_display_links = ("title",)
 
     list_editable = (
@@ -245,11 +245,14 @@ class ProductVariantAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("product",)
     list_per_page = 15
+    show_full_result_count = False
     list_display_links = ("sku", "product")
 
 
 @admin.register(ProductImage)
 class ProductImageAdmin(admin.ModelAdmin):
+    """Managed via Product inlines; hidden from sidebar."""
+
     list_display = (
         "id",
         "product",
@@ -268,11 +271,17 @@ class ProductImageAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("product",)
     list_per_page = 15
+    show_full_result_count = False
     list_display_links = ("product",)
+
+    def has_module_permission(self, request):
+        return False
 
 
 @admin.register(ProductAttribute)
 class ProductAttributeAdmin(admin.ModelAdmin):
+    """Managed via Product inlines; hidden from sidebar."""
+
     list_display = (
         "id",
         "product",
@@ -304,7 +313,11 @@ class ProductAttributeAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("product", "attribute")
     list_per_page = 15
+    show_full_result_count = False
     list_display_links = ("product",)
+
+    def has_module_permission(self, request):
+        return False
 
 
 @admin.register(Attribute)
@@ -357,6 +370,8 @@ class AttributeValueAdmin(admin.ModelAdmin):
 
 @admin.register(VariantAttribute)
 class VariantAttributeAdmin(admin.ModelAdmin):
+    """Managed via ProductVariant inlines; hidden from sidebar."""
+
     list_display = (
         "id",
         "variant",
@@ -381,7 +396,11 @@ class VariantAttributeAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     raw_id_fields = ("variant", "value")
     list_per_page = 15
+    show_full_result_count = False
     list_display_links = ("variant",)
+
+    def has_module_permission(self, request):
+        return False
 
 
 @admin.register(DiscountCampaign)

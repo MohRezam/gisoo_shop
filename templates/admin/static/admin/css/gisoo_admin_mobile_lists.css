@@ -221,8 +221,10 @@
 
   #changelist #result_list th,
   #changelist #result_list td {
-    white-space: nowrap;
+    white-space: normal;
     vertical-align: middle;
+    overflow: visible;
+    word-break: break-word;
   }
 
   /* Sticky action / first column (RTL: right edge) */
@@ -411,9 +413,10 @@
   }
 
   .related-widget-wrapper select {
-    flex: 1 1 180px;
-    width: auto !important;
+    flex: 1 1 100%;
+    width: 100% !important;
     min-width: 0 !important;
+    max-width: 100% !important;
   }
 
   /* Dual selector */

@@ -62,6 +62,8 @@ class MagazineAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     list_per_page = 15
     list_display_links = ("title",)
+    list_select_related = ("category",)
+    show_full_result_count = False
 
     fieldsets = (
         (

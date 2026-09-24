@@ -39,7 +39,15 @@ class InAppNotificationListAPIView(ListAPIView):
     pagination_class = StandardResultPagination
 
     def get_queryset(self):
-        return InAppNotification.objects.filter(user=self.request.user)
+        qs = InAppNotification.objects.filter(user=self.request.user)
+        is_read = self.request.query_params.get("is_read")
+        if is_read is not None:
+            normalized = str(is_read).strip().lower()
+            if normalized in ("1", "true", "yes"):
+                qs = qs.filter(is_read=True)
+            elif normalized in ("0", "false", "no"):
+                qs = qs.filter(is_read=False)
+        return qs
 
 
 @extend_schema(

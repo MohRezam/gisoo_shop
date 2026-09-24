@@ -74,6 +74,48 @@ class InboxAPITests(APITestCase):
             0,
         )
 
+    def test_filter_unread_only(self):
+        notify_user(user=self.user, title="Unread", body="A")
+        read = notify_user(user=self.user, title="Read", body="B")
+        InAppNotification.objects.filter(pk=read.id).update(is_read=True)
+
+        url = reverse("apps.notifications:inbox-list")
+        response = self.client.get(url, {"is_read": "false"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["title"], "Unread")
+
+    def test_purge_old_read_notifications(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.notifications.tasks import purge_old_read_in_app_notifications
+
+        old_read = notify_user(user=self.user, title="Old read", body="A")
+        recent_read = notify_user(user=self.user, title="Recent read", body="B")
+        old_unread = notify_user(user=self.user, title="Old unread", body="C")
+
+        InAppNotification.objects.filter(pk__in=[old_read.id, recent_read.id]).update(
+            is_read=True,
+        )
+        cutoff = timezone.now() - timedelta(days=15)
+        InAppNotification.objects.filter(pk__in=[old_read.id, old_unread.id]).update(
+            created_at=cutoff,
+        )
+
+        deleted = purge_old_read_in_app_notifications()
+        self.assertEqual(deleted, 1)
+        self.assertFalse(
+            InAppNotification.objects.filter(pk=old_read.id).exists(),
+        )
+        self.assertTrue(
+            InAppNotification.objects.filter(pk=recent_read.id).exists(),
+        )
+        self.assertTrue(
+            InAppNotification.objects.filter(pk=old_unread.id).exists(),
+        )
+
     def test_otp_endpoints_unchanged(self):
         # ensure OTP routes still resolve
         self.assertTrue(reverse("apps.notifications:send-otp"))

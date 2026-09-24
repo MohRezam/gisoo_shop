@@ -296,6 +296,17 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         )
 
     def get_payment_intent(self, obj):
+        if obj.status in (
+            OrderStatus.EXPIRED,
+            OrderStatus.CANCELED,
+            OrderStatus.PREPARING,
+            OrderStatus.SHIPPED,
+            OrderStatus.DELIVERED,
+        ):
+            return None
+
+        from django.utils import timezone
+
         payment_intent = (
             obj.payment_intents
             .filter(
@@ -312,19 +323,33 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         if payment_intent is None:
             return None
 
-        if payment_intent.status in {
-            PaymentIntentStatus.PENDING_PAYMENT,
-            PaymentIntentStatus.REJECTED,
-        }:
-            expires_at = payment_intent.expires_at
-        else:
-            expires_at = None
+        # Under review: keep intent visible even after the original deadline.
+        if payment_intent.status == PaymentIntentStatus.RECEIPT_SUBMITTED:
+            return {
+                "id": payment_intent.id,
+                "token": str(payment_intent.token),
+                "status": payment_intent.status,
+                "expires_at": None,
+                "can_upload_receipt": False,
+            }
+
+        now = timezone.now()
+        order_deadline_passed = (
+            obj.expires_at is not None and obj.expires_at <= now
+        )
+        intent_deadline_passed = (
+            payment_intent.expires_at is not None
+            and payment_intent.expires_at <= now
+        )
+        if order_deadline_passed or intent_deadline_passed:
+            # Payment window closed — do not offer resume / cancel via intent.
+            return None
 
         return {
             "id": payment_intent.id,
             "token": str(payment_intent.token),
             "status": payment_intent.status,
-            "expires_at": expires_at,
+            "expires_at": payment_intent.expires_at,
             "can_upload_receipt": (
                 payment_intent.status in RECEIPT_UPLOAD_STATUSES
             ),

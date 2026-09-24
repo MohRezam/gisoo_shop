@@ -1,9 +1,13 @@
 from celery import shared_task
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from apps.notifications.services.notification import (
     NotificationService,
 )
+
+
+READ_NOTIFICATION_RETENTION_DAYS = 14
 
 
 @shared_task(
@@ -138,3 +142,21 @@ def send_new_image_sms(
         recipient=recipient,
         consultation_id=consultation_id,
     )
+
+
+@shared_task
+def purge_old_read_in_app_notifications():
+    """
+    Delete read in-app notifications older than 2 weeks (by created_at).
+    Unread notifications are kept regardless of age.
+    """
+    from datetime import timedelta
+
+    from apps.notifications.models import InAppNotification
+
+    cutoff = timezone.now() - timedelta(days=READ_NOTIFICATION_RETENTION_DAYS)
+    deleted, _ = InAppNotification.objects.filter(
+        is_read=True,
+        created_at__lte=cutoff,
+    ).delete()
+    return deleted

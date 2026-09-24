@@ -1,5 +1,8 @@
 from django.contrib import admin
 from django import forms
+from django.db.models import Count
+from django_admin_inline_paginator.admin import TabularInlinePaginated
+
 from apps.cart.models import Cart, CartItem
 
 
@@ -16,15 +19,17 @@ class CartItemAdminForm(forms.ModelForm):
 
         if (variant is None) == (bundle is None):
             raise forms.ValidationError(
-                "Select either a variant or a bundle."
+                "یکی از فیلدهای «واریانت» یا «بسته» باید پر شود — نه هر دو و نه هیچ‌کدام."
             )
 
         return cleaned_data
 
 
-class CartItemInline(admin.TabularInline):
+class CartItemInline(TabularInlinePaginated):
     model = CartItem
     extra = 0
+    per_page = 20
+    pagination_key = "cartitem_page"
 
     fields = (
         "item_type",
@@ -39,21 +44,19 @@ class CartItemInline(admin.TabularInline):
 
     raw_id_fields = ("variant", "bundle")
 
+    @admin.display(description="نوع")
     def item_type(self, obj):
         if obj.bundle_id:
-            return "Bundle"
+            return "بسته"
 
         if obj.variant_id:
-            return "Product"
+            return "محصول"
 
         return "-"
-
-    item_type.short_description = "Type"
 
 
 @admin.register(Cart)
 class CartAdmin(admin.ModelAdmin):
-    form = CartItemAdminForm
     list_display = (
         "uuid",
         "user",
@@ -81,20 +84,31 @@ class CartAdmin(admin.ModelAdmin):
 
     exclude = ("creator", "archived")
     raw_id_fields = ("user", "discount")
+    list_select_related = ("user", "discount")
     list_per_page = 15
+    show_full_result_count = False
 
     inlines = (
         CartItemInline,
     )
 
-    def items_count(self, obj):
-        return obj.items.count()
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(_items_count=Count("items"))
+        )
 
-    items_count.short_description = "Items"
+    @admin.display(description="تعداد آیتم", ordering="_items_count")
+    def items_count(self, obj):
+        return obj._items_count
 
 
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
+    """Kept for advanced lookup; hidden from sidebar — manage via Cart."""
+
+    form = CartItemAdminForm
     list_display = (
         "id",
         "cart",
@@ -121,20 +135,30 @@ class CartItemAdmin(admin.ModelAdmin):
     )
     exclude = ("creator", "archived")
     raw_id_fields = ("cart", "variant", "bundle")
+    list_select_related = (
+        "cart",
+        "variant",
+        "variant__product",
+        "bundle",
+    )
     list_per_page = 15
+    show_full_result_count = False
     list_display_links = ("cart",)
 
+    def has_module_permission(self, request):
+        return False
+
+    @admin.display(description="نوع")
     def item_type(self, obj):
         if obj.bundle_id:
-            return "Bundle"
+            return "بسته"
 
         if obj.variant_id:
-            return "Product"
+            return "محصول"
 
         return "-"
 
-    item_type.short_description = "Type"
-
+    @admin.display(description="آیتم")
     def item_title(self, obj):
         if obj.bundle_id:
             return obj.bundle.title
@@ -143,5 +167,3 @@ class CartItemAdmin(admin.ModelAdmin):
             return obj.variant.product.title
 
         return "-"
-
-    item_title.short_description = "Item"

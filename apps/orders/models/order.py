@@ -350,9 +350,9 @@ class OrderStatusHistory(BaseModel):
     source = models.CharField(
         max_length=30,
         choices=[
-            ("admin", "Admin"),
-            ("system", "System"),
-            ("customer", "Customer"),
+            ("admin", "ادمین"),
+            ("system", "سیستم"),
+            ("customer", "مشتری"),
         ],
         default="system",
         verbose_name="منبع",

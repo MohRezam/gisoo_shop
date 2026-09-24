@@ -1,24 +1,20 @@
-from json import JSONDecodeError
 import logging
-
-import requests
-from decouple import config
 
 from apps.notifications.services.sms.base import (
     SMSProvider,
     SMSResult,
 )
+from apps.sms.client import send_by_base_number
 
 
 logger = logging.getLogger("sms")
 
 
 class MelipayamakProvider(SMSProvider):
-
-    def __init__(self):
-        self.api_url = config(
-            "MELIPAYAMAK_API"
-        )
+    """
+    Compatibility wrapper around apps.sms SendByBaseNumber client.
+    Prefer apps.sms.service.send_pattern_sms for new call sites.
+    """
 
     def send_pattern(
         self,
@@ -27,85 +23,23 @@ class MelipayamakProvider(SMSProvider):
         pattern_id: int,
         args: list[str],
     ) -> SMSResult:
-
-        data = {
-            "bodyId": pattern_id,
-            "to": recipient,
-            "args": [
-                str(arg)
-                for arg in args
-            ],
-        }
-
-        try:
-            response = requests.post(
-                self.api_url,
-                json=data,
-                timeout=10,
-            )
-
-            response.raise_for_status()
-
-        except requests.exceptions.RequestException as exc:
-            logger.exception(
-                "Melipayamak request failed "
-                "for %s: %s",
-                recipient,
-                exc,
-            )
-
-            return SMSResult(
-                success=False,
-                error=str(exc),
-            )
-
-        try:
-            json_response = response.json()
-
-        except JSONDecodeError:
-            logger.error(
-                "Melipayamak returned "
-                "non-JSON response: %s",
-                response.text,
-            )
-
-            return SMSResult(
-                success=False,
-                error=(
-                    "Non-JSON response "
-                    "from SMS provider."
-                ),
-                response=response,
-            )
-
-        rec_id = json_response.get(
-            "recId"
+        result = send_by_base_number(
+            phone=recipient,
+            body_id=int(pattern_id or 0),
+            text_vars=[str(arg) for arg in args],
         )
 
-        if not rec_id:
-            logger.error(
-                "Melipayamak SMS failed "
-                "for %s: %s",
-                recipient,
-                json_response,
-            )
-
+        if result.get("success"):
             return SMSResult(
-                success=False,
-                error=str(json_response),
-                response=json_response,
+                success=True,
+                provider_message_id=result.get("message_id"),
+                response=result.get("provider_response"),
             )
-
-        logger.info(
-            "SMS sent to %s. recId=%s",
-            recipient,
-            rec_id,
-        )
 
         return SMSResult(
-            success=True,
-            provider_message_id=str(rec_id),
-            response=json_response,
+            success=False,
+            error=result.get("error_message") or "SMS send failed.",
+            response=result.get("provider_response"),
         )
 
     def send_text(
@@ -114,17 +48,10 @@ class MelipayamakProvider(SMSProvider):
         recipient: str,
         message: str,
     ) -> SMSResult:
-
-        # Intentionally not implemented yet.
-        #
-        # Transactional SMS messages should use
-        # registered patterns.
-        #
-        # Marketing SMS will have a separate flow.
-
         return SMSResult(
             success=False,
             error=(
-                "Direct text SMS is not implemented."
+                "Direct text SMS is not implemented. "
+                "Use registered patterns via send_pattern_sms."
             ),
         )

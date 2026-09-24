@@ -45,7 +45,7 @@ class DiscountAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (
-            "General",
+            "عمومی",
             {
                 "fields": (
                     "code",
@@ -57,7 +57,7 @@ class DiscountAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Limits",
+            "محدودیت‌ها",
             {
                 "fields": (
                     "minimum_order_amount",
@@ -69,7 +69,7 @@ class DiscountAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Time",
+            "بازه زمانی",
             {
                 "fields": (
                     "starts_at",
@@ -78,7 +78,7 @@ class DiscountAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "System",
+            "سیستم",
             {
                 "fields": (
                     "created_at",
@@ -89,10 +89,11 @@ class DiscountAdmin(admin.ModelAdmin):
     )
     exclude = ("creator",)
     list_per_page = 15
+    show_full_result_count = False
 
     @admin.display(
         boolean=True,
-        description="Valid"
+        description="معتبر"
     )
     def is_valid(
             self,

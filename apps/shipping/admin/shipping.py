@@ -76,5 +76,7 @@ class ShipmentAdmin(
     ]
     exclude = ("creator", "archived")
     raw_id_fields = ("order", "created_by")
+    list_select_related = ("order", "created_by")
     list_per_page = 15
+    show_full_result_count = False
     list_display_links = ("order",)

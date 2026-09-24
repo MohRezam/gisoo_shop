@@ -51,9 +51,17 @@ def customer_can_cancel_order(order) -> bool:
     Customer may cancel only before uploading a payment receipt.
     Once a receipt is submitted (under review), cancel is blocked
     even while the order status is still waiting_payment.
+    Expired / past-deadline unpaid orders are also not cancelable.
     """
     if order.status not in CUSTOMER_CANCELABLE_STATUSES:
         return False
+
+    from django.utils import timezone
+
+    now = timezone.now()
+    if order.expires_at is not None and order.expires_at <= now:
+        return False
+
     return not order.payment_intents.filter(
         status=PaymentIntentStatus.RECEIPT_SUBMITTED,
     ).exists()

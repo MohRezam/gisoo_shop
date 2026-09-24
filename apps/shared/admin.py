@@ -59,6 +59,9 @@ class BaseModelAdmin(
     Base admin for all models
     """
 
+    list_per_page = 15
+    list_max_show_all = 100
+    show_full_result_count = False
     changelist_actions = ("invalidate_all_items_cache",)
 
     def get_obj(self, obj):
@@ -90,7 +93,8 @@ class BaseTabularInlineAdmin(
     Base admin for all inlines
     """
 
-    pass
+    per_page = 20
+    extra = 0
 
 
 class BaseStackedInlineAdmin(StackedInlineJalaliMixin, BaseTabularInlineAdmin):

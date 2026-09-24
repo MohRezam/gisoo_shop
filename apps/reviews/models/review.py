@@ -76,10 +76,6 @@ class ProductReview(BaseModel):
 
         constraints = [
             models.UniqueConstraint(
-                fields=["user", "product"],
-                name="unique_user_product_review",
-            ),
-            models.UniqueConstraint(
                 fields=["homepage_order"],
                 condition=models.Q(
                     is_featured=True,

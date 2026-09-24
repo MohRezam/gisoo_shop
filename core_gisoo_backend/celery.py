@@ -41,4 +41,8 @@ app.conf.beat_schedule = {
         "task": "apps.products.tasks.sweep_expired_discount_campaigns",
         "schedule": 60.0,
     },
+    "purge-old-read-notifications-daily": {
+        "task": "apps.notifications.tasks.purge_old_read_in_app_notifications",
+        "schedule": crontab(hour=3, minute=30),
+    },
 }

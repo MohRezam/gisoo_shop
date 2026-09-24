@@ -14,6 +14,7 @@ from apps.orders.models import (
     Order,
     OrderItem,
     OrderStatus,
+    OrderStatusHistory,
 )
 from apps.orders.ordering import apply_status_priority_ordering
 from apps.orders.services.bulk_tracking_import import (
@@ -24,6 +25,8 @@ from apps.orders.services.bulk_tracking_import import (
 from apps.orders.services.change_order_status import (
     change_order_status,
 )
+from django_admin_inline_paginator.admin import TabularInlinePaginated
+
 from apps.shared.admin_filters import (
     PersianAllValuesFilter,
     PersianChoicesFilter,
@@ -78,12 +81,14 @@ class OrderCreatedAtFilter(SimpleListFilter):
             }
 
 
-class OrderItemInline(admin.TabularInline):
+class OrderItemInline(TabularInlinePaginated):
     model = OrderItem
-
     extra = 0
-
-    readonly_fields = [
+    per_page = 20
+    pagination_key = "orderitem_page"
+    can_delete = False
+    # Address lives on Order — do not repeat on every line item.
+    fields = (
         "variant",
         "product_title",
         "variant_sku",
@@ -91,14 +96,55 @@ class OrderItemInline(admin.TabularInline):
         "original_unit_price",
         "unit_price",
         "total_price",
-        "province",
-        "city",
-        "postal_code",
-        "full_address",
         "order_bundle",
-    ]
-    exclude = ("creator",)
+    )
+    readonly_fields = (
+        "variant",
+        "product_title",
+        "variant_sku",
+        "quantity",
+        "original_unit_price",
+        "unit_price",
+        "total_price",
+        "order_bundle",
+    )
+    show_change_link = False
+    verbose_name = "آیتم"
+    verbose_name_plural = "آیتم‌های سفارش"
+
+
+class OrderStatusHistoryInline(TabularInlinePaginated):
+    model = OrderStatusHistory
+    extra = 0
+    per_page = 15
+    pagination_key = "status_history_page"
     can_delete = False
+    ordering = ("-created_at",)
+    fields = (
+        "created_at",
+        "old_status",
+        "new_status",
+        "changed_by",
+        "source",
+        "reason",
+    )
+    readonly_fields = fields
+    show_change_link = False
+    verbose_name = "تغییر وضعیت"
+    verbose_name_plural = "تاریخچه وضعیت سفارش"
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("changed_by")
+        )
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Order)
@@ -134,6 +180,7 @@ class OrderAdmin(admin.ModelAdmin):
 
     readonly_fields = [
         "status",
+        "public_number",
         "products_price",
         "shipping_price",
         "discount_amount",
@@ -141,10 +188,82 @@ class OrderAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
         "expires_at",
+        "payment_reminder_sent_at",
+        "payment_reminder_mid_sent_at",
+        "delivery_confirm_sms_sent_at",
+        "prepared_at",
+        "shipped_at",
+        "delivered_at",
     ]
+
+    fieldsets = (
+        (
+            "سفارش و مشتری",
+            {
+                "fields": (
+                    "public_number",
+                    "user",
+                    "phone_number",
+                    "status",
+                    "description",
+                ),
+            },
+        ),
+        (
+            "آدرس تحویل",
+            {
+                "fields": (
+                    "province",
+                    "city",
+                    "postal_code",
+                    "address",
+                ),
+            },
+        ),
+        (
+            "ارسال",
+            {
+                "fields": (
+                    "shipping_method",
+                    "carrier",
+                    "tracking_code",
+                    "prepared_at",
+                    "shipped_at",
+                    "delivered_at",
+                ),
+            },
+        ),
+        (
+            "مبالغ",
+            {
+                "fields": (
+                    "products_price",
+                    "shipping_price",
+                    "discount",
+                    "discount_amount",
+                    "total_price",
+                ),
+            },
+        ),
+        (
+            "سیستم",
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "expires_at",
+                    "payment_reminder_sent_at",
+                    "payment_reminder_mid_sent_at",
+                    "delivery_confirm_sms_sent_at",
+                    "created_at",
+                    "updated_at",
+                ),
+            },
+        ),
+    )
 
     inlines = [
         OrderItemInline,
+        OrderStatusHistoryInline,
     ]
 
     actions = [
@@ -159,7 +278,9 @@ class OrderAdmin(admin.ModelAdmin):
     ]
     exclude = ("creator", "archived")
     raw_id_fields = ("user", "discount", "shipping_method")
+    list_select_related = ("user", "discount", "shipping_method")
     list_per_page = 20
+    show_full_result_count = False
     list_display_links = ("user",)
 
     def get_queryset(self, request):
@@ -299,20 +420,20 @@ class OrderAdmin(admin.ModelAdmin):
         if updated:
             self.message_user(
                 request,
-                f"{updated} order(s) marked as {label}.",
+                f"{updated} سفارش به وضعیت «{label}» تغییر کرد.",
                 level=messages.SUCCESS,
             )
 
-    @admin.action(description="Mark selected as preparing")
+    @admin.action(description="تغییر به در حال آماده‌سازی")
     def mark_preparing(self, request, queryset):
         self._bulk_change_status(
             request,
             queryset,
             OrderStatus.PREPARING,
-            "preparing",
+            "در حال آماده‌سازی",
         )
 
-    @admin.action(description="Mark selected as shipped")
+    @admin.action(description="تغییر به ارسال‌شده")
     def mark_shipped(self, request, queryset):
         """
         Requires tracking_code (and carrier via order/shipping method)
@@ -322,23 +443,23 @@ class OrderAdmin(admin.ModelAdmin):
             request,
             queryset,
             OrderStatus.SHIPPED,
-            "shipped",
+            "ارسال‌شده",
         )
 
-    @admin.action(description="Mark selected as delivered")
+    @admin.action(description="تغییر به تحویل‌شده")
     def mark_delivered(self, request, queryset):
         self._bulk_change_status(
             request,
             queryset,
             OrderStatus.DELIVERED,
-            "delivered",
+            "تحویل‌شده",
         )
 
-    @admin.action(description="Mark selected as canceled")
+    @admin.action(description="لغو سفارش‌های انتخاب‌شده")
     def mark_canceled(self, request, queryset):
         self._bulk_change_status(
             request,
             queryset,
             OrderStatus.CANCELED,
-            "canceled",
+            "لغو شده",
         )

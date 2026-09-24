@@ -3,6 +3,7 @@ from django.contrib import admin
 
 from apps.consultations.forms import (
     ConsultationRecommendationAdminForm,
+    ConsultationRecommendationPackItemAdminForm,
 )
 from apps.consultations.models.consultation import (
     ConsultationRecommendation,
@@ -15,12 +16,6 @@ from apps.shared.admin_filters import (
     PersianChoicesFilter,
     PersianRelatedFilter,
 )
-
-
-def _consultation_id_from_request(request):
-    if not request or not request.resolver_match:
-        return None
-    return request.resolver_match.kwargs.get("object_id")
 
 
 class ConsultationRecommendationInline(
@@ -39,7 +34,7 @@ class ConsultationRecommendationInline(
     verbose_name = "پیشنهاد محصول"
     verbose_name_plural = (
         "۱) پیشنهادهای محصول "
-        "(توضیح و روش مصرف هر محصول)"
+        "(توضیح و روش مصرف هر محصول — اختیاری اگر فقط در گروه اضافه می‌کنید)"
     )
 
 
@@ -47,51 +42,17 @@ class ConsultationRecommendationPackItemInline(
     nested_admin.NestedTabularInline,
 ):
     model = ConsultationRecommendationPackItem
-    extra = 0
+    form = ConsultationRecommendationPackItemAdminForm
+    extra = 1
     fields = (
-        "recommendation",
+        "variant",
         "display_order",
     )
     verbose_name = "محصول داخل گروه"
     verbose_name_plural = (
         "محصولات این گروه "
-        "(فقط از پیشنهادهای همین درخواست)"
+        "(واریانت را مستقیم انتخاب کنید — نیازی به ذخیرهٔ قبلی نیست)"
     )
-
-    def formfield_for_foreignkey(
-        self,
-        db_field,
-        request,
-        **kwargs,
-    ):
-        if db_field.name == "recommendation":
-            consultation_id = _consultation_id_from_request(
-                request,
-            )
-            if consultation_id:
-                kwargs["queryset"] = (
-                    ConsultationRecommendation.objects
-                    .filter(
-                        consultation_id=consultation_id,
-                    )
-                    .select_related(
-                        "variant",
-                        "variant__product",
-                    )
-                    .order_by(
-                        "display_order",
-                        "created_at",
-                    )
-                )
-            else:
-                kwargs["queryset"] = (
-                    ConsultationRecommendation.objects.none()
-                )
-        return super().formfield_for_foreignkey(
-            db_field,
-            request,
-            **kwargs,
-        )
 
 
 class ConsultationRecommendationPackInline(
@@ -110,7 +71,7 @@ class ConsultationRecommendationPackInline(
     verbose_name = "گروه / روتین"
     verbose_name_plural = (
         "۲) گروه‌بندی محصولات "
-        "(اختیاری — متن مشترک برای چند محصول)"
+        "(عنوان و متن مشترک + انتخاب واریانت‌ها در همین ذخیره)"
     )
 
 
@@ -150,8 +111,12 @@ class ConsultationRequestAdmin(
     )
 
     raw_id_fields = ("user", "guest", "hair_problem")
+    list_select_related = ("user", "guest", "hair_problem")
     list_per_page = 15
+    show_full_result_count = False
 
+    # Recommendations before packs so same-save get_or_create finds
+    # explanations already written in section 1.
     inlines = (
         ConsultationRecommendationInline,
         ConsultationRecommendationPackInline,
@@ -171,9 +136,11 @@ class ConsultationRequestAdmin(
                     "request_phone_consultation",
                 ),
                 "description": (
-                    "۱) پایین صفحه محصولات پیشنهادی را اضافه کنید و ذخیره کنید. "
-                    "۲) دوباره همین صفحه را باز کنید و در بخش گروه، "
-                    "محصولات همین درخواست را به روتین وصل کنید و متن مشترک بنویسید."
+                    "پیشنهاد تکی و گروه را می‌توانید در همان ذخیره بسازید. "
+                    "در بخش گروه، واریانت محصول را مستقیم انتخاب کنید "
+                    "(دیگر لازم نیست اول ذخیره کنید و برگردید). "
+                    "اگر برای محصول توضیح/دستور مصرف می‌خواهید، "
+                    "همان واریانت را در بخش ۱ هم پر کنید."
                 ),
             },
         ),

@@ -50,7 +50,9 @@ class ProductReviewAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
 
     raw_id_fields = ("user", "product")
+    list_select_related = ("user", "product")
     list_per_page = 15
+    show_full_result_count = False
     list_display_links = ("product",)
 
     fieldsets = (

@@ -121,6 +121,8 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
 
     product_id = serializers.SerializerMethodField()
+    slug = serializers.SerializerMethodField()
+    variant_id = serializers.SerializerMethodField()
 
     price = serializers.SerializerMethodField()
     discounted_price = serializers.SerializerMethodField()
@@ -134,6 +136,8 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
             "id",
             "type",
             "product_id",
+            "slug",
+            "variant_id",
             "title",
             "brand",
             "image",
@@ -150,6 +154,12 @@ class ConsultationRecommendationSerializer(serializers.ModelSerializer):
 
     def get_product_id(self, obj):
         return obj.variant.product_id
+
+    def get_slug(self, obj):
+        return obj.variant.product.slug
+
+    def get_variant_id(self, obj):
+        return obj.variant_id
 
     def get_title(self, obj):
         return obj.variant.product.title

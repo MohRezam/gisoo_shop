@@ -9,6 +9,7 @@ LOCAL_APPS = [
     "apps.cart.apps.CartConfig",
     "apps.discounts.apps.DiscountsConfig",
     "apps.notifications.apps.NotificationsConfig",
+    "apps.sms.apps.SmsConfig",
     "apps.orders.apps.OrdersConfig",
     "apps.payments.apps.PaymentsConfig",
     "apps.products.apps.ProductsConfig",

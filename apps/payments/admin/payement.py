@@ -49,7 +49,7 @@ class DestinationCardAdmin(admin.ModelAdmin):
     list_display_links = ("name",)
     fieldsets = (
         (
-            "Card information",
+            "اطلاعات کارت",
             {
                 "fields": (
                     "name",
@@ -61,7 +61,7 @@ class DestinationCardAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "System information",
+            "سیستم",
             {
                 "fields": (
                     "created_at",
@@ -157,7 +157,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Actions",
+            "عملیات",
             {
                 "fields": (
                     "admin_action_links",
