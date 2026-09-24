@@ -116,7 +116,7 @@ def approve_payment(
 
     if duplicate_ref:
         raise ValidationError(
-            _("This bank reference is already used on another approved payment.")
+            _("این شماره پیگیری بانک قبلاً برای یک پرداخت تأییدشده دیگر استفاده شده است.")
         )
 
     now = timezone.now()

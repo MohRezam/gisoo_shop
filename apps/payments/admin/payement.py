@@ -20,6 +20,24 @@ from apps.shared.admin_filters import PersianChoicesFilter
 from django.utils.html import format_html
 
 
+def _form_error_message(exc):
+    """Flatten DRF/Django validation errors for admin forms."""
+    detail = getattr(exc, "detail", None)
+    if detail is None:
+        return str(exc)
+    if isinstance(detail, list):
+        return " ".join(str(item) for item in detail)
+    if isinstance(detail, dict):
+        parts = []
+        for value in detail.values():
+            if isinstance(value, list):
+                parts.extend(str(item) for item in value)
+            else:
+                parts.append(str(value))
+        return " ".join(parts)
+    return str(detail)
+
+
 @admin.register(DestinationCard)
 class DestinationCardAdmin(admin.ModelAdmin):
     list_display = (
@@ -275,7 +293,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
                 except Exception as exc:
                     form.add_error(
                         None,
-                        str(exc),
+                        _form_error_message(exc),
                     )
                 else:
                     self.message_user(
@@ -341,7 +359,7 @@ class PaymentIntentAdmin(admin.ModelAdmin):
                 except Exception as exc:
                     form.add_error(
                         None,
-                        str(exc),
+                        _form_error_message(exc),
                     )
                 else:
                     self.message_user(
