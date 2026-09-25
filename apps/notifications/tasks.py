@@ -160,3 +160,21 @@ def purge_old_read_in_app_notifications():
         created_at__lte=cutoff,
     ).delete()
     return deleted
+
+
+@shared_task
+def purge_old_read_admin_alerts():
+    """
+    Delete admin alerts that staff already read, older than 2 weeks.
+    Unread alerts are kept so nothing important is lost.
+    """
+    from datetime import timedelta
+
+    from apps.notifications.models import AdminAlert
+
+    cutoff = timezone.now() - timedelta(days=READ_NOTIFICATION_RETENTION_DAYS)
+    deleted, _ = AdminAlert.objects.filter(
+        is_read=True,
+        created_at__lte=cutoff,
+    ).delete()
+    return deleted

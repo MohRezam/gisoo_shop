@@ -45,4 +45,8 @@ app.conf.beat_schedule = {
         "task": "apps.notifications.tasks.purge_old_read_in_app_notifications",
         "schedule": crontab(hour=3, minute=30),
     },
+    "purge-old-read-admin-alerts-daily": {
+        "task": "apps.notifications.tasks.purge_old_read_admin_alerts",
+        "schedule": crontab(hour=3, minute=40),
+    },
 }

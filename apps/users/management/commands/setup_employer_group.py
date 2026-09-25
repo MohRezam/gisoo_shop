@@ -56,7 +56,7 @@ ALLOW_MODELS = {
     },
     "magazine": {"magazinepost", "magazinecategory"},
     "shipping": {"shippingmethod", "shippingcarrier"},
-    "notifications": {"adminalert", "inappnotification"},
+    "notifications": {"adminalert", "inappnotification", "smssettings"},
     "marketing": {"newslettersubscriber"},
     "addresses": {"address"},
 }

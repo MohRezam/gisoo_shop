@@ -116,6 +116,41 @@ class InboxAPITests(APITestCase):
             InAppNotification.objects.filter(pk=old_unread.id).exists(),
         )
 
+    def test_purge_old_read_admin_alerts(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.notifications.models import AdminAlert
+        from apps.notifications.tasks import purge_old_read_admin_alerts
+
+        old_read = AdminAlert.objects.create(
+            title="Old read",
+            body="A",
+            is_read=True,
+        )
+        recent_read = AdminAlert.objects.create(
+            title="Recent read",
+            body="B",
+            is_read=True,
+        )
+        old_unread = AdminAlert.objects.create(
+            title="Old unread",
+            body="C",
+            is_read=False,
+        )
+
+        cutoff = timezone.now() - timedelta(days=15)
+        AdminAlert.objects.filter(pk__in=[old_read.id, old_unread.id]).update(
+            created_at=cutoff,
+        )
+
+        deleted = purge_old_read_admin_alerts()
+        self.assertEqual(deleted, 1)
+        self.assertFalse(AdminAlert.objects.filter(pk=old_read.id).exists())
+        self.assertTrue(AdminAlert.objects.filter(pk=recent_read.id).exists())
+        self.assertTrue(AdminAlert.objects.filter(pk=old_unread.id).exists())
+
     def test_otp_endpoints_unchanged(self):
         # ensure OTP routes still resolve
         self.assertTrue(reverse("apps.notifications:send-otp"))

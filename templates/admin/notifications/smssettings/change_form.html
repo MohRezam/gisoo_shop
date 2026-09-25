@@ -1,0 +1,21 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_sms_settings.css' %}">
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} gisoo-sms-settings-page{% endblock %}
+
+{% block form_top %}
+<div class="gisoo-sms-intro">
+  <header class="gisoo-sms-head">
+    <p class="gisoo-eyebrow">اعلان‌ها · پیامک</p>
+    <h1>تنظیمات ارسال پیامک</h1>
+    <p class="gisoo-sms-sub">
+      هر رویداد یک تیک دارد؛ اگر فعال باشد همان پیامک ارسال می‌شود. همه به‌صورت پیش‌فرض روشن‌اند.
+    </p>
+  </header>
+</div>
+{% endblock %}

@@ -6,7 +6,7 @@ from apps.notifications.constants import (
     NotificationStatus,
     NotificationType,
 )
-from apps.notifications.models import Notification
+from apps.notifications.models import Notification, is_sms_pattern_enabled
 from apps.sms.service import send_pattern_sms
 
 
@@ -57,6 +57,14 @@ class NotificationService:
                     recipient,
                     data.get("code"),
                 )
+            return notification
+
+        if not is_sms_pattern_enabled(pattern_key):
+            notification.status = NotificationStatus.FAILED
+            notification.error_message = (
+                f"SMS pattern '{pattern_key}' disabled in admin settings."
+            )
+            notification.save(update_fields=["status", "error_message"])
             return notification
 
         result = send_pattern_sms(
