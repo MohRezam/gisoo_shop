@@ -185,22 +185,6 @@ class NotificationService:
         )
 
     @classmethod
-    def send_new_image(
-        cls,
-        *,
-        user,
-        recipient,
-        consultation_id,
-    ):
-        return cls._send_via_pattern(
-            user=user,
-            notification_type=NotificationType.NEW_IMAGE,
-            recipient=recipient,
-            pattern_key="new_image",
-            data={"consultation_id": str(consultation_id)},
-        )
-
-    @classmethod
     def send_order_shipped(
         cls,
         *,

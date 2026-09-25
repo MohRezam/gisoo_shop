@@ -129,16 +129,6 @@ PATTERNS: dict[str, SmsPattern] = {
         ),
         build_vars=_product_vars,
     ),
-    "new_image": SmsPattern(
-        key="new_image",
-        env_attr="SMS_PATTERN_NEW_IMAGE_BODY_ID",
-        variable_keys=("consultation_id",),
-        panel_text=(
-            "تصویر جدیدی برای مشاوره {0} ثبت شد.\n"
-            "لغو11"
-        ),
-        build_vars=_consultation_vars,
-    ),
     "order_shipped": SmsPattern(
         key="order_shipped",
         env_attr="SMS_PATTERN_ORDER_SHIPPED_BODY_ID",

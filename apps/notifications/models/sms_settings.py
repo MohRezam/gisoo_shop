@@ -13,7 +13,6 @@ SMS_TOGGLE_FIELDS: tuple[tuple[str, str, str], ...] = (
     ("delivery_confirm", "sms_delivery_confirm", "تأیید تحویل"),
     ("new_consultation", "sms_new_consultation", "درخواست مشاوره جدید"),
     ("new_comment", "sms_new_comment", "نظر جدید محصول"),
-    ("new_image", "sms_new_image", "تصویر جدید مشاوره"),
 )
 
 PATTERN_TO_FIELD = {pattern: field for pattern, field, _ in SMS_TOGGLE_FIELDS}
@@ -64,11 +63,6 @@ class SmsSettings(SingletonModel):
         default=True,
         verbose_name="نظر جدید محصول",
         help_text="پیامک اطلاع‌رسانی نظر جدید",
-    )
-    sms_new_image = models.BooleanField(
-        default=True,
-        verbose_name="تصویر جدید مشاوره",
-        help_text="پیامک اطلاع‌رسانی تصویر جدید مشاوره",
     )
 
     class Meta:

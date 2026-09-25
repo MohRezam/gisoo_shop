@@ -113,15 +113,6 @@ SMS_PATTERN_NEW_COMMENT_BODY_ID = _as_int(
 )
 SMS_PATTERN_NEW_COMMENT = SMS_PATTERN_NEW_COMMENT_BODY_ID
 
-SMS_PATTERN_NEW_IMAGE_BODY_ID = _as_int(
-    _first(
-        config("SMS_PATTERN_NEW_IMAGE_BODY_ID", default=""),
-        config("SMS_PATTERN_NEW_IMAGE", default=""),
-        default="0",
-    )
-)
-SMS_PATTERN_NEW_IMAGE = SMS_PATTERN_NEW_IMAGE_BODY_ID
-
 SMS_PATTERN_ORDER_SHIPPED_BODY_ID = _as_int(
     _first(
         config("SMS_PATTERN_ORDER_SHIPPED_BODY_ID", default=""),

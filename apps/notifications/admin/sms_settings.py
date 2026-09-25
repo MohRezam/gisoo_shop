@@ -38,7 +38,6 @@ class SmsSettingsAdmin(admin.ModelAdmin):
                 "fields": (
                     "sms_new_consultation",
                     "sms_new_comment",
-                    "sms_new_image",
                 ),
             },
         ),
