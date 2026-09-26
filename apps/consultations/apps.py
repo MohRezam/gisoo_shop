@@ -7,6 +7,7 @@ class ConsultationsConfig(AppConfig):
     verbose_name = "مشاوره‌ها"
 
     def ready(self):
+        from apps.consultations import signals as consultation_signals  # noqa: F401
         from apps.consultations.signals import register_consultation_cache_signals
 
         register_consultation_cache_signals()

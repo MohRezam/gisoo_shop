@@ -54,16 +54,12 @@ def _order_id_vars(data: dict) -> list[str]:
     return _vars_from_keys(data, ("order_id",))
 
 
-def _consultation_vars(data: dict) -> list[str]:
-    return _vars_from_keys(data, ("consultation_id",))
-
-
-def _product_vars(data: dict) -> list[str]:
-    return _vars_from_keys(data, ("product_id",))
-
-
 def _payment_reminder_vars(data: dict) -> list[str]:
     return _vars_from_keys(data, ("order_id", "minutes_left"))
+
+
+def _consultation_id_vars(data: dict) -> list[str]:
+    return _vars_from_keys(data, ("consultation_id",))
 
 
 PATTERNS: dict[str, SmsPattern] = {
@@ -109,26 +105,6 @@ PATTERNS: dict[str, SmsPattern] = {
         ),
         build_vars=_payment_reminder_vars,
     ),
-    "new_consultation": SmsPattern(
-        key="new_consultation",
-        env_attr="SMS_PATTERN_NEW_CONSULTATION_BODY_ID",
-        variable_keys=("consultation_id",),
-        panel_text=(
-            "درخواست مشاوره جدید ثبت شد. شناسه: {0}\n"
-            "لغو11"
-        ),
-        build_vars=_consultation_vars,
-    ),
-    "new_comment": SmsPattern(
-        key="new_comment",
-        env_attr="SMS_PATTERN_NEW_COMMENT_BODY_ID",
-        variable_keys=("product_id",),
-        panel_text=(
-            "نظر جدیدی برای محصول {0} ثبت شد.\n"
-            "لغو11"
-        ),
-        build_vars=_product_vars,
-    ),
     "order_shipped": SmsPattern(
         key="order_shipped",
         env_attr="SMS_PATTERN_ORDER_SHIPPED_BODY_ID",
@@ -158,6 +134,57 @@ PATTERNS: dict[str, SmsPattern] = {
             "لغو11"
         ),
         build_vars=_order_id_vars,
+    ),
+    "consultation_answered": SmsPattern(
+        key="consultation_answered",
+        env_attr="SMS_PATTERN_CONSULTATION_ANSWERED_BODY_ID",
+        variable_keys=("consultation_id",),
+        panel_text=(
+            "پاسخ درخواست مشاوره شما آماده است. شناسه: {0}\n"
+            "وارد سایت شوید و نتیجه را ببینید.\n"
+            "لغو11"
+        ),
+        build_vars=_consultation_id_vars,
+    ),
+    "order_preparing": SmsPattern(
+        key="order_preparing",
+        env_attr="SMS_PATTERN_ORDER_PREPARING_BODY_ID",
+        variable_keys=("order_id",),
+        panel_text=(
+            "سفارش {0} تأیید شد و در حال آماده‌سازی است.\n"
+            "لغو11"
+        ),
+        build_vars=_order_id_vars,
+    ),
+    "order_expired": SmsPattern(
+        key="order_expired",
+        env_attr="SMS_PATTERN_ORDER_EXPIRED_BODY_ID",
+        variable_keys=("order_id",),
+        panel_text=(
+            "مهلت پرداخت سفارش {0} به پایان رسید و سفارش منقضی شد.\n"
+            "لغو11"
+        ),
+        build_vars=_order_id_vars,
+    ),
+    "payment_rejected": SmsPattern(
+        key="payment_rejected",
+        env_attr="SMS_PATTERN_PAYMENT_REJECTED_BODY_ID",
+        variable_keys=("order_id",),
+        panel_text=(
+            "رسید پرداخت سفارش {0} رد شد. می‌توانید دوباره پرداخت را ارسال کنید.\n"
+            "لغو11"
+        ),
+        build_vars=_order_id_vars,
+    ),
+    "consultation_received": SmsPattern(
+        key="consultation_received",
+        env_attr="SMS_PATTERN_CONSULTATION_RECEIVED_BODY_ID",
+        variable_keys=("consultation_id",),
+        panel_text=(
+            "درخواست مشاوره شما با شناسه {0} ثبت شد. به‌زودی پاسخ داده می‌شود.\n"
+            "لغو11"
+        ),
+        build_vars=_consultation_id_vars,
     ),
 }
 

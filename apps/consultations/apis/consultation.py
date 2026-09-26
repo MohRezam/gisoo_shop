@@ -193,6 +193,9 @@ class ConsultationCreateAPIView(
             try:
                 from apps.notifications.models import AdminAlertType
                 from apps.notifications.services.admin_alerts import notify_admin
+                from apps.notifications.tasks import (
+                    send_consultation_received_sms,
+                )
 
                 notify_admin(
                     title="درخواست مشاوره جدید",
@@ -203,6 +206,13 @@ class ConsultationCreateAPIView(
                         f"{consultation.pk}/change/"
                     ),
                 )
+                phone = (consultation.phone_number or "").strip()
+                if phone:
+                    send_consultation_received_sms.delay(
+                        user_id=request.user.id,
+                        recipient=phone,
+                        consultation_id=str(consultation.id),
+                    )
             except Exception:
                 pass
 
@@ -236,6 +246,9 @@ class ConsultationCreateAPIView(
         try:
             from apps.notifications.models import AdminAlertType
             from apps.notifications.services.admin_alerts import notify_admin
+            from apps.notifications.tasks import (
+                send_consultation_received_sms,
+            )
 
             notify_admin(
                 title="درخواست مشاوره جدید",
@@ -246,6 +259,13 @@ class ConsultationCreateAPIView(
                     f"{consultation.pk}/change/"
                 ),
             )
+            phone = (consultation.phone_number or "").strip()
+            if phone:
+                send_consultation_received_sms.delay(
+                    user_id=None,
+                    recipient=phone,
+                    consultation_id=str(consultation.id),
+                )
         except Exception:
             pass
 

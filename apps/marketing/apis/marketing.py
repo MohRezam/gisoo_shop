@@ -10,8 +10,8 @@ from apps.marketing.serializers import (
     MarketingSubscribeSerializer,
     MarketingVerifyOTPSerializer,
 )
-from apps.marketing.services.marketing import generate_otp, save_otp, delete_otp
-from apps.notifications.services.otp import get_otp
+from apps.marketing.services.marketing import save_otp, delete_otp, get_otp
+from apps.users.services.otp_sms import send_otp_sms
 
 
 class MarketingSubscribeAPIView(APIView):
@@ -40,8 +40,15 @@ class MarketingSubscribeAPIView(APIView):
             "phone_number"
         ]
 
-        # otp = generate_otp()
-        otp = "123456"
+        otp, ok = send_otp_sms(phone_number=phone_number)
+        if not ok:
+            return Response(
+                {
+                    "detail": "Failed to send OTP. Please try again later."
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         save_otp(
             phone_number,
             otp,

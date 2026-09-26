@@ -6,10 +6,10 @@ from apps.notifications.serializers import (
     SendOTPSerializer, VerifyOTPSerializer,
 )
 from apps.notifications.services.otp import (
-    generate_otp,
     save_otp, get_otp, delete_otp,
 )
 from apps.users.services.get_or_create_user import get_or_create_user
+from apps.users.services.otp_sms import send_otp_sms
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
@@ -28,7 +28,14 @@ class SendOTPAPIView(APIView):
             "phone_number"
         ]
 
-        code = generate_otp()
+        code, ok = send_otp_sms(phone_number=phone_number)
+        if not ok:
+            return Response(
+                {
+                    "detail": "Failed to send OTP. Please try again later."
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         save_otp(
             phone_number,
@@ -37,8 +44,7 @@ class SendOTPAPIView(APIView):
 
         return Response(
             {
-                # OTP is stored only; SMS delivery is not wired yet.
-                "message": "OTP generated successfully"
+                "message": "OTP sent successfully"
             },
             status=status.HTTP_200_OK,
         )

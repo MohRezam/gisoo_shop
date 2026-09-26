@@ -1,5 +1,3 @@
-import secrets
-
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.utils.translation import gettext as _
@@ -11,16 +9,16 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.cart.services.merge_cart import CartService
 from apps.consultations.services import merge_guest_consultations_after_login
-from apps.notifications.constants import NotificationStatus
-from apps.notifications.services.notification import NotificationService
 from apps.products.services.wishlist import WishlistService
 from apps.users.models import UserPhoneNumber
 from apps.users.serializers.login import (
     RequestOTPSerializer,
     VerifyOTPSerializer,
 )
+from apps.users.services.otp_sms import send_otp_sms
 from core_gisoo_backend.settings.components.constants import (
     GUEST_CONSULTATION_COOKIE_NAME,
+    OTP_TTL,
     WISHLIST_COOKIE_NAME,
 )
 from utils.general.throttles import OTPThrottle
@@ -28,8 +26,6 @@ from drf_spectacular.utils import extend_schema
 
 User = get_user_model()
 
-OTP_TTL = 123
-OTP_ATTEMPTS_TTL = 123
 RESEND_COOLDOWN = 60
 RESEND_LIMIT = 5
 RESEND_WINDOW = 300
@@ -47,35 +43,20 @@ class RequestOTPAPIView(APIView):
         serializer.is_valid(raise_exception=True)
 
         phone_number = serializer.validated_data["phone_number"]
-
-        from django.conf import settings
-
         otp_key = f"login:otp_{phone_number}"
-        if getattr(settings, "SMS_ENABLED", False):
-            otp = str(secrets.randbelow(900000) + 100000)
-            notification = NotificationService.send_otp(
-                user=None,
-                recipient=phone_number,
-                otp=otp,
-            )
-            if notification.status != NotificationStatus.SENT:
-                return Response(
-                    {
-                        "detail": _(
-                            "Failed to send OTP. Please try again later."
-                        )
-                    },
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
-                )
-        else:
-            # Dev / pre-Melipayamak: fixed OTP until SMS panel is live.
-            otp = "123456"
 
-        cache.set(
-            otp_key,
-            otp,
-            timeout=OTP_TTL,
-        )
+        otp, ok = send_otp_sms(phone_number=phone_number)
+        if not ok:
+            return Response(
+                {
+                    "detail": _(
+                        "Failed to send OTP. Please try again later."
+                    )
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        cache.set(otp_key, otp, timeout=OTP_TTL)
 
         return Response(
             {
@@ -119,33 +100,19 @@ class ResendOTPAPIView(APIView):
                 )
             )
 
-        from django.conf import settings
-
         otp_key = f"login:otp_{phone_number}"
-        if getattr(settings, "SMS_ENABLED", False):
-            otp = str(secrets.randbelow(900000) + 100000)
-            notification = NotificationService.send_otp(
-                user=None,
-                recipient=phone_number,
-                otp=otp,
+        otp, ok = send_otp_sms(phone_number=phone_number)
+        if not ok:
+            return Response(
+                {
+                    "detail": _(
+                        "Failed to send OTP. Please try again later."
+                    )
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
-            if notification.status != NotificationStatus.SENT:
-                return Response(
-                    {
-                        "detail": _(
-                            "Failed to send OTP. Please try again later."
-                        )
-                    },
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
-                )
-        else:
-            otp = "123456"
 
-        cache.set(
-            otp_key,
-            otp,
-            timeout=OTP_TTL,
-        )
+        cache.set(otp_key, otp, timeout=OTP_TTL)
 
         cache.set(
             timestamp_key,

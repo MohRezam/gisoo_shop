@@ -4,6 +4,8 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from core_gisoo_backend.settings.components.constants import OTP_TTL
+
 
 phone_number_validator = RegexValidator(
     regex=r"^09\d{9}$",
@@ -88,7 +90,7 @@ class VerifyOTPSerializer(serializers.Serializer):
             cache.set(
                 attempts_key,
                 attempts,
-                timeout=123,
+                timeout=OTP_TTL,
             )
 
             if attempts >= 5:

@@ -245,6 +245,13 @@ def change_order_status(
 
     if send_notification and new_status in STATUS_NOTIFICATIONS:
         from apps.notifications.services.inbox import notify_user
+        from apps.notifications.tasks import (
+            send_order_cancelled_sms,
+            send_order_expired_sms,
+            send_order_preparing_sms,
+            send_order_shipped_sms,
+            send_payment_rejected_sms,
+        )
         from apps.orders.cache import invalidate_track_order_cache
 
         title, body_template = STATUS_NOTIFICATIONS[new_status]
@@ -256,9 +263,12 @@ def change_order_status(
 
         user = order.user
         order_id = order.id
+        user_id = order.user_id
+        phone = (order.phone_number or "").strip()
+        status_for_sms = new_status
 
-        transaction.on_commit(
-            lambda: notify_user(
+        def _notify_customer():
+            notify_user(
                 user=user,
                 title=title,
                 body=body,
@@ -266,7 +276,25 @@ def change_order_status(
                 link=f"/account/orders/{order_id}",
                 order_id=order_id,
             )
-        )
+            if not phone or not user_id:
+                return
+
+            sms_map = {
+                OrderStatus.PREPARING: send_order_preparing_sms,
+                OrderStatus.SHIPPED: send_order_shipped_sms,
+                OrderStatus.CANCELED: send_order_cancelled_sms,
+                OrderStatus.EXPIRED: send_order_expired_sms,
+                OrderStatus.PAYMENT_REJECTED: send_payment_rejected_sms,
+            }
+            sms_task = sms_map.get(status_for_sms)
+            if sms_task is not None:
+                sms_task.delay(
+                    user_id=user_id,
+                    recipient=phone,
+                    order_id=label,
+                )
+
+        transaction.on_commit(_notify_customer)
 
         try:
             invalidate_track_order_cache(

@@ -285,14 +285,16 @@ def reject_payment(
     order_label = order.public_number or order.id
     user = order.user
     order_id = order.id
+    user_id = order.user_id
+    phone = (order.phone_number or "").strip()
     reject_body = (
         f"رسید پرداخت سفارش {order_label} رد شد. "
         f"دلیل: {reason}. "
         "می‌توانید دوباره پرداخت را ارسال کنید."
     )
 
-    transaction.on_commit(
-        lambda: notify_user(
+    def _notify_rejection():
+        notify_user(
             user=user,
             title="رسید پرداخت رد شد",
             body=reject_body,
@@ -300,6 +302,15 @@ def reject_payment(
             link=f"/account/orders/{order_id}",
             order_id=order_id,
         )
-    )
+        if phone and user_id:
+            from apps.notifications.tasks import send_payment_rejected_sms
+
+            send_payment_rejected_sms.delay(
+                user_id=user_id,
+                recipient=phone,
+                order_id=order_label,
+            )
+
+    transaction.on_commit(_notify_rejection)
 
     return payment_intent

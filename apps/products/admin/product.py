@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from jalali_date.admin import ModelAdminJalaliMixin
 
 from apps.products.admin import BundleInline
 from apps.products.models import (
@@ -11,6 +12,7 @@ from apps.products.models import (
     ProductVariant,
     VariantAttribute, ProductRelatedProduct, DiscountCampaign,
 )
+from utils.helpers.jalali_helper import get_persian_jalali_from_datetime
 import nested_admin
 
 
@@ -202,6 +204,22 @@ class ProductAdmin(
         product.refresh_from_db(fields=["show_in_special_offer"])
 
         if not want_special:
+            # Leaving the campaign: restore base price only if it was a member.
+            was_member = product.show_in_special_offer
+            if was_member:
+                product.show_in_special_offer = False
+                product.save(
+                    update_fields=["show_in_special_offer", "updated_at"]
+                )
+                cleared = product.variants.filter(
+                    discounted_price__isnull=False,
+                ).update(discounted_price=None)
+                if cleared:
+                    messages.info(
+                        request,
+                        "محصول از پیشنهاد ویژه خارج شد و قیمت تخفیف‌خورده "
+                        "واریانت‌ها به قیمت اصلی برگشت.",
+                    )
             return
 
         if product.has_active_discount():
@@ -424,12 +442,12 @@ class VariantAttributeAdmin(admin.ModelAdmin):
 
 
 @admin.register(DiscountCampaign)
-class DiscountCampaignAdmin(admin.ModelAdmin):
+class DiscountCampaignAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
     list_display = (
         "id",
         "title",
-        "starts_at",
-        "ends_at",
+        "starts_at_fa",
+        "ends_at_fa",
         "is_active",
         "status",
     )
@@ -443,8 +461,8 @@ class DiscountCampaignAdmin(admin.ModelAdmin):
     )
 
     readonly_fields = (
-        "created_at",
-        "updated_at",
+        "created_at_fa",
+        "updated_at_fa",
         "status",
     )
 
@@ -463,13 +481,14 @@ class DiscountCampaignAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "زمان‌بندی",
+            "زمان‌بندی (شمسی)",
             {
                 "fields": (
                     "starts_at",
                     "ends_at",
                 ),
                 "description": (
+                    "تاریخ را از تقویم شمسی انتخاب کنید. "
                     "با رسیدن به زمان پایان، تخفیف محصولات عضو "
                     "پیشنهاد ویژه به‌صورت خودکار برداشته می‌شود."
                 ),
@@ -487,14 +506,30 @@ class DiscountCampaignAdmin(admin.ModelAdmin):
             "اطلاعات سیستم",
             {
                 "fields": (
-                    "created_at",
-                    "updated_at",
+                    "created_at_fa",
+                    "updated_at_fa",
                 )
             },
         ),
     )
     list_per_page = 15
     list_display_links = ("title",)
+
+    @admin.display(description="شروع (شمسی)", ordering="starts_at")
+    def starts_at_fa(self, obj):
+        return get_persian_jalali_from_datetime(obj.starts_at)
+
+    @admin.display(description="پایان (شمسی)", ordering="ends_at")
+    def ends_at_fa(self, obj):
+        return get_persian_jalali_from_datetime(obj.ends_at)
+
+    @admin.display(description="ایجاد (شمسی)")
+    def created_at_fa(self, obj):
+        return get_persian_jalali_from_datetime(obj.created_at)
+
+    @admin.display(description="آخرین ویرایش (شمسی)")
+    def updated_at_fa(self, obj):
+        return get_persian_jalali_from_datetime(obj.updated_at)
 
     @admin.display(description="وضعیت")
     def status(self, obj):
@@ -508,6 +543,26 @@ class DiscountCampaignAdmin(admin.ModelAdmin):
             return "فعال"
 
         return "غیرفعال"
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
+        from django.utils import timezone
+
+        from apps.products.services.discount_campaign import (
+            end_discount_campaign,
+        )
+
+        # If end time is already past (or just set to past), clear discounts now
+        # so we do not wait only on Celery.
+        if obj.pk and obj.ends_at and obj.ends_at <= timezone.now():
+            ended = end_discount_campaign(campaign_id=obj.pk)
+            if ended:
+                messages.success(
+                    request,
+                    "زمان کمپین گذشته بود؛ تخفیف محصولات عضو پیشنهاد ویژه "
+                    "برداشته شد و قیمت‌ها به حالت اصلی برگشت.",
+                )
 
     def has_add_permission(self, request):
         return not DiscountCampaign.objects.exists()

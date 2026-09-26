@@ -8,6 +8,8 @@ from apps.products.models import (
     ProductImage,
     ProductVariant,
 )
+from apps.shared.cache.list_cache import bump_cache_version
+from apps.shared.cache import namespaces as ns
 
 
 def get_running_campaign() -> DiscountCampaign | None:
@@ -106,10 +108,23 @@ def campaign_member_products_queryset() -> QuerySet[Product]:
     )
 
 
+def _bump_catalog_caches() -> None:
+    """QuerySet.update() skips post_save; bump caches explicitly."""
+    for namespace in (
+        ns.PRODUCTS_LIST,
+        ns.PRODUCTS_DETAIL,
+        ns.PRODUCTS_SPECIAL,
+        ns.PRODUCTS_CONSULTATION,
+        ns.PRODUCTS_FILTERS_META,
+    ):
+        bump_cache_version(namespace)
+
+
 @transaction.atomic
 def clear_special_offer_discounts() -> int:
     """
     Remove sale prices and special-offer flags from campaign members.
+    Restores each variant to its base ``price``.
     Returns the number of products cleared.
     """
 
@@ -129,6 +144,7 @@ def clear_special_offer_discounts() -> int:
     ).update(discounted_price=None)
 
     updated = products.update(show_in_special_offer=False)
+    _bump_catalog_caches()
     return updated
 
 
@@ -159,6 +175,9 @@ def end_discount_campaign(*, campaign_id: int) -> bool:
     if campaign.is_active:
         campaign.is_active = False
         campaign.save(update_fields=["is_active", "updated_at"])
+    else:
+        # Campaign already inactive — still bump so stale sale prices leave CDN/cache.
+        _bump_catalog_caches()
 
     return True
 

@@ -16,28 +16,31 @@ class SmsSettingsAdmin(admin.ModelAdmin):
                 "classes": ("gisoo-sms-fieldset",),
                 "description": mark_safe(
                     '<p class="gisoo-sms-lead">'
-                    "با این تیک‌ها مشخص کنید کدام رویدادها پیامک بفرستند. "
-                    "پیش‌فرض همه فعال‌اند. سوئیچ کلی <code>SMS_ENABLED</code> در سرور "
-                    "هنوز باید روشن باشد."
+                    "همهٔ این پیامک‌ها فقط برای مشتری است. "
+                    "کارفرما فقط اعلان داخل پنل می‌گیرد. "
+                    "سوئیچ کلی <code>SMS_ENABLED</code> در سرور باید روشن باشد."
                     "</p>"
                 ),
                 "fields": (
                     "sms_order_created",
                     "sms_payment_success",
                     "sms_payment_reminder",
+                    "sms_payment_rejected",
+                    "sms_order_preparing",
                     "sms_order_shipped",
                     "sms_order_cancelled",
+                    "sms_order_expired",
                     "sms_delivery_confirm",
                 ),
             },
         ),
         (
-            "پیامک‌های مشاوره و محتوا",
+            "پیامک‌های مشاوره (مشتری)",
             {
                 "classes": ("gisoo-sms-fieldset",),
                 "fields": (
-                    "sms_new_consultation",
-                    "sms_new_comment",
+                    "sms_consultation_received",
+                    "sms_consultation_answered",
                 ),
             },
         ),

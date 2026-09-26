@@ -457,20 +457,20 @@ class ProductAttribute(BaseModel):
 class DiscountCampaign(BaseModel):
     title = models.CharField(
         max_length=255,
-        verbose_name=_("title"),
+        verbose_name="عنوان",
     )
 
     starts_at = models.DateTimeField(
-        verbose_name=_("starts_at"),
+        verbose_name="زمان شروع",
     )
 
     ends_at = models.DateTimeField(
-        verbose_name=_("ends_at"),
+        verbose_name="زمان پایان",
     )
 
     is_active = models.BooleanField(
         default=True,
-        verbose_name=_("is_active"),
+        verbose_name="فعال",
     )
 
     singleton_key = models.BooleanField(

@@ -9,6 +9,8 @@ from apps.users.serializers import (
     RequestOTPSerializer,
 )
 from apps.users.serializers.login import PhoneVerifyOTPSerializer
+from apps.users.services.otp_sms import send_otp_sms
+from core_gisoo_backend.settings.components.constants import OTP_TTL
 from rest_framework import status
 from django.utils.translation import gettext_lazy as _
 from django.core.cache import cache
@@ -175,13 +177,24 @@ class AddPhoneNumberRequestOTPAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # TODO: enable real OTP + SMS when SMS panel is available
-        otp = "123456"
+        otp, ok = send_otp_sms(
+            phone_number=phone_number,
+            user=user,
+        )
+        if not ok:
+            return Response(
+                {
+                    "detail": _(
+                        "Failed to send OTP. Please try again later."
+                    )
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         cache.set(
             f"phone:otp_{user.id}_{phone_number}",
             otp,
-            timeout=123,
+            timeout=OTP_TTL,
         )
 
         return Response(

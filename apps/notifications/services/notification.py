@@ -153,38 +153,6 @@ class NotificationService:
         )
 
     @classmethod
-    def send_new_consultation(
-        cls,
-        *,
-        user,
-        recipient,
-        consultation_id,
-    ):
-        return cls._send_via_pattern(
-            user=user,
-            notification_type=NotificationType.NEW_CONSULTATION,
-            recipient=recipient,
-            pattern_key="new_consultation",
-            data={"consultation_id": str(consultation_id)},
-        )
-
-    @classmethod
-    def send_new_comment(
-        cls,
-        *,
-        user,
-        recipient,
-        product_id,
-    ):
-        return cls._send_via_pattern(
-            user=user,
-            notification_type=NotificationType.NEW_COMMENT,
-            recipient=recipient,
-            pattern_key="new_comment",
-            data={"product_id": str(product_id)},
-        )
-
-    @classmethod
     def send_order_shipped(
         cls,
         *,
@@ -253,5 +221,93 @@ class NotificationService:
             recipient=recipient,
             pattern_key="delivery_confirm",
             data={"order_id": str(order_id)},
+            idempotency_key=idempotency_key,
+        )
+
+    @classmethod
+    def send_consultation_answered(
+        cls,
+        *,
+        user,
+        recipient,
+        consultation_id,
+        idempotency_key=None,
+    ):
+        return cls._send_via_pattern(
+            user=user,
+            notification_type=NotificationType.CONSULTATION_ANSWERED,
+            recipient=recipient,
+            pattern_key="consultation_answered",
+            data={"consultation_id": str(consultation_id)},
+            idempotency_key=idempotency_key,
+        )
+
+    @classmethod
+    def send_order_preparing(
+        cls,
+        *,
+        user,
+        recipient,
+        order_id,
+    ):
+        return cls._send_via_pattern(
+            user=user,
+            notification_type=NotificationType.ORDER_PREPARING,
+            recipient=recipient,
+            pattern_key="order_preparing",
+            data={"order_id": str(order_id)},
+        )
+
+    @classmethod
+    def send_order_expired(
+        cls,
+        *,
+        user,
+        recipient,
+        order_id,
+        idempotency_key=None,
+    ):
+        return cls._send_via_pattern(
+            user=user,
+            notification_type=NotificationType.ORDER_EXPIRED,
+            recipient=recipient,
+            pattern_key="order_expired",
+            data={"order_id": str(order_id)},
+            idempotency_key=idempotency_key,
+        )
+
+    @classmethod
+    def send_payment_rejected(
+        cls,
+        *,
+        user,
+        recipient,
+        order_id,
+        idempotency_key=None,
+    ):
+        return cls._send_via_pattern(
+            user=user,
+            notification_type=NotificationType.PAYMENT_REJECTED,
+            recipient=recipient,
+            pattern_key="payment_rejected",
+            data={"order_id": str(order_id)},
+            idempotency_key=idempotency_key,
+        )
+
+    @classmethod
+    def send_consultation_received(
+        cls,
+        *,
+        user,
+        recipient,
+        consultation_id,
+        idempotency_key=None,
+    ):
+        return cls._send_via_pattern(
+            user=user,
+            notification_type=NotificationType.CONSULTATION_RECEIVED,
+            recipient=recipient,
+            pattern_key="consultation_received",
+            data={"consultation_id": str(consultation_id)},
             idempotency_key=idempotency_key,
         )

@@ -41,16 +41,6 @@ class Command(BaseCommand):
             default="",
             dest="minutes_left",
         )
-        parser.add_argument(
-            "--consultation-id",
-            default="",
-            dest="consultation_id",
-        )
-        parser.add_argument(
-            "--product-id",
-            default="",
-            dest="product_id",
-        )
 
     def handle(self, *args, **options):
         pattern = options["pattern"]
@@ -65,8 +55,6 @@ class Command(BaseCommand):
             "order_id": options["order_id"],
             "amount": options["amount"],
             "minutes_left": options["minutes_left"],
-            "consultation_id": options["consultation_id"],
-            "product_id": options["product_id"],
         }
         # Drop empty keys so build_vars can report missing ones clearly.
         data = {k: v for k, v in data.items() if str(v).strip()}

@@ -95,24 +95,6 @@ SMS_PATTERN_PAYMENT_REMINDER_BODY_ID = _as_int(
 )
 SMS_PATTERN_PAYMENT_REMINDER = SMS_PATTERN_PAYMENT_REMINDER_BODY_ID
 
-SMS_PATTERN_NEW_CONSULTATION_BODY_ID = _as_int(
-    _first(
-        config("SMS_PATTERN_NEW_CONSULTATION_BODY_ID", default=""),
-        config("SMS_PATTERN_NEW_CONSULTATION", default=""),
-        default="0",
-    )
-)
-SMS_PATTERN_NEW_CONSULTATION = SMS_PATTERN_NEW_CONSULTATION_BODY_ID
-
-SMS_PATTERN_NEW_COMMENT_BODY_ID = _as_int(
-    _first(
-        config("SMS_PATTERN_NEW_COMMENT_BODY_ID", default=""),
-        config("SMS_PATTERN_NEW_COMMENT", default=""),
-        default="0",
-    )
-)
-SMS_PATTERN_NEW_COMMENT = SMS_PATTERN_NEW_COMMENT_BODY_ID
-
 SMS_PATTERN_ORDER_SHIPPED_BODY_ID = _as_int(
     _first(
         config("SMS_PATTERN_ORDER_SHIPPED_BODY_ID", default=""),
@@ -139,6 +121,51 @@ SMS_PATTERN_DELIVERY_CONFIRM_BODY_ID = _as_int(
     )
 )
 SMS_PATTERN_DELIVERY_CONFIRM = SMS_PATTERN_DELIVERY_CONFIRM_BODY_ID
+
+SMS_PATTERN_CONSULTATION_ANSWERED_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_CONSULTATION_ANSWERED_BODY_ID", default=""),
+        config("SMS_PATTERN_CONSULTATION_ANSWERED", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_CONSULTATION_ANSWERED = SMS_PATTERN_CONSULTATION_ANSWERED_BODY_ID
+
+SMS_PATTERN_ORDER_PREPARING_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_ORDER_PREPARING_BODY_ID", default=""),
+        config("SMS_PATTERN_ORDER_PREPARING", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_ORDER_PREPARING = SMS_PATTERN_ORDER_PREPARING_BODY_ID
+
+SMS_PATTERN_ORDER_EXPIRED_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_ORDER_EXPIRED_BODY_ID", default=""),
+        config("SMS_PATTERN_ORDER_EXPIRED", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_ORDER_EXPIRED = SMS_PATTERN_ORDER_EXPIRED_BODY_ID
+
+SMS_PATTERN_PAYMENT_REJECTED_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_PAYMENT_REJECTED_BODY_ID", default=""),
+        config("SMS_PATTERN_PAYMENT_REJECTED", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_PAYMENT_REJECTED = SMS_PATTERN_PAYMENT_REJECTED_BODY_ID
+
+SMS_PATTERN_CONSULTATION_RECEIVED_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_CONSULTATION_RECEIVED_BODY_ID", default=""),
+        config("SMS_PATTERN_CONSULTATION_RECEIVED", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_CONSULTATION_RECEIVED = SMS_PATTERN_CONSULTATION_RECEIVED_BODY_ID
 
 # When Melipayamak is live, OTP pattern text in the panel should be:
 #   سلام

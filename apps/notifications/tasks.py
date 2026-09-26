@@ -64,27 +64,94 @@ def send_payment_success_sms(user_id, recipient, order_id, amount):
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_backoff_max=60,
-    retry_kwargs={
-        "max_retries": 3,
-    },
+    retry_kwargs={"max_retries": 3},
 )
-def send_new_consultation_sms(
-        user_id,
-        recipient,
-        consultation_id,
-):
-    from django.contrib.auth import get_user_model
-
+def send_order_shipped_sms(user_id, recipient, order_id):
     User = get_user_model()
-
-    user = User.objects.get(
-        id=user_id
+    user = User.objects.get(id=user_id)
+    notification = NotificationService.send_order_shipped(
+        user=user,
+        recipient=recipient,
+        order_id=order_id,
     )
+    return notification.id
 
-    return NotificationService.send_new_consultation(
+
+@shared_task(
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_kwargs={"max_retries": 3},
+)
+def send_order_cancelled_sms(user_id, recipient, order_id):
+    User = get_user_model()
+    user = User.objects.get(id=user_id)
+    notification = NotificationService.send_order_cancelled(
+        user=user,
+        recipient=recipient,
+        order_id=order_id,
+    )
+    return notification.id
+
+
+@shared_task(
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_kwargs={"max_retries": 3},
+)
+def send_consultation_answered_sms(
+    user_id,
+    recipient,
+    consultation_id,
+):
+    User = get_user_model()
+    user = None
+    if user_id:
+        user = User.objects.filter(id=user_id).first()
+
+    notification = NotificationService.send_consultation_answered(
         user=user,
         recipient=recipient,
         consultation_id=consultation_id,
+        idempotency_key=f"consultation_answered:{consultation_id}",
+    )
+    return notification.id
+
+
+def _order_status_sms_task(
+    *,
+    user_id,
+    recipient,
+    order_id,
+    send_fn,
+    idempotency_key=None,
+):
+    User = get_user_model()
+    user = User.objects.get(id=user_id)
+    kwargs = {
+        "user": user,
+        "recipient": recipient,
+        "order_id": order_id,
+    }
+    if idempotency_key is not None:
+        kwargs["idempotency_key"] = idempotency_key
+    notification = send_fn(**kwargs)
+    return notification.id
+
+
+@shared_task(
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_kwargs={"max_retries": 3},
+)
+def send_order_preparing_sms(user_id, recipient, order_id):
+    return _order_status_sms_task(
+        user_id=user_id,
+        recipient=recipient,
+        order_id=order_id,
+        send_fn=NotificationService.send_order_preparing,
     )
 
 
@@ -92,28 +159,57 @@ def send_new_consultation_sms(
     autoretry_for=(Exception,),
     retry_backoff=True,
     retry_backoff_max=60,
-    retry_kwargs={
-        "max_retries": 3,
-    },
+    retry_kwargs={"max_retries": 3},
 )
-def send_new_comment_sms(
-        user_id,
-        recipient,
-        product_id,
-):
-    from django.contrib.auth import get_user_model
-
-    User = get_user_model()
-
-    user = User.objects.get(
-        id=user_id
+def send_order_expired_sms(user_id, recipient, order_id):
+    return _order_status_sms_task(
+        user_id=user_id,
+        recipient=recipient,
+        order_id=order_id,
+        send_fn=NotificationService.send_order_expired,
+        idempotency_key=f"order_expired:{order_id}",
     )
 
-    return NotificationService.send_new_comment(
+
+@shared_task(
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_kwargs={"max_retries": 3},
+)
+def send_payment_rejected_sms(user_id, recipient, order_id):
+    return _order_status_sms_task(
+        user_id=user_id,
+        recipient=recipient,
+        order_id=order_id,
+        send_fn=NotificationService.send_payment_rejected,
+        idempotency_key=f"payment_rejected:{order_id}",
+    )
+
+
+@shared_task(
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=60,
+    retry_kwargs={"max_retries": 3},
+)
+def send_consultation_received_sms(
+    user_id,
+    recipient,
+    consultation_id,
+):
+    User = get_user_model()
+    user = None
+    if user_id:
+        user = User.objects.filter(id=user_id).first()
+
+    notification = NotificationService.send_consultation_received(
         user=user,
         recipient=recipient,
-        product_id=product_id,
+        consultation_id=consultation_id,
+        idempotency_key=f"consultation_received:{consultation_id}",
     )
+    return notification.id
 
 
 @shared_task
