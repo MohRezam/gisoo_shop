@@ -232,7 +232,7 @@ def create_order(
         send_order_created_sms.delay(
             user_id=user_id,
             recipient=phone,
-            order_id=order_id,
+            order_id=public_number or order_id,
             amount=amount,
         )
         try:

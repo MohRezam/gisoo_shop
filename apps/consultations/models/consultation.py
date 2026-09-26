@@ -212,6 +212,32 @@ class ConsultationRequest(models.Model):
             ),
         ]
 
+    def has_recommendation_answer(self) -> bool:
+        """True when at least one product or one non-empty pack exists."""
+        if not self.pk:
+            return False
+        if self.recommendations.exists():
+            return True
+        return self.recommendation_packs.filter(
+            items__isnull=False,
+        ).exists()
+
+    def clean(self):
+        super().clean()
+        if (
+            self.status == self.Status.COMPLETED
+            and self.pk
+            and not self.has_recommendation_answer()
+        ):
+            raise ValidationError(
+                {
+                    "status": _(
+                        "برای تکمیل‌شده کردن درخواست، حداقل یک پیشنهاد "
+                        "محصول یا یک گروه محصول با حداقل یک محصول لازم است."
+                    ),
+                }
+            )
+
     def __str__(self):
         return f"{self.full_name} - {self.phone_number}"
 

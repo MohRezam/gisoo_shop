@@ -73,7 +73,7 @@ def _notify_user_when_consultation_answered(sender, instance, created, **kwargs)
                     "می‌توانید نتیجه را در حساب کاربری ببینید."
                 ),
                 type=InAppNotificationType.SYSTEM,
-                link=f"/account/consultations/{consultation_id}",
+                link=f"/account?section=consult&consult={consultation_id}",
             )
 
     transaction.on_commit(_notify)

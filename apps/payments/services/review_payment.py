@@ -178,7 +178,7 @@ def approve_payment(
         lambda: send_payment_success_sms.delay(
             user_id=user_id,
             recipient=phone,
-            order_id=order_id,
+            order_id=order_label,
             amount=amount,
         )
     )
