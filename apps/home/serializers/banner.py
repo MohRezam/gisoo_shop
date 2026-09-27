@@ -53,7 +53,4 @@ class SliderSerializer(serializers.ModelSerializer):
                 return None
             return f"/categories/{obj.category.slug}/"
 
-        if obj.link_type == obj.LinkType.CUSTOM:
-            return obj.custom_url
-
         return None

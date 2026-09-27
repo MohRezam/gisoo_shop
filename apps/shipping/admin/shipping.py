@@ -43,6 +43,26 @@ class ShippingMethodAdmin(
     exclude = ("creator", "archived")
     list_per_page = 15
     list_display_links = ("title",)
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "title",
+                    "carrier",
+                    "price",
+                    "free_shipping_minimum",
+                    "estimated_days_min",
+                    "estimated_days",
+                    "is_active",
+                ),
+                "description": (
+                    "حامل مشخص می‌کند سفارش با پست، تیپاکس یا پیک ارسال می‌شود. "
+                    "برای روش «پیک» گزینهٔ پیک را انتخاب کنید."
+                ),
+            },
+        ),
+    )
 
 
 @admin.register(Shipment)

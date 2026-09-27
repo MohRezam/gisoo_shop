@@ -1,5 +1,7 @@
 from django.contrib import admin, messages
+from django.core.exceptions import ValidationError
 from jalali_date.admin import ModelAdminJalaliMixin
+from nested_admin.formsets import NestedInlineFormSet
 
 from apps.products.admin import BundleInline
 from apps.products.models import (
@@ -16,10 +18,59 @@ from utils.helpers.jalali_helper import get_persian_jalali_from_datetime
 import nested_admin
 
 
+class ProductImageInlineFormSet(NestedInlineFormSet):
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+
+        primary_count = 0
+        image_count = 0
+
+        for form in self.forms:
+            if not hasattr(form, "cleaned_data") or not form.cleaned_data:
+                continue
+            if self.can_delete and form.cleaned_data.get("DELETE"):
+                continue
+
+            image = form.cleaned_data.get("image")
+            has_image = bool(image)
+            if (
+                not has_image
+                and form.instance.pk
+                and getattr(form.instance, "image", None)
+            ):
+                has_image = True
+
+            if not has_image and not form.instance.pk:
+                continue
+
+            if has_image:
+                image_count += 1
+
+            if form.cleaned_data.get("is_primary"):
+                primary_count += 1
+
+        if image_count == 0:
+            return
+
+        if primary_count == 0:
+            raise ValidationError(
+                "دقیقاً یک تصویر باید به‌عنوان تصویر اصلی انتخاب شود."
+            )
+        if primary_count > 1:
+            raise ValidationError(
+                "بیش از یک تصویر اصلی مجاز نیست؛ دقیقاً یک تصویر را اصلی کنید."
+            )
+
+
 class ProductImageInline(nested_admin.NestedTabularInline):
     model = ProductImage
+    formset = ProductImageInlineFormSet
     extra = 0
     exclude = ("creator", "archived")
+    verbose_name = "تصویر"
+    verbose_name_plural = "تصاویر محصول (دقیقاً یک تصویر اصلی)"
 
 
 class ProductAttributeInline(nested_admin.NestedTabularInline):

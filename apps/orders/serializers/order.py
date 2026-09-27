@@ -282,18 +282,12 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             OrderStatus.DELIVERED,
         ):
             return None
-        from apps.shipping.models import (
-            CARRIER_TRACKING_URLS,
-            ShippingCarrier,
-        )
+        from apps.shipping.models import CARRIER_TRACKING_URLS
 
         carrier = self.get_carrier(obj)
         if not carrier:
             return None
-        return CARRIER_TRACKING_URLS.get(
-            carrier,
-            CARRIER_TRACKING_URLS[ShippingCarrier.POST],
-        )
+        return CARRIER_TRACKING_URLS.get(carrier) or None
 
     def get_payment_intent(self, obj):
         if obj.status in (

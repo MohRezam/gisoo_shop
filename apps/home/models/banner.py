@@ -99,6 +99,7 @@ class Slider(BaseModel):
     class LinkType(models.TextChoices):
         PRODUCT = "product", "محصول"
         CATEGORY = "category", "دسته‌بندی"
+        NONE = "none", "بدون لینک"
 
     image = models.ImageField(
         upload_to=slider_image_path(),
@@ -108,7 +109,9 @@ class Slider(BaseModel):
     link_type = models.CharField(
         max_length=20,
         choices=LinkType.choices,
+        default=LinkType.NONE,
         verbose_name="نوع لینک",
+        help_text="اگر اسلایدر فقط نمایشی است، «بدون لینک» را انتخاب کنید.",
     )
 
     product = models.ForeignKey(

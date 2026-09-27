@@ -139,16 +139,6 @@ def change_order_status(
             )
 
     if new_status == OrderStatus.SHIPPED:
-        tracking = (order.tracking_code or "").strip()
-        if not tracking:
-            raise ValidationError(
-                _(
-                    "کد رهگیری قبل از علامت‌گذاری به‌عنوان "
-                    "ارسال‌شده الزامی است."
-                )
-            )
-        order.tracking_code = tracking
-
         carrier = (order.carrier or "").strip()
         if not carrier:
             method = order.shipping_method
@@ -156,14 +146,26 @@ def change_order_status(
         if carrier not in {
             ShippingCarrier.POST,
             ShippingCarrier.TIPAX,
+            ShippingCarrier.COURIER,
         }:
             raise ValidationError(
                 _(
-                    "حامل ارسال (پست یا تیپاکس) قبل از "
+                    "حامل ارسال (پست، تیپاکس یا پیک) قبل از "
                     "علامت‌گذاری به‌عنوان ارسال‌شده الزامی است."
                 )
             )
         order.carrier = carrier
+
+        tracking = (order.tracking_code or "").strip()
+        # پیک معمولاً کد رهگیری آنلاین ندارد.
+        if carrier != ShippingCarrier.COURIER and not tracking:
+            raise ValidationError(
+                _(
+                    "کد رهگیری قبل از علامت‌گذاری به‌عنوان "
+                    "ارسال‌شده الزامی است."
+                )
+            )
+        order.tracking_code = tracking
 
     update_fields = [
         "status",

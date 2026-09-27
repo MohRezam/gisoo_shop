@@ -14,16 +14,22 @@ class ShippingCarrier(models.TextChoices):
         "tipax",
         "تیپاکس",
     )
+    COURIER = (
+        "courier",
+        "پیک",
+    )
 
 
 CARRIER_TRACKING_URLS = {
     ShippingCarrier.POST: "https://tracking.post.ir/",
     ShippingCarrier.TIPAX: "https://tipaxco.com/tracking",
+    # پیک رهگیری آنلاین ندارد
 }
 
 CARRIER_SHIPPED_LABELS = {
     ShippingCarrier.POST: "ارسال با پست",
     ShippingCarrier.TIPAX: "ارسال با تیپاکس",
+    ShippingCarrier.COURIER: "ارسال با پیک",
 }
 
 
@@ -39,6 +45,10 @@ class ShippingMethod(BaseModel):
         choices=ShippingCarrier.choices,
         default=ShippingCarrier.POST,
         verbose_name="حامل",
+        help_text=(
+            "پست و تیپاکس برای رهگیری آنلاین؛ "
+            "پیک برای ارسال محلی/موتوری بدون لینک رهگیری."
+        ),
     )
 
     price = models.PositiveBigIntegerField(
@@ -81,10 +91,7 @@ class ShippingMethod(BaseModel):
 
     @property
     def tracking_url(self) -> str:
-        return CARRIER_TRACKING_URLS.get(
-            self.carrier,
-            CARRIER_TRACKING_URLS[ShippingCarrier.POST],
-        )
+        return CARRIER_TRACKING_URLS.get(self.carrier, "")
 
 
 class ShipmentStatus(models.TextChoices):

@@ -190,7 +190,8 @@ class ProductImage(BaseModel):
     )
     is_primary = models.BooleanField(
         default=False,
-        verbose_name=_("Primary image"),
+        verbose_name="تصویر اصلی",
+        help_text="دقیقاً یک تصویر از هر محصول باید اصلی باشد.",
     )
     alt_text = models.CharField(
         max_length=255,
@@ -237,7 +238,7 @@ class ProductImage(BaseModel):
 
         if exists:
             raise ValidationError(
-                _("This product already has a primary image.")
+                "بیش از یک تصویر اصلی مجاز نیست؛ دقیقاً یک تصویر را اصلی کنید."
             )
 
 

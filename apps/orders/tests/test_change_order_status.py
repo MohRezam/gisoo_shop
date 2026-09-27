@@ -175,6 +175,25 @@ class ChangeOrderStatusTests(TestCase):
                 new_status=OrderStatus.SHIPPED,
             )
 
+    def test_courier_ship_without_tracking_code(self):
+        self.shipping.carrier = "courier"
+        self.shipping.save(update_fields=["carrier"])
+        self.order.carrier = "courier"
+        self.order.save(update_fields=["carrier", "updated_at"])
+
+        self._mark_order_paid()
+        change_order_status(
+            order=self.order,
+            new_status=OrderStatus.PREPARING,
+        )
+        order = change_order_status(
+            order=self.order,
+            new_status=OrderStatus.SHIPPED,
+        )
+        order.refresh_from_db()
+        self.assertEqual(order.carrier, "courier")
+        self.assertEqual(order.tracking_code, "")
+
     def test_set_delivered_at(self):
         self._prepare_for_ship()
 

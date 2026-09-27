@@ -63,3 +63,22 @@ class SliderAdmin(admin.ModelAdmin):
     raw_id_fields = ("product", "category")
     list_per_page = 15
     list_display_links = ("link_type",)
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "image",
+                    "link_type",
+                    "product",
+                    "category",
+                    "display_order",
+                    "is_active",
+                ),
+                "description": (
+                    "برای اسلایدر بدون لینک، نوع لینک را «بدون لینک» بگذارید "
+                    "و محصول/دسته را خالی بگذارید."
+                ),
+            },
+        ),
+    )
