@@ -147,6 +147,27 @@ class ProductAdmin(
         "recommended_order",
     )
 
+    def changelist_view(self, request, extra_context=None):
+        from apps.products.services.discount_campaign import (
+            ensure_expired_campaigns_cleared,
+        )
+
+        ensure_expired_campaigns_cleared()
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        from apps.products.services.discount_campaign import (
+            ensure_expired_campaigns_cleared,
+        )
+
+        ensure_expired_campaigns_cleared()
+        return super().change_view(
+            request,
+            object_id,
+            form_url=form_url,
+            extra_context=extra_context,
+        )
+
     fieldsets = (
         (
             "اطلاعات اصلی",
@@ -543,6 +564,27 @@ class DiscountCampaignAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
             return "فعال"
 
         return "غیرفعال"
+
+    def changelist_view(self, request, extra_context=None):
+        from apps.products.services.discount_campaign import (
+            ensure_expired_campaigns_cleared,
+        )
+
+        ensure_expired_campaigns_cleared()
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        from apps.products.services.discount_campaign import (
+            ensure_expired_campaigns_cleared,
+        )
+
+        ensure_expired_campaigns_cleared()
+        return super().change_view(
+            request,
+            object_id,
+            form_url=form_url,
+            extra_context=extra_context,
+        )
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

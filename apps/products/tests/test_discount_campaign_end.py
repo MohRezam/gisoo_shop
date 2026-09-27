@@ -1,12 +1,14 @@
 from datetime import timedelta
 
+from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
-from django.core.management import call_command
-
 from apps.products.models import DiscountCampaign
-from apps.products.services.discount_campaign import end_discount_campaign
+from apps.products.services.discount_campaign import (
+    end_discount_campaign,
+    ensure_expired_campaigns_cleared,
+)
 from apps.products.tasks import sweep_expired_discount_campaigns
 from apps.products.tests.factories import (
     create_brand,
@@ -90,3 +92,13 @@ class DiscountCampaignEndTests(TestCase):
 
         self.variant.refresh_from_db()
         self.assertIsNone(self.variant.discounted_price)
+
+    def test_lazy_ensure_clears_without_celery(self):
+        """Storefront path: first request after ends_at must clear sales."""
+        ended = ensure_expired_campaigns_cleared()
+        self.assertEqual(ended, 1)
+
+        self.variant.refresh_from_db()
+        self.product.refresh_from_db()
+        self.assertIsNone(self.variant.discounted_price)
+        self.assertFalse(self.product.show_in_special_offer)

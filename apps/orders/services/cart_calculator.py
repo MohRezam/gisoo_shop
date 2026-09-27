@@ -36,6 +36,12 @@ def calculate_cart(
         }
     """
 
+    from apps.products.services.discount_campaign import (
+        ensure_expired_campaigns_cleared,
+    )
+
+    ensure_expired_campaigns_cleared()
+
     products_total = 0
     total_volume = 0
 

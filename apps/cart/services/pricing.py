@@ -9,6 +9,17 @@ def get_variant_prices(variant):
     Return original and current prices for a product variant.
     """
 
+    from apps.products.services.discount_campaign import (
+        ensure_expired_campaigns_cleared,
+    )
+
+    # Drop campaign sale prices if the campaign clock already passed.
+    ensure_expired_campaigns_cleared()
+    if getattr(variant, "pk", None):
+        variant.refresh_from_db(
+            fields=["price", "discounted_price"],
+        )
+
     original_price = variant.price
 
     current_price = (

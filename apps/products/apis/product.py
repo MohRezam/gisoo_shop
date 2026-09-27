@@ -211,6 +211,15 @@ class ProductListAPIView(CachedListMixin, ListAPIView):
         "-created_at",
     ]
 
+    def list(self, request, *args, **kwargs):
+        from apps.products.services.discount_campaign import (
+            ensure_expired_campaigns_cleared,
+        )
+
+        # Before cache lookup so bump invalidates stale sale prices.
+        ensure_expired_campaigns_cleared()
+        return super().list(request, *args, **kwargs)
+
     def get_queryset(self):
         qs = _base_product_list_queryset()
         ordering = self.request.query_params.get("ordering") or ""
@@ -242,6 +251,14 @@ class ProductDetailAPIView(CachedRetrieveMixin, RetrieveAPIView):
     cache_ttl = 60 * 10
     cache_lookup_kwarg = "slug"
     lookup_field = "slug"
+
+    def retrieve(self, request, *args, **kwargs):
+        from apps.products.services.discount_campaign import (
+            ensure_expired_campaigns_cleared,
+        )
+
+        ensure_expired_campaigns_cleared()
+        return super().retrieve(request, *args, **kwargs)
 
     queryset = (
         Product.objects
@@ -505,6 +522,14 @@ class SpecialOfferProductListAPIView(CachedListMixin, ListAPIView):
     pagination_class = StandardResultPagination
     cache_namespace = ns.PRODUCTS_SPECIAL
     cache_ttl = 60 * 5
+
+    def list(self, request, *args, **kwargs):
+        from apps.products.services.discount_campaign import (
+            ensure_expired_campaigns_cleared,
+        )
+
+        ensure_expired_campaigns_cleared()
+        return super().list(request, *args, **kwargs)
 
     def get_queryset(self):
         from apps.products.services.discount_campaign import (
