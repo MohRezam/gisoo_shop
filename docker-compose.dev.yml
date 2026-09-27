@@ -64,6 +64,30 @@ services:
       redis:
         condition: service_healthy
 
+  celery-beat:
+    build: .
+
+    container_name: gisoo_shop_celery_beat
+
+    restart: always
+
+    command: >
+      celery -A core_gisoo_backend beat -l info
+      --scheduler django_celery_beat.schedulers:DatabaseScheduler
+
+    env_file:
+      - .env
+
+    environment:
+      SKIP_ENTRYPOINT_SETUP: "1"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+      redis:
+        condition: service_healthy
+
   nginx:
     image: nginx:alpine
 

@@ -37,6 +37,12 @@ python manage.py migrate --noinput
 # --verbosity 0: table already exists is normal on redeploy; do not spam logs.
 python manage.py createcachetable --verbosity 0
 
+# DatabaseScheduler does not load in-code beat_schedule; sync PeriodicTask rows.
+python manage.py sync_celery_beat
+
+# Clear sale prices for campaigns whose ends_at already passed (in case beat lagged).
+python manage.py clear_expired_discount_campaigns
+
 python manage.py collectstatic --noinput
 
 exec "$@"

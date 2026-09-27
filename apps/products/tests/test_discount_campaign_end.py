@@ -3,8 +3,11 @@ from datetime import timedelta
 from django.test import TestCase
 from django.utils import timezone
 
+from django.core.management import call_command
+
 from apps.products.models import DiscountCampaign
 from apps.products.services.discount_campaign import end_discount_campaign
+from apps.products.tasks import sweep_expired_discount_campaigns
 from apps.products.tests.factories import (
     create_brand,
     create_category,
@@ -69,3 +72,21 @@ class DiscountCampaignEndTests(TestCase):
 
         self.variant.refresh_from_db()
         self.assertEqual(self.variant.discounted_price, 70_000)
+
+    def test_sweep_expired_clears_discount(self):
+        ended = sweep_expired_discount_campaigns()
+        self.assertEqual(ended, 1)
+
+        self.variant.refresh_from_db()
+        self.product.refresh_from_db()
+        self.campaign.refresh_from_db()
+
+        self.assertIsNone(self.variant.discounted_price)
+        self.assertFalse(self.product.show_in_special_offer)
+        self.assertFalse(self.campaign.is_active)
+
+    def test_management_command_clears_expired(self):
+        call_command("clear_expired_discount_campaigns")
+
+        self.variant.refresh_from_db()
+        self.assertIsNone(self.variant.discounted_price)
