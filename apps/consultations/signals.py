@@ -7,13 +7,18 @@ from apps.shared.cache import namespaces as ns
 
 
 def register_consultation_cache_signals():
-    from apps.consultations.models import ConsultationFAQ
+    from apps.consultations.models import ConsultationFAQ, ConsultationPageBlock
 
     def bump_faq_cache(**_kwargs):
         bump_cache_version(ns.CONSULTATIONS_FAQ)
 
+    def bump_page_cache(**_kwargs):
+        bump_cache_version(ns.CONSULTATIONS_PAGE)
+
     post_save.connect(bump_faq_cache, sender=ConsultationFAQ, weak=False)
     post_delete.connect(bump_faq_cache, sender=ConsultationFAQ, weak=False)
+    post_save.connect(bump_page_cache, sender=ConsultationPageBlock, weak=False)
+    post_delete.connect(bump_page_cache, sender=ConsultationPageBlock, weak=False)
 
 
 @receiver(pre_save, sender="consultations.ConsultationRequest")

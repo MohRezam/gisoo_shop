@@ -39,6 +39,7 @@ class SliderAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "link_type",
+        "custom_url",
         "display_order",
         "is_active",
         "created_at",
@@ -72,12 +73,14 @@ class SliderAdmin(admin.ModelAdmin):
                     "link_type",
                     "product",
                     "category",
+                    "custom_url",
                     "display_order",
                     "is_active",
                 ),
                 "description": (
-                    "برای اسلایدر بدون لینک، نوع لینک را «بدون لینک» بگذارید "
-                    "و محصول/دسته را خالی بگذارید."
+                    "ابعاد پیشنهادی تصویر: ۱۹۲۰×۴۸۰ پیکسل (نسبت حدود ۴ به ۱). "
+                    "برای لینک خارجی، نوع لینک را «لینک سفارشی / خارجی» بگذارید "
+                    "و آدرس https را در «لینک سفارشی» وارد کنید."
                 ),
             },
         ),

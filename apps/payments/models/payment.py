@@ -306,35 +306,96 @@ class PaymentReview(BaseModel):
 
 
 class DestinationCard(BaseModel):
+    """
+    Shop card-to-card destination.
+
+    Only one row should exist site-wide; admin enforces that.
+    Employer edits card number, holder name, and optional bank name.
+    display_pan / masked_pan are derived automatically.
+    """
+
     name = models.CharField(
         max_length=100,
-        verbose_name=_("name"),
+        verbose_name="نام دارنده",
+        help_text="نامی که روی کارت یا در صفحه پرداخت به مشتری نشان داده می‌شود.",
     )
 
     card_number = models.CharField(
         max_length=16,
         unique=True,
-        verbose_name=_("card number"),
+        verbose_name="شماره کارت",
+        help_text="۱۶ رقم شماره کارت مقصد (بدون فاصله).",
+    )
+
+    bank_name = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        verbose_name="نام بانک",
+        help_text="اختیاری — مثلاً ملت، سامان، ملی.",
     )
 
     display_pan = models.CharField(
         max_length=32,
-        verbose_name=_("display pan"),
+        blank=True,
+        default="",
+        verbose_name="شماره کارت (نمایشی)",
     )
 
     masked_pan = models.CharField(
         max_length=32,
-        verbose_name=_("masked pan"),
+        blank=True,
+        default="",
+        verbose_name="شماره کارت (ماسک‌شده)",
     )
 
     is_active = models.BooleanField(
         default=True,
-        verbose_name=_("is active"),
+        verbose_name="فعال در فروشگاه",
+        help_text="اگر خاموش باشد، صفحه پرداخت کارت مقصد ندارد.",
     )
 
     class Meta:
         verbose_name = "کارت مقصد"
-        verbose_name_plural = "کارت‌های مقصد"
+        verbose_name_plural = "کارت مقصد"
 
     def __str__(self):
-        return self.display_pan
+        return self.display_pan or self.card_number or "کارت مقصد"
+
+    def _apply_derived_pans(self):
+        from utils.general.card_number_secure import (
+            format_display_pan,
+            normalize_card_number,
+            secure_card_number,
+        )
+
+        digits = normalize_card_number(self.card_number)
+        self.card_number = digits
+        self.display_pan = format_display_pan(digits) or digits
+        self.masked_pan = secure_card_number(digits) or ""
+        self.bank_name = (self.bank_name or "").strip()
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        from utils.general.card_number_secure import normalize_card_number
+
+        digits = normalize_card_number(self.card_number)
+        if len(digits) != 16:
+            raise ValidationError(
+                {"card_number": "شماره کارت باید دقیقاً ۱۶ رقم باشد."}
+            )
+        self._apply_derived_pans()
+
+        others = DestinationCard.objects.all()
+        if self.pk:
+            others = others.exclude(pk=self.pk)
+        if others.exists():
+            raise ValidationError(
+                "فقط یک کارت مقصد می‌تواند در سایت وجود داشته باشد. "
+                "همان کارت موجود را ویرایش کنید."
+            )
+
+    def save(self, *args, **kwargs):
+        self._apply_derived_pans()
+        super().save(*args, **kwargs)

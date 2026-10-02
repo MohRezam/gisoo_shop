@@ -14,8 +14,9 @@ from utils.paginators import StandardResultPagination
     description=(
         "Returns active About Us blocks. "
         "section=intro is used on the homepage and as the first about-page block; "
-        "section=story and section=cta are the second and third about-page blocks. "
-        "Optional filter: ?section=intro|story|cta. Cached."
+        "section=story and section=cta are the second and third about-page blocks; "
+        "section=consult_banner is the homepage consult banner above FAQs. "
+        "Optional filter: ?section=intro|story|cta|consult_banner. Cached."
     ),
     parameters=[
         OpenApiParameter(
@@ -23,7 +24,7 @@ from utils.paginators import StandardResultPagination
             type=str,
             location=OpenApiParameter.QUERY,
             required=False,
-            enum=["intro", "story", "cta"],
+            enum=["intro", "story", "cta", "consult_banner"],
             description="Filter by about section key.",
         ),
     ],
@@ -41,6 +42,6 @@ class HomeAboutAPIView(CachedListMixin, ListAPIView):
             .order_by("display_order", "-created_at")
         )
         section = self.request.query_params.get("section")
-        if section in {"intro", "story", "cta"}:
+        if section in {"intro", "story", "cta", "consult_banner"}:
             qs = qs.filter(section=section)
         return qs

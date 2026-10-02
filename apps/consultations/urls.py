@@ -7,6 +7,7 @@ from apps.consultations.apis import (
     ConsultationFAQListAPIView,
     ConsultationListAPIView,
     ConsultationOptionsAPIView,
+    ConsultationPageContentAPIView,
     ConsultationUpdateAPIView,
 )
 
@@ -22,6 +23,11 @@ urlpatterns = [
         "faqs/",
         ConsultationFAQListAPIView.as_view(),
         name="faqs",
+    ),
+    path(
+        "page-content/",
+        ConsultationPageContentAPIView.as_view(),
+        name="page-content",
     ),
     path(
         "",

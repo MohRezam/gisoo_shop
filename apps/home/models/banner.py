@@ -99,11 +99,16 @@ class Slider(BaseModel):
     class LinkType(models.TextChoices):
         PRODUCT = "product", "محصول"
         CATEGORY = "category", "دسته‌بندی"
+        CUSTOM = "custom", "لینک سفارشی / خارجی"
         NONE = "none", "بدون لینک"
 
     image = models.ImageField(
         upload_to=slider_image_path(),
         verbose_name="تصویر",
+        help_text=(
+            "ابعاد پیشنهادی: ۱۹۲۰×۴۸۰ پیکسل (نسبت حدود ۴ به ۱). "
+            "محتوای مهم را وسط تصویر بگذارید تا روی موبایل بریده نشود."
+        ),
     )
 
     link_type = models.CharField(
@@ -111,7 +116,9 @@ class Slider(BaseModel):
         choices=LinkType.choices,
         default=LinkType.NONE,
         verbose_name="نوع لینک",
-        help_text="اگر اسلایدر فقط نمایشی است، «بدون لینک» را انتخاب کنید.",
+        help_text=(
+            "محصول / دسته‌بندی / لینک سفارشی (مثلاً https://...) / بدون لینک."
+        ),
     )
 
     product = models.ForeignKey(
@@ -130,6 +137,16 @@ class Slider(BaseModel):
         blank=True,
         related_name="sliders",
         verbose_name="دسته‌بندی",
+    )
+
+    custom_url = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name="لینک سفارشی",
+        help_text=(
+            "برای لینک خارجی از https:// استفاده کنید؛ "
+            "در سایت در تب جدید باز می‌شود."
+        ),
     )
 
     display_order = models.PositiveIntegerField(
@@ -160,11 +177,19 @@ class Slider(BaseModel):
                 "category": "برای لینک دسته، انتخاب دسته‌بندی الزامی است."
             })
 
+        if self.link_type == self.LinkType.CUSTOM and not self.custom_url:
+            raise ValidationError({
+                "custom_url": "برای لینک سفارشی، آدرس الزامی است."
+            })
+
         if self.link_type != self.LinkType.PRODUCT:
             self.product = None
 
         if self.link_type != self.LinkType.CATEGORY:
             self.category = None
+
+        if self.link_type != self.LinkType.CUSTOM:
+            self.custom_url = ""
 
     def __str__(self):
         return str(self.image)

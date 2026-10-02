@@ -22,6 +22,7 @@ HOME_SATISFACTION = "home:satisfaction"
 HOME_SOCIAL_LINKS = "home:social_links"
 
 CONSULTATIONS_FAQ = "consultations:faq"
+CONSULTATIONS_PAGE = "consultations:page"
 
 PAYMENT_GUIDE_VIDEO = "payments:guide_video"
 

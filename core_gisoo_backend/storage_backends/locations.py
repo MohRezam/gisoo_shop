@@ -33,6 +33,9 @@ def slider_image_path():
 def home_about_image_path():
     return f"{BASE_MEDIA_LOCATION}/home/about-us"
 
+def consultation_page_image_path():
+    return f"{BASE_MEDIA_LOCATION}/consultations/page"
+
 def customer_satisfaction_path():
     return f"{BASE_MEDIA_LOCATION}/customer/satisfaction"
 

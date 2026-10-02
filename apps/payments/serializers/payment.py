@@ -61,10 +61,12 @@ class PaymentIntentSerializer(serializers.ModelSerializer):
         }
 
     def get_destination_card(self, obj):
+        card = obj.destination_card
         return {
-            "masked_pan": obj.destination_card.masked_pan,
-            "display_pan": obj.destination_card.display_pan,
-            "name": obj.destination_card.name,
+            "masked_pan": card.masked_pan,
+            "display_pan": card.display_pan,
+            "name": card.name,
+            "bank_name": card.bank_name or "",
         }
 
     def get_payable_amount(self, obj):

@@ -9,6 +9,7 @@ class AboutSection(models.TextChoices):
     INTRO = "intro", _("معرفی (صفحه اصلی و درباره ما)")
     STORY = "story", _("داستان شکل‌گیری")
     CTA = "cta", _("دعوت به اقدام")
+    CONSULT_BANNER = "consult_banner", _("بنر مشاوره صفحه اصلی")
 
 
 class HomeAbout(BaseModel):
@@ -19,7 +20,8 @@ class HomeAbout(BaseModel):
         verbose_name=_("section"),
         help_text=_(
             "intro = homepage + about first block; "
-            "story / cta = about page second and third blocks."
+            "story / cta = about page second and third blocks; "
+            "consult_banner = homepage consult banner above FAQs."
         ),
     )
 
