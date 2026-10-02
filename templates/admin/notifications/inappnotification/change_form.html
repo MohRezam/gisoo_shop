@@ -21,7 +21,7 @@
 
 {% block form_header %}
 <header class="gisoo-form-head gisoo-notif-head">
-  <div>
+  <div class="gisoo-form-head-main">
     <p class="gisoo-eyebrow">{% if add %}ایجاد اعلان{% else %}ویرایش اعلان{% endif %}</p>
     <h1>{% if add %}ارسال اعلان درون‌برنامه‌ای{% else %}ویرایش اعلان{% endif %}</h1>
     <p class="gisoo-dash-sub">
@@ -32,5 +32,14 @@
       {% endif %}
     </p>
   </div>
+  {% block object-tools %}
+  {% if change and not is_popup %}
+    <ul class="object-tools gisoo-form-tools">
+      {% block object-tools-items %}
+        {% change_form_object_tools %}
+      {% endblock %}
+    </ul>
+  {% endif %}
+  {% endblock %}
 </header>
 {% endblock %}

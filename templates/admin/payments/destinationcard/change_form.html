@@ -1,0 +1,53 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static admin_urls %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_destination_card.css' %}">
+{% endblock %}
+
+{% block bodyclass %}{{ block.super }} gisoo-destination-card-page{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">خانه</a>
+  <span class="gisoo-bc-sep" aria-hidden="true">/</span>
+  <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+  <span class="gisoo-bc-sep" aria-hidden="true">/</span>
+  {% if has_view_permission %}
+    <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural }}</a>
+  {% else %}
+    {{ opts.verbose_name_plural }}
+  {% endif %}
+  <span class="gisoo-bc-sep" aria-hidden="true">/</span>
+  {% if add %}افزودن کارت مقصد{% else %}ویرایش کارت مقصد{% endif %}
+</div>
+{% endblock %}
+
+{% block form_header_sub %}
+{% if original and not add %}
+  <p class="gisoo-dest-sub">
+    <span class="gisoo-dest-label">شماره کارت فعلی</span>
+    <span class="gisoo-pan" dir="ltr">{{ original.display_pan|default:original.card_number }}</span>
+    {% if original.name %}
+      <span class="gisoo-dest-dot" aria-hidden="true">·</span>
+      <span class="gisoo-dest-holder">{{ original.name }}</span>
+    {% endif %}
+  </p>
+{% endif %}
+{% endblock %}
+
+{% block form_top %}
+<div class="gisoo-dest-intro">
+  <div class="gisoo-dest-info-grid">
+    <article class="gisoo-dest-info-card">
+      <strong>یک کارت در کل سایت</strong>
+      <p>نام دارنده، شماره کارت و در صورت تمایل نام بانک را وارد کنید. همین کارت به مشتری در صفحه پرداخت نشان داده می‌شود.</p>
+    </article>
+    <article class="gisoo-dest-info-card">
+      <strong>نمایش خودکار</strong>
+      <p>پیش‌نمایش فاصله‌دار و نسخه ماسک‌شده بعد از ذخیره به‌صورت خودکار ساخته می‌شوند؛ نیازی به پر کردن دستی نیست.</p>
+    </article>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,181 @@
+/* Destination card admin — clean RTL form with LTR card numbers */
+
+.gisoo-destination-card-page #content {
+  max-width: 820px;
+}
+
+.gisoo-destination-card-page .gisoo-form-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 0 0 20px;
+  padding: 18px 20px;
+  background:
+    radial-gradient(420px 160px at 100% 0%, rgba(23, 61, 237, 0.08), transparent 60%),
+    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e6ebf2;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.gisoo-destination-card-page .gisoo-form-head h1 {
+  font-size: 1.4rem;
+}
+
+.gisoo-dest-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.gisoo-dest-label {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.gisoo-dest-holder {
+  color: #334155;
+  font-weight: 600;
+}
+
+.gisoo-dest-dot {
+  opacity: 0.4;
+}
+
+.gisoo-pan,
+.gisoo-destination-card-page .form-row .readonly,
+.gisoo-destination-card-page input[name="card_number"],
+.gisoo-destination-card-page input[name="display_pan"],
+.gisoo-destination-card-page input[name="masked_pan"],
+.gisoo-destination-card-page .field-display_pan .readonly,
+.gisoo-destination-card-page .field-masked_pan .readonly,
+.gisoo-destination-card-page .field-card_number input {
+  direction: ltr !important;
+  unicode-bidi: isolate;
+  text-align: left !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  font-family: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Consolas, monospace;
+}
+
+.gisoo-pan {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef3ff;
+  color: #0f2fb8 !important;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: 1px solid #dbe4ff;
+}
+
+.gisoo-dest-intro {
+  margin: 0 0 18px;
+}
+
+.gisoo-dest-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.gisoo-dest-info-card {
+  background: linear-gradient(180deg, #eef3ff 0%, #ffffff 100%);
+  border: 1px solid #e6ebf2;
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.gisoo-dest-info-card strong {
+  display: block;
+  color: #0f2fb8;
+  font-family: "Kook", "IranSans", Tahoma, sans-serif;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.gisoo-dest-info-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.75;
+}
+
+.gisoo-destination-card-page .object-tools,
+.gisoo-destination-card-page .gisoo-form-tools {
+  float: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  gap: 8px;
+}
+
+.gisoo-destination-card-page .object-tools a {
+  background: #173ded !important;
+  border-radius: 999px !important;
+  padding: 9px 16px !important;
+  font-size: 0.82rem !important;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none !important;
+}
+
+.gisoo-destination-card-page fieldset.module {
+  border-radius: 18px !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.gisoo-destination-card-page .form-row input[type="text"] {
+  width: min(100%, 420px) !important;
+  border-radius: 12px !important;
+  border: 1px solid #dbe3ef !important;
+  background: #fff !important;
+  padding: 11px 14px !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gisoo-destination-card-page .form-row input[type="text"]:focus {
+  border-color: #93a8ff !important;
+  box-shadow: 0 0 0 3px rgba(23, 61, 237, 0.12);
+  outline: none;
+}
+
+.gisoo-destination-card-page .field-card_number input {
+  font-size: 1.05rem !important;
+  letter-spacing: 0.08em;
+}
+
+.gisoo-destination-card-page .help,
+.gisoo-destination-card-page .helptext {
+  color: #64748b !important;
+  font-size: 0.8rem !important;
+  margin-top: 8px;
+}
+
+@media (max-width: 767px) {
+  .gisoo-dest-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gisoo-destination-card-page .gisoo-form-head {
+    padding: 14px;
+  }
+
+  .gisoo-destination-card-page .object-tools,
+  .gisoo-destination-card-page .gisoo-form-tools {
+    width: 100%;
+  }
+
+  .gisoo-destination-card-page .object-tools a {
+    width: 100%;
+    justify-content: center;
+  }
+}

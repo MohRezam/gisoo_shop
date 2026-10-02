@@ -360,7 +360,12 @@ class DestinationCard(BaseModel):
         verbose_name_plural = "کارت مقصد"
 
     def __str__(self):
-        return self.display_pan or self.card_number or "کارت مقصد"
+        from utils.general.card_number_secure import ltr_isolate
+
+        pan = self.display_pan or self.card_number
+        if pan:
+            return ltr_isolate(pan)
+        return "کارت مقصد"
 
     def _apply_derived_pans(self):
         from utils.general.card_number_secure import (

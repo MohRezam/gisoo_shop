@@ -95,23 +95,25 @@ body {
 /* ========== Top header ========== */
 #header {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
   justify-content: space-between;
-  flex-wrap: wrap;
+  align-items: center !important;
   background:
-    radial-gradient(520px 220px at 8% 120%, rgba(139, 30, 63, 0.28), transparent 60%),
-    radial-gradient(640px 240px at 92% -20%, rgba(255, 255, 255, 0.22), transparent 55%),
-    linear-gradient(118deg, #122447 0%, #1a2e5a 38%, #173ded 78%, #3b6bff 100%) !important;
+    radial-gradient(520px 220px at 8% 120%, rgba(139, 30, 63, 0.22), transparent 60%),
+    radial-gradient(640px 240px at 92% -20%, rgba(255, 255, 255, 0.16), transparent 55%),
+    linear-gradient(118deg, #122447 0%, #1a2e5a 42%, #173ded 100%) !important;
   color: #fff !important;
   border: none !important;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.12) inset,
-    0 4px 14px rgba(18, 36, 71, 0.2);
-  padding: 14px 28px !important;
-  align-items: center;
-  gap: 18px;
-  min-height: 78px;
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 4px 14px rgba(18, 36, 71, 0.18);
+  padding: 12px 22px !important;
+  gap: 16px;
+  min-height: 72px;
+  box-sizing: border-box !important;
 }
 
 #header::before {
@@ -119,8 +121,9 @@ body {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
   pointer-events: none;
+  border-radius: inherit;
 }
 
 #header #branding,
@@ -136,7 +139,10 @@ body {
   position: relative;
   z-index: 1;
   float: none !important;
+  flex: 1 1 auto !important;
   width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
   padding: 0 !important;
   margin: 0 !important;
 }
@@ -146,23 +152,30 @@ body {
   z-index: 1;
   float: none !important;
   display: flex !important;
-  align-items: center;
-  gap: 12px;
-  padding: 6px !important;
+  flex: 0 1 auto !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 10px;
+  padding: 5px 6px !important;
   margin: 0 !important;
   font-size: 0.86rem !important;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   backdrop-filter: blur(10px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  text-align: left !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  text-align: right !important;
+  max-width: min(640px, 58vw);
+  min-width: 0;
+  box-sizing: border-box !important;
 }
 
 #gisoo-brand {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .gisoo-brand-link {
@@ -255,6 +268,9 @@ body {
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.14);
+  min-width: 0;
+  max-width: 260px;
+  flex: 0 1 auto;
 }
 
 .gisoo-user-avatar {
@@ -308,6 +324,10 @@ body {
   font-size: 0.84rem;
   font-weight: 700;
   color: #fff !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
 }
 
 .gisoo-user-phone {
@@ -319,6 +339,7 @@ body {
   color: #ffe8a3 !important;
   direction: ltr;
   unicode-bidi: plaintext;
+  white-space: nowrap;
 }
 
 .gisoo-user-phone .gisoo-ico {
@@ -329,7 +350,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .gisoo-header-link {
@@ -421,6 +443,21 @@ div.breadcrumbs a:hover {
 .gisoo-bc-sep {
   margin: 0 6px;
   opacity: 0.45;
+}
+
+.gisoo-bc-current {
+  display: inline-block;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Card / phone / URL numbers must stay LTR inside RTL admin */
+.gisoo-pan {
+  display: inline-block;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Hide theme toggle — panel is always light */
@@ -534,6 +571,8 @@ a.button:hover {
   background: #173ded !important;
   color: #fff !important;
   padding: 8px 16px !important;
+  text-transform: none !important;
+  font-weight: 700;
 }
 
 .deletelink,
@@ -576,8 +615,18 @@ input:focus, textarea:focus, select:focus {
 }
 
 .gisoo-form-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
   margin: 0 0 18px;
   padding: 4px 2px 0;
+}
+
+.gisoo-form-head-main {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .gisoo-form-head h1 {
@@ -585,6 +634,30 @@ input:focus, textarea:focus, select:focus {
   font-family: "Kook", "IranSans", Tahoma, sans-serif;
   font-size: 1.45rem;
   color: #0f172a !important;
+}
+
+.gisoo-eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #64748b !important;
+}
+
+.gisoo-form-tools.object-tools,
+.gisoo-change .object-tools.gisoo-form-tools {
+  float: none !important;
+  position: static !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gisoo-form-tools.object-tools li {
+  float: none !important;
+  margin: 0 !important;
 }
 
 .gisoo-change-form fieldset.module {
@@ -697,6 +770,7 @@ input:focus, textarea:focus, select:focus {
   display: flex !important;
   flex-direction: row !important;
   flex: 1 1 auto !important;
+  min-height: 0 !important;
   align-items: stretch !important;
   width: 100% !important;
   max-width: 100% !important;
@@ -713,11 +787,13 @@ input:focus, textarea:focus, select:focus {
 #nav-sidebar {
   position: sticky !important;
   top: 0 !important;
-  align-self: flex-start !important;
+  align-self: stretch !important;
   flex: 0 0 280px !important;
   width: 280px !important;
   max-width: 280px !important;
-  height: calc(100vh - 64px) !important;
+  /* Match #main height — not full viewport (avoids overlap with page chrome) */
+  height: 100% !important;
+  max-height: calc(100dvh - 64px) !important;
   margin: 0 !important;
   padding: 0 !important;
   background: #ffffff !important;
@@ -1628,6 +1704,33 @@ a.gisoo-btn-ghost:hover {
   }
   .gisoo-charts {
     grid-template-columns: 1fr;
+  }
+
+  #header {
+    gap: 12px !important;
+    padding: 10px 16px !important;
+  }
+
+  #user-tools {
+    max-width: min(520px, 54vw);
+    gap: 8px;
+  }
+
+  .gisoo-header-badge {
+    display: none !important;
+  }
+
+  .gisoo-user-phone {
+    display: none !important;
+  }
+
+  .gisoo-user-chip {
+    max-width: 200px;
+  }
+
+  .gisoo-header-link {
+    padding: 7px 10px !important;
+    font-size: 0.76rem !important;
   }
 }
 
