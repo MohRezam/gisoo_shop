@@ -48,15 +48,27 @@ services:
       - core_gisoo_backend.wsgi:application
       - --bind
       - 0.0.0.0:8000
+      - --worker-class
+      - gthread
       - --workers
-      - "3"
+      - "2"
+      - --threads
+      - "2"
+      - --timeout
+      - "60"
+      - --max-requests
+      - "500"
+      - --max-requests-jitter
+      - "50"
+      - --keep-alive
+      - "5"
 
     env_file:
       - .env
 
     volumes:
-      - staticfiles:/usr/src/app/static
-      - media:/usr/src/app/media
+      - staticfiles:/app/static
+      - media:/app/media
 
     depends_on:
       db:
@@ -79,9 +91,14 @@ services:
       - worker
       - -l
       - info
+      - --concurrency
+      - "1"
 
     env_file:
       - .env
+
+    environment:
+      SKIP_ENTRYPOINT_SETUP: "1"
 
     depends_on:
       db:
@@ -106,9 +123,14 @@ services:
       - beat
       - -l
       - info
+      - --scheduler
+      - django_celery_beat.schedulers:DatabaseScheduler
 
     env_file:
       - .env
+
+    environment:
+      SKIP_ENTRYPOINT_SETUP: "1"
 
     depends_on:
       db:
@@ -133,8 +155,8 @@ services:
 
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - staticfiles:/usr/src/app/static:ro
-      - media:/usr/src/app/media:ro
+      - staticfiles:/app/static:ro
+      - media:/app/media:ro
 
     networks:
       - gisoo_network

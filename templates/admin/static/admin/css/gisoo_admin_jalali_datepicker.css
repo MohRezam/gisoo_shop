@@ -1,0 +1,64 @@
+/* Jalali datepicker: keep fully usable above sticky admin chrome */
+
+jdp-container {
+  position: fixed !important;
+  z-index: 100000 !important;
+  max-height: min(440px, calc(100vh - 32px)) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.22) !important;
+}
+
+jdp-overlay {
+  z-index: 99999 !important;
+}
+
+/* Mobile sheet pinned to bottom was half-covered by sticky submit row */
+@media only screen and (max-width: 900px) {
+  jdp-container {
+    top: 50% !important;
+    bottom: auto !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(307.875px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    min-width: 0 !important;
+    border-radius: 12px !important;
+  }
+
+  jdp-overlay {
+    display: block !important;
+    height: 100% !important;
+    width: 100% !important;
+    background-color: rgba(15, 23, 42, 0.35) !important;
+  }
+}
+
+/* Leave room so date rows aren't trapped under sticky submit */
+.gisoo-change-form form,
+.change-form form {
+  padding-bottom: 96px;
+}
+
+.gisoo-change-form .form-row,
+.gisoo-change-form fieldset.module,
+.change-form .form-row,
+.change-form fieldset.module {
+  overflow: visible !important;
+}
+
+.gisoo-change-form .datetime,
+.change-form .datetime {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.gisoo-change-form .datetime input.jalali_date-date,
+.change-form .datetime input.jalali_date-date {
+  min-width: 140px;
+  direction: ltr;
+  text-align: left;
+}

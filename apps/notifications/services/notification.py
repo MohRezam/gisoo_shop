@@ -6,26 +6,21 @@ from apps.notifications.constants import (
     NotificationStatus,
     NotificationType,
 )
-from apps.notifications.models import Notification
-from apps.notifications.services.sms import (
-    MelipayamakProvider,
-)
+from apps.notifications.models import Notification, is_sms_pattern_enabled
+from apps.sms.service import send_pattern_sms
 
 
 class NotificationService:
-
-    sms_provider = MelipayamakProvider()
-
     @classmethod
-    def send_sms_pattern(
-            cls,
-            *,
-            user,
-            notification_type,
-            recipient,
-            pattern_id,
-            args,
-            idempotency_key=None,
+    def _send_via_pattern(
+        cls,
+        *,
+        user,
+        notification_type,
+        recipient,
+        pattern_key,
+        data,
+        idempotency_key=None,
     ):
         if idempotency_key:
             existing_notification = (
@@ -33,7 +28,6 @@ class NotificationService:
                 .filter(idempotency_key=idempotency_key)
                 .first()
             )
-
             if existing_notification:
                 return existing_notification
 
@@ -46,21 +40,50 @@ class NotificationService:
             idempotency_key=idempotency_key,
         )
 
-        result = cls.sms_provider.send_pattern(
-            recipient=recipient,
-            pattern_id=pattern_id,
-            args=args,
+        if not getattr(settings, "SMS_ENABLED", False):
+            notification.status = NotificationStatus.FAILED
+            notification.error_message = "SMS_ENABLED is False; SMS not sent."
+            notification.save(
+                update_fields=["status", "error_message"]
+            )
+            if (
+                pattern_key == "otp_login"
+                and getattr(settings, "DEBUG", False)
+            ):
+                import logging
+
+                logging.getLogger("sms").info(
+                    "DEBUG OTP for %s (SMS disabled): %s",
+                    recipient,
+                    data.get("code"),
+                )
+            return notification
+
+        if not is_sms_pattern_enabled(pattern_key):
+            notification.status = NotificationStatus.FAILED
+            notification.error_message = (
+                f"SMS pattern '{pattern_key}' disabled in admin settings."
+            )
+            notification.save(update_fields=["status", "error_message"])
+            return notification
+
+        result = send_pattern_sms(
+            pattern_key,
+            recipient,
+            data,
         )
 
-        if result.success:
+        if result.get("success"):
             notification.status = NotificationStatus.SENT
             notification.provider_message_id = (
-                    result.provider_message_id or ""
+                result.get("message_id") or ""
             )
             notification.sent_at = timezone.now()
         else:
             notification.status = NotificationStatus.FAILED
-            notification.error_message = result.error or ""
+            notification.error_message = (
+                result.get("error_message") or ""
+            )
 
         notification.save(
             update_fields=[
@@ -70,7 +93,6 @@ class NotificationService:
                 "sent_at",
             ]
         )
-
         return notification
 
     @classmethod
@@ -81,18 +103,12 @@ class NotificationService:
         recipient,
         otp,
     ):
-        pattern_id = settings.SMS_PATTERN_OTP
-
-        return cls.send_sms_pattern(
+        return cls._send_via_pattern(
             user=user,
-            notification_type=(
-                NotificationType.OTP
-            ),
+            notification_type=NotificationType.OTP,
             recipient=recipient,
-            pattern_id=pattern_id,
-            args=[
-                otp,
-            ],
+            pattern_key="otp_login",
+            data={"code": str(otp)},
         )
 
     @classmethod
@@ -104,120 +120,36 @@ class NotificationService:
         order_id,
         amount,
     ):
-        pattern_id = (
-            settings.SMS_PATTERN_ORDER_CREATED
-        )
-
-        return cls.send_sms_pattern(
+        return cls._send_via_pattern(
             user=user,
-            notification_type=(
-                NotificationType.ORDER_CREATED
-            ),
+            notification_type=NotificationType.ORDER_CREATED,
             recipient=recipient,
-            pattern_id=pattern_id,
-            args=[
-                str(order_id),
-                str(amount),
-            ],
+            pattern_key="order_created",
+            data={
+                "order_id": str(order_id),
+                "amount": str(amount),
+            },
         )
 
     @classmethod
     def send_payment_success(
-            cls,
-            *,
-            user,
-            recipient,
-            order_id,
-            amount,
+        cls,
+        *,
+        user,
+        recipient,
+        order_id,
+        amount,
     ):
-        pattern_id = (
-            settings.SMS_PATTERN_PAYMENT_SUCCESS
-        )
-
-        return cls.send_sms_pattern(
+        return cls._send_via_pattern(
             user=user,
-            notification_type=(
-                NotificationType.PAYMENT_SUCCESS
-            ),
+            notification_type=NotificationType.PAYMENT_SUCCESS,
             recipient=recipient,
-            pattern_id=pattern_id,
-            args=[
-                str(order_id),
-                str(amount),
-            ],
+            pattern_key="payment_success",
+            data={
+                "order_id": str(order_id),
+                "amount": str(amount),
+            },
             idempotency_key=f"payment_success:{order_id}",
-        )
-
-    @classmethod
-    def send_new_consultation(
-        cls,
-        *,
-        user,
-        recipient,
-        consultation_id,
-    ):
-        pattern_id = (
-            settings.SMS_PATTERN_NEW_CONSULTATION
-        )
-
-        return cls.send_sms_pattern(
-            user=user,
-            notification_type=(
-                NotificationType.NEW_CONSULTATION
-            ),
-            recipient=recipient,
-            pattern_id=pattern_id,
-            args=[
-                str(consultation_id),
-            ],
-        )
-
-    @classmethod
-    def send_new_comment(
-        cls,
-        *,
-        user,
-        recipient,
-        product_id,
-    ):
-        pattern_id = (
-            settings.SMS_PATTERN_NEW_COMMENT
-        )
-
-        return cls.send_sms_pattern(
-            user=user,
-            notification_type=(
-                NotificationType.NEW_COMMENT
-            ),
-            recipient=recipient,
-            pattern_id=pattern_id,
-            args=[
-                str(product_id),
-            ],
-        )
-
-    @classmethod
-    def send_new_image(
-        cls,
-        *,
-        user,
-        recipient,
-        consultation_id,
-    ):
-        pattern_id = (
-            settings.SMS_PATTERN_NEW_IMAGE
-        )
-
-        return cls.send_sms_pattern(
-            user=user,
-            notification_type=(
-                NotificationType.NEW_IMAGE
-            ),
-            recipient=recipient,
-            pattern_id=pattern_id,
-            args=[
-                str(consultation_id),
-            ],
         )
 
     @classmethod
@@ -228,20 +160,12 @@ class NotificationService:
         recipient,
         order_id,
     ):
-        pattern_id = (
-            settings.SMS_PATTERN_ORDER_SHIPPED
-        )
-
-        return cls.send_sms_pattern(
+        return cls._send_via_pattern(
             user=user,
-            notification_type=(
-                NotificationType.ORDER_SHIPPED
-            ),
+            notification_type=NotificationType.ORDER_SHIPPED,
             recipient=recipient,
-            pattern_id=pattern_id,
-            args=[
-                str(order_id),
-            ],
+            pattern_key="order_shipped",
+            data={"order_id": str(order_id)},
         )
 
     @classmethod
@@ -252,18 +176,138 @@ class NotificationService:
         recipient,
         order_id,
     ):
-        pattern_id = (
-            settings.SMS_PATTERN_ORDER_CANCELLED
+        return cls._send_via_pattern(
+            user=user,
+            notification_type=NotificationType.ORDER_CANCELLED,
+            recipient=recipient,
+            pattern_key="order_cancelled",
+            data={"order_id": str(order_id)},
         )
 
-        return cls.send_sms_pattern(
+    @classmethod
+    def send_payment_reminder(
+        cls,
+        *,
+        user,
+        recipient,
+        order_id,
+        minutes_left,
+        idempotency_key=None,
+    ):
+        return cls._send_via_pattern(
             user=user,
-            notification_type=(
-                NotificationType.ORDER_CANCELLED
-            ),
+            notification_type=NotificationType.PAYMENT_REMINDER,
             recipient=recipient,
-            pattern_id=pattern_id,
-            args=[
-                str(order_id),
-            ],
+            pattern_key="payment_reminder",
+            data={
+                "order_id": str(order_id),
+                "minutes_left": str(minutes_left),
+            },
+            idempotency_key=idempotency_key,
+        )
+
+    @classmethod
+    def send_delivery_confirm(
+        cls,
+        *,
+        user,
+        recipient,
+        order_id,
+        idempotency_key=None,
+    ):
+        return cls._send_via_pattern(
+            user=user,
+            notification_type=NotificationType.DELIVERY_CONFIRM,
+            recipient=recipient,
+            pattern_key="delivery_confirm",
+            data={"order_id": str(order_id)},
+            idempotency_key=idempotency_key,
+        )
+
+    @classmethod
+    def send_consultation_answered(
+        cls,
+        *,
+        user,
+        recipient,
+        consultation_id,
+        idempotency_key=None,
+    ):
+        return cls._send_via_pattern(
+            user=user,
+            notification_type=NotificationType.CONSULTATION_ANSWERED,
+            recipient=recipient,
+            pattern_key="consultation_answered",
+            data={"consultation_id": str(consultation_id)},
+            idempotency_key=idempotency_key,
+        )
+
+    @classmethod
+    def send_order_preparing(
+        cls,
+        *,
+        user,
+        recipient,
+        order_id,
+    ):
+        return cls._send_via_pattern(
+            user=user,
+            notification_type=NotificationType.ORDER_PREPARING,
+            recipient=recipient,
+            pattern_key="order_preparing",
+            data={"order_id": str(order_id)},
+        )
+
+    @classmethod
+    def send_order_expired(
+        cls,
+        *,
+        user,
+        recipient,
+        order_id,
+        idempotency_key=None,
+    ):
+        return cls._send_via_pattern(
+            user=user,
+            notification_type=NotificationType.ORDER_EXPIRED,
+            recipient=recipient,
+            pattern_key="order_expired",
+            data={"order_id": str(order_id)},
+            idempotency_key=idempotency_key,
+        )
+
+    @classmethod
+    def send_payment_rejected(
+        cls,
+        *,
+        user,
+        recipient,
+        order_id,
+        idempotency_key=None,
+    ):
+        return cls._send_via_pattern(
+            user=user,
+            notification_type=NotificationType.PAYMENT_REJECTED,
+            recipient=recipient,
+            pattern_key="payment_rejected",
+            data={"order_id": str(order_id)},
+            idempotency_key=idempotency_key,
+        )
+
+    @classmethod
+    def send_consultation_received(
+        cls,
+        *,
+        user,
+        recipient,
+        consultation_id,
+        idempotency_key=None,
+    ):
+        return cls._send_via_pattern(
+            user=user,
+            notification_type=NotificationType.CONSULTATION_RECEIVED,
+            recipient=recipient,
+            pattern_key="consultation_received",
+            data={"consultation_id": str(consultation_id)},
+            idempotency_key=idempotency_key,
         )

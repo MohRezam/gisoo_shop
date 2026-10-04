@@ -7,6 +7,7 @@ from apps.home.models import HomeAbout
 class HomeAboutAdmin(admin.ModelAdmin):
     list_display = (
         "id",
+        "section",
         "title",
         "display_order",
         "is_active",
@@ -14,6 +15,7 @@ class HomeAboutAdmin(admin.ModelAdmin):
     )
 
     list_filter = (
+        "section",
         "is_active",
     )
 
@@ -34,3 +36,22 @@ class HomeAboutAdmin(admin.ModelAdmin):
     exclude = ("creator", "archived")
     list_per_page = 15
     list_display_links = ("title",)
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "section",
+                    "title",
+                    "description",
+                    "image",
+                    "display_order",
+                    "is_active",
+                ),
+                "description": (
+                    "برای بنر «نمیدونی کدوم محصول مناسبته؟» در صفحه اصلی، "
+                    "section را روی «بنر مشاوره صفحه اصلی» بگذارید."
+                ),
+            },
+        ),
+    )

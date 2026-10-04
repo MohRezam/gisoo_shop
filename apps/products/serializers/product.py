@@ -3,12 +3,32 @@ from rest_framework import serializers
 from apps.products.models import (
     AttributeValue,
     Product,
+    ProductFAQ,
     ProductImage,
     ProductVariant,
     VariantAttribute, ProductAttribute, DiscountCampaign
 )
 from apps.reviews.serializers import ProductReviewPublicSerializer
-from django.db import models
+
+
+def _product_category_titles(obj):
+    return [category.title for category in obj.categories.all()]
+
+
+def _product_primary_category_title(obj):
+    titles = _product_category_titles(obj)
+    return titles[0] if titles else ""
+
+
+class ProductFAQSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductFAQ
+        fields = (
+            "id",
+            "question",
+            "answer",
+        )
+
 
 class AttributeValueSerializer(
     serializers.ModelSerializer,
@@ -81,7 +101,8 @@ class ProductListSerializer(
 ):
     brand = serializers.StringRelatedField()
 
-    category = serializers.StringRelatedField()
+    category = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
 
     thumbnail = serializers.SerializerMethodField()
 
@@ -107,6 +128,7 @@ class ProductListSerializer(
             "slug",
             "brand",
             "category",
+            "categories",
             "thumbnail",
             "price",
             "discounted_price",
@@ -115,6 +137,12 @@ class ProductListSerializer(
             "is_available",
             "is_in_stock"
         )
+
+    def get_category(self, obj):
+        return _product_primary_category_title(obj)
+
+    def get_categories(self, obj):
+        return _product_category_titles(obj)
 
     def get_is_in_stock(
             self,
@@ -224,7 +252,8 @@ class SpecialOfferProductListSerializer(
 ):
     brand = serializers.StringRelatedField()
 
-    category = serializers.StringRelatedField()
+    category = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
 
     thumbnail = serializers.SerializerMethodField()
 
@@ -250,6 +279,7 @@ class SpecialOfferProductListSerializer(
             "slug",
             "brand",
             "category",
+            "categories",
             "thumbnail",
             "price",
             "discounted_price",
@@ -258,6 +288,12 @@ class SpecialOfferProductListSerializer(
             "stock",
             "is_available",
         )
+
+    def get_category(self, obj):
+        return _product_primary_category_title(obj)
+
+    def get_categories(self, obj):
+        return _product_category_titles(obj)
 
     def _first_variant(
             self,
@@ -541,7 +577,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         source="brand.title",
         read_only=True,
     )
-    category = serializers.StringRelatedField()
+    category = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
 
     images = ProductImageSerializer(
         many=True,
@@ -565,6 +602,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    faqs = serializers.SerializerMethodField()
+
     min_price = serializers.SerializerMethodField()
     max_price = serializers.SerializerMethodField()
     has_multiple_variants = serializers.SerializerMethodField()
@@ -583,6 +622,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "slug",
             "brand",
             "category",
+            "categories",
             "short_description",
             "description",
             "is_available",
@@ -598,11 +638,27 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
             "related_products",
             "reviews",
+            "faqs",
             "has_multiple_variants",
             "rating",
             "is_favorited",
             "is_in_stock"
         ]
+
+    def get_faqs(self, obj):
+        rows = getattr(obj, "active_faqs", None)
+        if rows is None:
+            rows = (
+                obj.faqs.filter(is_active=True)
+                .order_by("ordering", "id")[:6]
+            )
+        return ProductFAQSerializer(rows, many=True).data
+
+    def get_category(self, obj):
+        return _product_primary_category_title(obj)
+
+    def get_categories(self, obj):
+        return _product_category_titles(obj)
 
     def get_rating(self, obj):
         return {
@@ -713,24 +769,30 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             ).data
 
         # Automatic fallback:
-        # products from the same category.
-        products = (
-            Product.objects
-            .filter(
-                category=obj.category,
-                is_available=True,
-            )
-            .exclude(
-                pk=obj.pk,
-            )
-            .prefetch_related(
-                "images",
-                "variants",
-            )
-            .order_by(
-                "-created_at",
-            )[:4]
+        # products that share at least one category.
+        category_ids = list(
+            obj.categories.values_list("id", flat=True)
         )
+        products = Product.objects.none()
+        if category_ids:
+            products = (
+                Product.objects
+                .filter(
+                    categories__in=category_ids,
+                    is_available=True,
+                )
+                .exclude(
+                    pk=obj.pk,
+                )
+                .prefetch_related(
+                    "images",
+                    "variants",
+                )
+                .distinct()
+                .order_by(
+                    "-created_at",
+                )[:4]
+            )
 
         return RelatedProductSerializer(
             products,
@@ -810,10 +872,7 @@ class DiscountCampaignProductSerializer(serializers.ModelSerializer):
 
 
 class DiscountCampaignSerializer(serializers.ModelSerializer):
-    products = DiscountCampaignProductSerializer(
-        many=True,
-        read_only=True,
-    )
+    products = serializers.SerializerMethodField()
 
     class Meta:
         model = DiscountCampaign
@@ -824,3 +883,18 @@ class DiscountCampaignSerializer(serializers.ModelSerializer):
             "ends_at",
             "products",
         )
+
+    def get_products(self, obj):
+        products = self.context.get("campaign_products")
+        if products is None:
+            from apps.products.services.discount_campaign import (
+                campaign_member_products_queryset,
+            )
+
+            products = campaign_member_products_queryset()
+
+        return DiscountCampaignProductSerializer(
+            products,
+            many=True,
+            context=self.context,
+        ).data

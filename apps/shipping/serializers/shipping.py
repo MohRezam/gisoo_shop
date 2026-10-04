@@ -14,7 +14,9 @@ class ShippingMethodSerializer(
         fields = [
             "id",
             "title",
+            "carrier",
             "price",
             "free_shipping_minimum",
+            "estimated_days_min",
             "estimated_days",
         ]

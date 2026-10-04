@@ -1,21 +1,35 @@
 import os
 
-from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 
 from .common import BASE_DIR, DEBUG
 from .constants import PROJECT_NAME
 
-SECRET_KEY = os.getenv(
-    "SECRET_KEY", "django-insecure-*6^r370f68i&-l*g2b*ncvy*57wv6!da5$6o8glho@)&z@ruf="
-)
-ENCRYPTION_KEY = os.getenv(
-    "ENCRYPTION_KEY", b"viyLb459xpvqo3aUVB5WFXnZr1hsUDgVhoRsAa7wEt0="
-)
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    if DEBUG:
+        # Local-dev only; never used when DEBUG is False.
+        SECRET_KEY = "django-insecure-local-dev-only-not-for-production"
+    else:
+        raise ImproperlyConfigured(
+            "The SECRET_KEY environment variable must be set when DEBUG is False."
+        )
+ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
+if not ENCRYPTION_KEY:
+    if DEBUG:
+        # Local-dev only; never used when DEBUG is False.
+        ENCRYPTION_KEY = b"viyLb459xpvqo3aUVB5WFXnZr1hsUDgVhoRsAa7wEt0="
+    else:
+        raise ImproperlyConfigured(
+            "The ENCRYPTION_KEY environment variable must be set when DEBUG is False."
+        )
 
-ALLOWED_HOSTS = ["*"]
 
-if DEBUG:
-    ALLOWED_HOSTS += ["127.0.0.1", "localhost", "*"]
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if host.strip()
+]
 
 INTERNAL_IPS = ["127.0.0.1"]
 
@@ -34,7 +48,9 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-if not settings.DEBUG:
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True

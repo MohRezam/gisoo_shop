@@ -40,10 +40,6 @@ class ProductFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Product
 
-    category = factory.SubFactory(
-        CategoryFactory
-    )
-
     brand = factory.SubFactory(
         BrandFactory
     )
@@ -60,6 +56,15 @@ class ProductFactory(factory.django.DjangoModelFactory):
     description = "Test product description"
 
     is_available = True
+
+    @factory.post_generation
+    def categories(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted is not None:
+            self.categories.set(extracted)
+        else:
+            self.categories.add(CategoryFactory())
 
 
 class ProductVariantFactory(

@@ -49,6 +49,8 @@ class ProfileSerializer(serializers.ModelSerializer):
         if not value:
             return value
 
+        value = value.strip().lower()
+
         queryset = User.objects.filter(
             email__iexact=value
         ).exclude(

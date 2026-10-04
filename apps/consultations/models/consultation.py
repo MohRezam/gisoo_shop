@@ -17,22 +17,22 @@ class GuestIdentity(models.Model):
     phone_number = models.CharField(
         max_length=20,
         unique=True,
-        verbose_name=_("phone number"),
+        verbose_name="شماره تلفن",
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
+        verbose_name="تاریخ ایجاد",
     )
 
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name=_("updated at"),
+        verbose_name="تاریخ به‌روزرسانی",
     )
 
     class Meta:
-        verbose_name = _("guest identity")
-        verbose_name_plural = _("guest identities")
+        verbose_name = "هویت مهمان"
+        verbose_name_plural = "هویت‌های مهمان"
 
     def __str__(self):
         return self.phone_number
@@ -49,33 +49,33 @@ class GuestDeviceAccess(models.Model):
         GuestIdentity,
         on_delete=models.CASCADE,
         related_name="device_accesses",
-        verbose_name=_("guest"),
+        verbose_name="مهمان",
     )
 
     token = models.CharField(
         max_length=64,
         unique=True,
         editable=False,
-        verbose_name=_("token"),
+        verbose_name="توکن",
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
+        verbose_name="تاریخ ایجاد",
     )
 
     last_used_at = models.DateTimeField(
         auto_now=True,
-        verbose_name=_("last used at"),
+        verbose_name="آخرین استفاده",
     )
 
     expires_at = models.DateTimeField(
-        verbose_name=_("expires at"),
+        verbose_name="تاریخ انقضا",
     )
 
     class Meta:
-        verbose_name = _("guest device access")
-        verbose_name_plural = _("guest device accesses")
+        verbose_name = "دسترسی دستگاه مهمان"
+        verbose_name_plural = "دسترسی‌های دستگاه مهمان"
 
     def save(self, *args, **kwargs):
         if not self.token:
@@ -89,28 +89,28 @@ class GuestDeviceAccess(models.Model):
 
 class ConsultationRequest(models.Model):
     class Gender(models.TextChoices):
-        FEMALE = "female", _("Female")
-        MALE = "male", _("Male")
+        FEMALE = "female", "زن"
+        MALE = "male", "مرد"
 
     class Duration(models.TextChoices):
         LESS_THAN_MONTH = (
             "less_than_month",
-            _("Less than a month"),
+            "کمتر از یک ماه",
         )
 
         ONE_TO_THREE_MONTHS = (
             "one_to_three_months",
-            _("One to three months"),
+            "یک تا سه ماه",
         )
 
         MORE_THAN_THREE_MONTHS = (
             "more_than_three_months",
-            _("More than three months"),
+            "بیشتر از سه ماه",
         )
 
     class Status(models.TextChoices):
-        PENDING = "pending", _("Pending")
-        COMPLETED = "completed", _("Completed")
+        PENDING = "pending", "در انتظار"
+        COMPLETED = "completed", "تکمیل‌شده"
 
     id = models.UUIDField(
         primary_key=True,
@@ -124,7 +124,7 @@ class ConsultationRequest(models.Model):
         related_name="consultation_requests",
         null=True,
         blank=True,
-        verbose_name=_("user"),
+        verbose_name="کاربر",
     )
 
     guest = models.ForeignKey(
@@ -133,63 +133,63 @@ class ConsultationRequest(models.Model):
         related_name="consultation_requests",
         null=True,
         blank=True,
-        verbose_name=_("guest"),
+        verbose_name="مهمان",
     )
 
     full_name = models.CharField(
         max_length=150,
-        verbose_name=_("full name"),
+        verbose_name="نام کامل",
     )
 
     phone_number = models.CharField(
         max_length=20,
-        verbose_name=_("phone number"),
+        verbose_name="شماره موبایل",
     )
 
     gender = models.CharField(
         max_length=20,
         choices=Gender.choices,
-        verbose_name=_("gender"),
+        verbose_name="جنسیت",
     )
 
     hair_problem = models.ForeignKey(
         "products.HairProblem",
         on_delete=models.PROTECT,
         related_name="consultation_requests",
-        verbose_name=_("hair problem"),
+        verbose_name="مشکل مو",
     )
 
     duration = models.CharField(
         max_length=50,
         choices=Duration.choices,
-        verbose_name=_("duration"),
+        verbose_name="مدت مشکل",
     )
 
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
         default=Status.PENDING,
-        verbose_name=_("status"),
+        verbose_name="وضعیت",
     )
 
     request_phone_consultation = models.BooleanField(
         default=False,
-        verbose_name=_("phone consultation"),
+        verbose_name="درخواست مشاوره تلفنی",
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
+        verbose_name="تاریخ ایجاد",
     )
 
     updated_at = models.DateTimeField(
         auto_now=True,
-        verbose_name=_("updated at"),
+        verbose_name="آخرین به‌روزرسانی",
     )
 
     class Meta:
-        verbose_name = _("consultation request")
-        verbose_name_plural = _("consultation requests")
+        verbose_name = "درخواست مشاوره"
+        verbose_name_plural = "درخواست‌های مشاوره"
 
         ordering = [
             "-created_at",
@@ -212,6 +212,32 @@ class ConsultationRequest(models.Model):
             ),
         ]
 
+    def has_recommendation_answer(self) -> bool:
+        """True when at least one product or one non-empty pack exists."""
+        if not self.pk:
+            return False
+        if self.recommendations.exists():
+            return True
+        return self.recommendation_packs.filter(
+            items__isnull=False,
+        ).exists()
+
+    def clean(self):
+        super().clean()
+        if (
+            self.status == self.Status.COMPLETED
+            and self.pk
+            and not self.has_recommendation_answer()
+        ):
+            raise ValidationError(
+                {
+                    "status": _(
+                        "برای تکمیل‌شده کردن درخواست، حداقل یک پیشنهاد "
+                        "محصول یا یک گروه محصول با حداقل یک محصول لازم است."
+                    ),
+                }
+            )
+
     def __str__(self):
         return f"{self.full_name} - {self.phone_number}"
 
@@ -221,36 +247,36 @@ class ConsultationRecommendation(models.Model):
         ConsultationRequest,
         on_delete=models.CASCADE,
         related_name="recommendations",
-        verbose_name=_("consultation"),
+        verbose_name="مشاوره",
     )
 
     variant = models.ForeignKey(
         "products.ProductVariant",
         on_delete=models.PROTECT,
         related_name="consultation_recommendations",
-        verbose_name=_("product variant"),
+        verbose_name="واریانت محصول",
     )
 
     explanation = models.TextField(
         blank=True,
         default="",
-        verbose_name=_("explanation"),
+        verbose_name="توضیح",
     )
 
     usage_instruction = models.TextField(
         blank=True,
         default="",
-        verbose_name=_("usage instruction"),
+        verbose_name="دستور مصرف",
     )
 
     display_order = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("display order"),
+        verbose_name="ترتیب نمایش",
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
+        verbose_name="تاریخ ایجاد",
     )
 
     class Meta:
@@ -269,11 +295,17 @@ class ConsultationRecommendation(models.Model):
             ),
         ]
 
+        verbose_name = "پیشنهاد محصول مشاوره"
+        verbose_name_plural = "پیشنهادهای محصول مشاوره"
+
     def __str__(self):
-        return (
-            f"{self.consultation.full_name} "
-            f"→ {self.variant}"
-        )
+        variant = self.variant
+        product = getattr(variant, "product", None)
+        title = getattr(product, "title", None) or str(variant)
+        sku = getattr(variant, "sku", "") or ""
+        if sku:
+            return f"{title} ({sku})"
+        return title
 
 
 class ConsultationRecommendationPack(models.Model):
@@ -281,28 +313,35 @@ class ConsultationRecommendationPack(models.Model):
         ConsultationRequest,
         on_delete=models.CASCADE,
         related_name="recommendation_packs",
-        verbose_name=_("consultation"),
+        verbose_name="مشاوره",
     )
 
     title = models.CharField(
         max_length=255,
-        verbose_name=_("title"),
+        blank=True,
+        default="",
+        verbose_name="عنوان گروه",
+        help_text="اختیاری — مثلاً «روتین روزانه»",
     )
 
     description = models.TextField(
         blank=True,
         default="",
-        verbose_name=_("description"),
+        verbose_name="متن کلی گروه",
+        help_text=(
+            "متن مشترک برای کل گروه محصولات — "
+            "مثلاً «این محصولات را به‌صورت روتین استفاده کنید»"
+        ),
     )
 
     display_order = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("display order"),
+        verbose_name="ترتیب نمایش",
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
+        verbose_name="تاریخ ایجاد",
     )
 
     class Meta:
@@ -311,15 +350,14 @@ class ConsultationRecommendationPack(models.Model):
             "created_at",
         ]
 
-        verbose_name = _("consultation recommendation pack")
-        verbose_name_plural = _(
-            "consultation recommendation packs"
-        )
+        verbose_name = "گروه پیشنهاد محصول"
+        verbose_name_plural = "گروه‌های پیشنهاد محصول"
 
     def __str__(self):
+        label = self.title.strip() or (self.description[:40] if self.description else "گروه")
         return (
             f"{self.consultation.full_name} "
-            f"→ {self.title}"
+            f"→ {label}"
         )
 
 
@@ -328,24 +366,24 @@ class ConsultationRecommendationPackItem(models.Model):
         ConsultationRecommendationPack,
         on_delete=models.CASCADE,
         related_name="items",
-        verbose_name=_("pack"),
+        verbose_name="گروه",
     )
 
     recommendation = models.ForeignKey(
         ConsultationRecommendation,
         on_delete=models.CASCADE,
         related_name="pack_items",
-        verbose_name=_("recommendation"),
+        verbose_name="پیشنهاد محصول",
     )
 
     display_order = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("display order"),
+        verbose_name="ترتیب نمایش",
     )
 
     created_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("created at"),
+        verbose_name="تاریخ ایجاد",
     )
 
     class Meta:
@@ -364,12 +402,8 @@ class ConsultationRecommendationPackItem(models.Model):
             ),
         ]
 
-        verbose_name = _(
-            "consultation recommendation pack item"
-        )
-        verbose_name_plural = _(
-            "consultation recommendation pack items"
-        )
+        verbose_name = "محصول داخل گروه"
+        verbose_name_plural = "محصولات داخل گروه"
 
     def clean(self):
         if (
@@ -380,8 +414,7 @@ class ConsultationRecommendationPackItem(models.Model):
         ):
             raise ValidationError(
                 _(
-                    "Pack and recommendation "
-                    "must belong to the same consultation."
+                    "گروه و پیشنهاد محصول باید متعلق به یک مشاوره باشند."
                 )
             )
 
@@ -390,8 +423,9 @@ class ConsultationRecommendationPackItem(models.Model):
         return super().save(*args, **kwargs)
 
     def __str__(self):
+        pack_label = self.pack.title.strip() or "گروه"
         return (
-            f"{self.pack.title} → "
+            f"{pack_label} → "
             f"{self.recommendation}"
         )
 
@@ -425,6 +459,8 @@ class GuestOTP(models.Model):
         ordering = [
             "-created_at",
         ]
+        verbose_name = "کد تأیید مهمان"
+        verbose_name_plural = "کدهای تأیید مهمان"
 
     def __str__(self):
         return (

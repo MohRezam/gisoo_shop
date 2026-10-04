@@ -1,78 +1,119 @@
+from django.conf import settings
 from django.db import models
-from django.utils.translation import (
-    gettext_lazy as _,
-)
+from django.utils.translation import gettext_lazy as _
 
 from apps.shared.models.base import BaseModel
 
 
+class ShippingCarrier(models.TextChoices):
+    POST = (
+        "post",
+        "پست",
+    )
+    TIPAX = (
+        "tipax",
+        "تیپاکس",
+    )
+    COURIER = (
+        "courier",
+        "پیک",
+    )
+
+
+CARRIER_TRACKING_URLS = {
+    ShippingCarrier.POST: "https://tracking.post.ir/",
+    ShippingCarrier.TIPAX: "https://tipaxco.com/tracking",
+    # پیک رهگیری آنلاین ندارد
+}
+
+CARRIER_SHIPPED_LABELS = {
+    ShippingCarrier.POST: "ارسال با پست",
+    ShippingCarrier.TIPAX: "ارسال با تیپاکس",
+    ShippingCarrier.COURIER: "ارسال با پیک",
+}
+
+
 class ShippingMethod(BaseModel):
     title = models.CharField(
-        verbose_name=_("Title"),
+        verbose_name="عنوان",
         max_length=255,
         unique=True,
     )
 
-    price = models.PositiveBigIntegerField(
-        verbose_name=_("Price"),
-        default=0
+    carrier = models.CharField(
+        max_length=16,
+        choices=ShippingCarrier.choices,
+        default=ShippingCarrier.POST,
+        verbose_name="حامل",
+        help_text=(
+            "پست و تیپاکس برای رهگیری آنلاین؛ "
+            "پیک برای ارسال محلی/موتوری بدون لینک رهگیری."
+        ),
     )
 
-    free_shipping_minimum = models.PositiveBigIntegerField(
-        verbose_name=_("Free shipping minimum"),
+    price = models.PositiveBigIntegerField(
+        verbose_name="قیمت",
         default=0,
     )
 
-    estimated_days = models.PositiveSmallIntegerField(
-        verbose_name=_("Estimated days"),
+    free_shipping_minimum = models.PositiveBigIntegerField(
+        verbose_name="حداقل ارسال رایگان",
+        default=0,
+        help_text="۰ یعنی ارسال رایگان غیرفعال است.",
+    )
+
+    estimated_days_min = models.PositiveSmallIntegerField(
+        verbose_name="حداقل روز تخمینی",
         default=3,
+        help_text="شروع بازه تحویل (مثلاً ۳ در «۳ تا ۵ روز»).",
+    )
+
+    estimated_days = models.PositiveSmallIntegerField(
+        verbose_name="حداکثر روز تخمینی",
+        default=5,
+        help_text="پایان بازه تحویل و زمان پیامک تأیید تحویل (مثلاً ۵).",
     )
 
     is_active = models.BooleanField(
-        verbose_name=_("Is active"),
+        verbose_name="فعال",
         default=True,
     )
 
     class Meta:
-        verbose_name = _("Shipping Method")
-        verbose_name_plural = _(
-            "Shipping Methods"
-        )
+        verbose_name = "روش ارسال"
+        verbose_name_plural = "روش‌های ارسال"
         ordering = [
             "price",
         ]
 
-    def __str__(
-            self,
-    ):
+    def __str__(self):
         return self.title
 
+    @property
+    def tracking_url(self) -> str:
+        return CARRIER_TRACKING_URLS.get(self.carrier, "")
 
-class ShipmentStatus(
-    models.TextChoices,
-):
+
+class ShipmentStatus(models.TextChoices):
     PENDING = (
         "pending",
-        _("Pending"),
+        "در انتظار",
     )
 
     SHIPPED = (
         "shipped",
-        _("Shipped"),
+        "ارسال شده",
     )
 
     DELIVERED = (
         "delivered",
-        _("Delivered"),
+        "تحویل شده",
     )
 
     RETURNED = (
         "returned",
-        _("Returned"),
+        "مرجوع شده",
     )
-
-
-from django.conf import settings
 
 
 class Shipment(BaseModel):
@@ -80,27 +121,32 @@ class Shipment(BaseModel):
         "orders.Order",
         on_delete=models.CASCADE,
         related_name="shipments",
+        verbose_name="سفارش",
     )
 
     status = models.CharField(
         max_length=20,
         choices=ShipmentStatus.choices,
         default=ShipmentStatus.PENDING,
+        verbose_name="وضعیت",
     )
 
     tracking_code = models.CharField(
         max_length=255,
         blank=True,
+        verbose_name="کد پیگیری",
     )
 
     shipped_at = models.DateTimeField(
         null=True,
         blank=True,
+        verbose_name="زمان ارسال",
     )
 
     delivered_at = models.DateTimeField(
         null=True,
         blank=True,
+        verbose_name="زمان تحویل",
     )
 
     created_by = models.ForeignKey(
@@ -109,16 +155,15 @@ class Shipment(BaseModel):
         null=True,
         blank=True,
         related_name="created_shipments",
+        verbose_name="ایجادکننده",
     )
 
     class Meta:
+        verbose_name = "محموله"
+        verbose_name_plural = "محموله‌ها"
         ordering = [
             "-created_at",
         ]
 
-    def __str__(
-            self,
-    ):
-        return (
-            f"Shipment #{self.pk}"
-        )
+    def __str__(self):
+        return f"Shipment #{self.pk}"

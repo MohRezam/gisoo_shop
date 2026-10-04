@@ -73,6 +73,8 @@ class Notification(models.Model):
     )
 
     class Meta:
+        verbose_name = "پیام سیستمی"
+        verbose_name_plural = "پیام‌های سیستمی"
         ordering = [
             "-created_at",
         ]

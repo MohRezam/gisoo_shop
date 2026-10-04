@@ -33,8 +33,23 @@ def slider_image_path():
 def home_about_image_path():
     return f"{BASE_MEDIA_LOCATION}/home/about-us"
 
+def consultation_page_image_path():
+    return f"{BASE_MEDIA_LOCATION}/consultations/page"
+
 def customer_satisfaction_path():
     return f"{BASE_MEDIA_LOCATION}/customer/satisfaction"
 
 def magazine_thumbnail_path():
     return f"{BASE_MEDIA_LOCATION}/magazines/thumbnails"
+
+
+def payment_receipt_path():
+    return f"{BASE_MEDIA_LOCATION}/payments/receipts"
+
+def payment_guide_video_path():
+    return f"{BASE_MEDIA_LOCATION}/payments/guide"
+
+
+def payment_guide_poster_path():
+    return f"{BASE_MEDIA_LOCATION}/payments/guide/posters"
+

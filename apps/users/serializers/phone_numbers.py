@@ -25,7 +25,8 @@ class UserPhoneNumberSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
 
         queryset = UserPhoneNumber.objects.filter(
-            phone_number=value
+            phone_number=value,
+            is_verified=True,
         ).exclude(
             user=user
         )

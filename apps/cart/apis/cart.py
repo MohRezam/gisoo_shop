@@ -1,7 +1,9 @@
+from django.http import Http404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import ValidationError
 from apps.cart.serializers import AddCartItemSerializer, CartSerializer, UpdateCartItemSerializer, \
     ApplyDiscountSerializer
 from apps.cart.services import get_cart, apply_discount_to_cart, remove_discount_from_cart
@@ -56,6 +58,19 @@ class CartDetailAPIView(RetrieveAPIView):
         "items__variant__product",
         "items__bundle__variant__product",
     )
+
+    def get_object(self):
+        cart = super().get_object()
+        user = self.request.user
+
+        if user and user.is_authenticated:
+            if cart.user_id != user.id:
+                raise Http404
+        elif cart.user_id is not None:
+            # Guests may only access guest carts.
+            raise Http404
+
+        return cart
 
 
 class UpdateCartItemAPIView(APIView):
@@ -113,6 +128,7 @@ class CartDiscountAPIView(APIView):
             200: inline_serializer(
                 name="CartDiscountResponse",
                 fields={
+                    "cart_uuid": serializers.UUIDField(),
                     "discount": serializers.CharField(
                         allow_null=True
                     ),
@@ -138,15 +154,19 @@ class CartDiscountAPIView(APIView):
             "X-Cart-UUID"
         )
 
-        cart = get_cart(
-            user=request.user,
-            cart_uuid=cart_uuid,
-        )
+        try:
+            cart = get_cart(
+                user=request.user,
+                cart_uuid=cart_uuid,
+            )
+        except Http404 as exc:
+            raise ValidationError(
+                "سبد خرید پیدا نشد."
+            ) from exc
 
         if cart is None:
-            return Response(
-                {"detail": "Cart not found."},
-                status=404,
+            raise ValidationError(
+                "سبد خرید پیدا نشد."
             )
 
         result = apply_discount_to_cart(
@@ -158,6 +178,7 @@ class CartDiscountAPIView(APIView):
         discount = result["discount"]
 
         return Response({
+            "cart_uuid": str(cart.uuid),
             "discount": discount.code if discount else None,
             "original_subtotal": result["original_subtotal"],
             "product_discount": result["product_discount"],
@@ -188,15 +209,19 @@ class CartDiscountAPIView(APIView):
             "X-Cart-UUID"
         )
 
-        cart = get_cart(
-            user=request.user,
-            cart_uuid=cart_uuid,
-        )
+        try:
+            cart = get_cart(
+                user=request.user,
+                cart_uuid=cart_uuid,
+            )
+        except Http404 as exc:
+            raise ValidationError(
+                "سبد خرید پیدا نشد."
+            ) from exc
 
         if cart is None:
-            return Response(
-                {"detail": "Cart not found."},
-                status=404,
+            raise ValidationError(
+                "سبد خرید پیدا نشد."
             )
 
         result = remove_discount_from_cart(
@@ -205,6 +230,7 @@ class CartDiscountAPIView(APIView):
         )
 
         return Response({
+            "cart_uuid": str(cart.uuid),
             "discount": None,
             "original_subtotal": result["original_subtotal"],
             "product_discount": result["product_discount"],

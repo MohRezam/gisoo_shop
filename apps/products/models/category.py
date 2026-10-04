@@ -1,6 +1,5 @@
 from apps.shared.models.base import BaseModel
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
 from core_gisoo_backend.storage_backends.locations import category_image_path
 
@@ -8,16 +7,16 @@ from core_gisoo_backend.storage_backends.locations import category_image_path
 class Category(BaseModel):
     title = models.CharField(
         max_length=255,
-        verbose_name=_("title"),
+        verbose_name="عنوان",
     )
 
     slug = models.SlugField(
         unique=True,
-        verbose_name=_("slug"),
+        verbose_name="اسلاگ",
     )
     image = models.ImageField(
         upload_to=category_image_path(),
-        verbose_name=_("image"),
+        verbose_name="تصویر",
         null=True,
         blank=True
     )
@@ -25,7 +24,7 @@ class Category(BaseModel):
         max_length=500,
         null=True,
         blank=True,
-        verbose_name=_("short_description"),
+        verbose_name="توضیحات کوتاه",
     )
     parent = models.ForeignKey(
         "self",
@@ -33,12 +32,12 @@ class Category(BaseModel):
         blank=True,
         null=True,
         related_name="children",
-        verbose_name=_("parent"),
+        verbose_name="والد",
     )
 
     class Meta:
-        verbose_name = _("category")
-        verbose_name_plural = _("categories")
+        verbose_name = "دسته‌بندی"
+        verbose_name_plural = "دسته‌بندی‌ها"
         ordering = ["title"]
 
     def __str__(self):

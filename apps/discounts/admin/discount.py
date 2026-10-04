@@ -1,14 +1,16 @@
 from django.contrib import admin
 from django.utils import timezone
+from jalali_date.admin import ModelAdminJalaliMixin
 
 from apps.discounts.models import (
     Discount,
     DiscountUsage,
 )
+from utils.helpers.jalali_helper import get_persian_jalali_from_datetime
 
 
 @admin.register(Discount)
-class DiscountAdmin(admin.ModelAdmin):
+class DiscountAdmin(ModelAdminJalaliMixin, admin.ModelAdmin):
     list_display = (
         "code",
         "discount_type",
@@ -18,15 +20,13 @@ class DiscountAdmin(admin.ModelAdmin):
         "used_count",
         "is_active",
         "is_valid",
-        "starts_at",
-        "expires_at",
+        "starts_at_fa",
+        "expires_at_fa",
     )
 
     list_filter = (
         "discount_type",
         "is_active",
-        "starts_at",
-        "expires_at",
     )
 
     search_fields = (
@@ -45,7 +45,7 @@ class DiscountAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (
-            "General",
+            "عمومی",
             {
                 "fields": (
                     "code",
@@ -57,7 +57,7 @@ class DiscountAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Limits",
+            "محدودیت‌ها",
             {
                 "fields": (
                     "minimum_order_amount",
@@ -69,16 +69,19 @@ class DiscountAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Time",
+            "بازه زمانی (شمسی)",
             {
                 "fields": (
                     "starts_at",
                     "expires_at",
-                )
+                ),
+                "description": (
+                    "تاریخ و ساعت شروع/انقضا را از تقویم شمسی انتخاب کنید."
+                ),
             },
         ),
         (
-            "System",
+            "سیستم",
             {
                 "fields": (
                     "created_at",
@@ -89,10 +92,11 @@ class DiscountAdmin(admin.ModelAdmin):
     )
     exclude = ("creator",)
     list_per_page = 15
+    show_full_result_count = False
 
     @admin.display(
         boolean=True,
-        description="Valid"
+        description="معتبر"
     )
     def is_valid(
             self,
@@ -104,6 +108,14 @@ class DiscountAdmin(admin.ModelAdmin):
                 obj.is_active
                 and obj.starts_at <= now <= obj.expires_at
         )
+
+    @admin.display(description="شروع (شمسی)", ordering="starts_at")
+    def starts_at_fa(self, obj):
+        return get_persian_jalali_from_datetime(obj.starts_at)
+
+    @admin.display(description="انقضا (شمسی)", ordering="expires_at")
+    def expires_at_fa(self, obj):
+        return get_persian_jalali_from_datetime(obj.expires_at)
 
 
 @admin.register(DiscountUsage)

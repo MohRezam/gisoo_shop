@@ -24,6 +24,8 @@ class PaymentIntentSerializer(serializers.ModelSerializer):
     destination_card = serializers.SerializerMethodField()
     server_time = serializers.SerializerMethodField()
     expires_at = serializers.SerializerMethodField()
+    payable_amount = serializers.SerializerMethodField()
+    amount_unit = serializers.SerializerMethodField()
 
     class Meta:
         model = PaymentIntent
@@ -35,6 +37,8 @@ class PaymentIntentSerializer(serializers.ModelSerializer):
             "unique_suffix",
             "adjustment_discount",
             "payable_amount_rial",
+            "payable_amount",
+            "amount_unit",
             "destination_card",
             "status",
             "expires_at",
@@ -42,6 +46,7 @@ class PaymentIntentSerializer(serializers.ModelSerializer):
             "submitted_at",
             "reviewed_at",
             "paid_at",
+            "rejection_reason",
         ]
         read_only_fields = fields
 
@@ -56,10 +61,22 @@ class PaymentIntentSerializer(serializers.ModelSerializer):
         }
 
     def get_destination_card(self, obj):
+        card = obj.destination_card
         return {
-            "masked_pan": obj.destination_card.masked_pan,
-            "display_pan": obj.destination_card.display_pan,
-            "name": obj.destination_card.name,
+            "masked_pan": card.masked_pan,
+            "display_pan": card.display_pan,
+            "name": card.name,
+            "bank_name": card.bank_name or "",
+        }
+
+    def get_payable_amount(self, obj):
+        """Exact card-to-card amount in RIAL (same as payable_amount_rial)."""
+        return obj.payable_amount_rial
+
+    def get_amount_unit(self, obj):
+        return {
+            "code": "rial",
+            "label": "ریال",
         }
 
     def get_server_time(self, obj):

@@ -39,6 +39,7 @@ class SliderAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "link_type",
+        "custom_url",
         "display_order",
         "is_active",
         "created_at",
@@ -63,3 +64,24 @@ class SliderAdmin(admin.ModelAdmin):
     raw_id_fields = ("product", "category")
     list_per_page = 15
     list_display_links = ("link_type",)
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "image",
+                    "link_type",
+                    "product",
+                    "category",
+                    "custom_url",
+                    "display_order",
+                    "is_active",
+                ),
+                "description": (
+                    "ابعاد پیشنهادی تصویر: ۱۹۲۰×۴۸۰ پیکسل (نسبت حدود ۴ به ۱). "
+                    "برای لینک خارجی، نوع لینک را «لینک سفارشی / خارجی» بگذارید "
+                    "و آدرس https را در «لینک سفارشی» وارد کنید."
+                ),
+            },
+        ),
+    )

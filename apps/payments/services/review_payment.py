@@ -7,11 +7,12 @@ from rest_framework.exceptions import ValidationError
 
 from apps.discounts.services import register_discount_usage
 from apps.orders.constants import ORDER_EXPIRATION_MINUTES
-from apps.orders.models import OrderStatus
+from apps.orders.models import Order, OrderStatus
 from apps.orders.services.change_order_status import (
     change_order_status,
 )
 from apps.notifications.tasks import send_payment_success_sms
+from apps.notifications.services.inbox import notify_user
 from apps.payments.models import (
     PaymentIntent,
     PaymentIntentStatus,
@@ -22,9 +23,45 @@ from apps.payments.models import (
 
 REVIEWABLE_STATUSES = {
     PaymentIntentStatus.RECEIPT_SUBMITTED,
-    PaymentIntentStatus.UNDER_REVIEW,
-    PaymentIntentStatus.MANUAL_REVIEW,
 }
+
+PAYABLE_ORDER_STATUSES = {
+    OrderStatus.WAITING_PAYMENT,
+}
+
+APPROVED_BANK_REF_STATUSES = {
+    PaymentIntentStatus.PAID,
+    PaymentIntentStatus.REFUNDED,
+}
+
+
+def _lock_order_then_intent(*, payment_intent_id):
+    """
+    Lock Order first, then PaymentIntent, to match
+    expire_order and avoid deadlocks.
+    """
+
+    intent_order_id = (
+        PaymentIntent.objects
+        .filter(pk=payment_intent_id)
+        .values_list("order_id", flat=True)
+        .get()
+    )
+
+    order = (
+        Order.objects
+        .select_for_update()
+        .select_related("user")
+        .get(pk=intent_order_id)
+    )
+
+    payment_intent = (
+        PaymentIntent.objects
+        .select_for_update()
+        .get(pk=payment_intent_id)
+    )
+
+    return order, payment_intent
 
 
 @transaction.atomic
@@ -36,11 +73,8 @@ def approve_payment(
     bank_reference,
     reason="",
 ):
-    payment_intent = (
-        PaymentIntent.objects
-        .select_for_update()
-        .select_related("order")
-        .get(pk=payment_intent_id)
+    order, payment_intent = _lock_order_then_intent(
+        payment_intent_id=payment_intent_id,
     )
 
     if payment_intent.status == PaymentIntentStatus.PAID:
@@ -49,6 +83,11 @@ def approve_payment(
     if payment_intent.status not in REVIEWABLE_STATUSES:
         raise ValidationError(
             _("This payment cannot be approved.")
+        )
+
+    if order.status not in PAYABLE_ORDER_STATUSES:
+        raise ValidationError(
+            _("Payment cannot be approved for this order status.")
         )
 
     if not bank_verified:
@@ -63,6 +102,21 @@ def approve_payment(
     if not bank_reference:
         raise ValidationError(
             _("Bank reference is required.")
+        )
+
+    duplicate_ref = (
+        PaymentIntent.objects
+        .filter(
+            bank_reference=bank_reference,
+            status__in=APPROVED_BANK_REF_STATUSES,
+        )
+        .exclude(pk=payment_intent.pk)
+        .exists()
+    )
+
+    if duplicate_ref:
+        raise ValidationError(
+            _("این شماره پیگیری بانک قبلاً برای یک پرداخت تأییدشده دیگر استفاده شده است.")
         )
 
     now = timezone.now()
@@ -98,8 +152,6 @@ def approve_payment(
         bank_verified=True,
     )
 
-    order = payment_intent.order
-
     if order.discount_id is not None:
         register_discount_usage(
             discount=order.discount,
@@ -107,20 +159,37 @@ def approve_payment(
             order=order,
         )
 
-    if order.status == OrderStatus.CREATED:
-        change_order_status(
-            order=order,
-            new_status=OrderStatus.PREPARING,
-            changed_by=admin,
-            reason="Payment approved.",
-        )
+    change_order_status(
+        order=order,
+        new_status=OrderStatus.PREPARING,
+        changed_by=admin,
+        reason="Payment approved.",
+        send_notification=False,
+    )
+
+    order_label = order.public_number or order.id
+    user = order.user
+    order_id = order.id
+    user_id = order.user_id
+    phone = order.phone_number
+    amount = order.total_price
 
     transaction.on_commit(
         lambda: send_payment_success_sms.delay(
-            user_id=order.user_id,
-            recipient=order.phone_number,
-            order_id=order.id,
-            amount=order.total_price,
+            user_id=user_id,
+            recipient=phone,
+            order_id=order_label,
+            amount=amount,
+        )
+    )
+    transaction.on_commit(
+        lambda: notify_user(
+            user=user,
+            title="پرداخت تأیید شد",
+            body=f"رسید پرداخت سفارش {order_label} تأیید شد.",
+            type="order",
+            link=f"/account/orders/{order_id}",
+            order_id=order_id,
         )
     )
 
@@ -134,11 +203,8 @@ def reject_payment(
     admin,
     reason,
 ):
-    payment_intent = (
-        PaymentIntent.objects
-        .select_for_update()
-        .select_related("order")
-        .get(pk=payment_intent_id)
+    order, payment_intent = _lock_order_then_intent(
+        payment_intent_id=payment_intent_id,
     )
 
     if payment_intent.status == PaymentIntentStatus.REJECTED:
@@ -195,9 +261,9 @@ def reject_payment(
         bank_verified=False,
     )
 
-    order = payment_intent.order
-
-    if order.status == OrderStatus.CREATED:
+    if order.status in PAYABLE_ORDER_STATUSES | {
+        OrderStatus.PAYMENT_REJECTED,
+    }:
         order.expires_at = new_expiration
 
         order.save(
@@ -207,11 +273,44 @@ def reject_payment(
             ]
         )
 
-        change_order_status(
-            order=order,
-            new_status=OrderStatus.PAYMENT_REJECTED,
-            changed_by=admin,
-            reason="Payment receipt rejected.",
+        if order.status != OrderStatus.PAYMENT_REJECTED:
+            change_order_status(
+                order=order,
+                new_status=OrderStatus.PAYMENT_REJECTED,
+                changed_by=admin,
+                reason="Payment receipt rejected.",
+                send_notification=False,
+            )
+
+    order_label = order.public_number or order.id
+    user = order.user
+    order_id = order.id
+    user_id = order.user_id
+    phone = (order.phone_number or "").strip()
+    reject_body = (
+        f"رسید پرداخت سفارش {order_label} رد شد. "
+        f"دلیل: {reason}. "
+        "می‌توانید دوباره پرداخت را ارسال کنید."
+    )
+
+    def _notify_rejection():
+        notify_user(
+            user=user,
+            title="رسید پرداخت رد شد",
+            body=reject_body,
+            type="order",
+            link=f"/account/orders/{order_id}",
+            order_id=order_id,
         )
+        if phone and user_id:
+            from apps.notifications.tasks import send_payment_rejected_sms
+
+            send_payment_rejected_sms.delay(
+                user_id=user_id,
+                recipient=phone,
+                order_id=order_label,
+            )
+
+    transaction.on_commit(_notify_rejection)
 
     return payment_intent

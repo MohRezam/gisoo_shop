@@ -1,0 +1,157 @@
+from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
+
+from apps.notifications.models import InAppNotification, NotificationType
+from apps.notifications.services.inbox import notify_user
+
+User = get_user_model()
+
+
+class InboxAPITests(APITestCase):
+
+    def setUp(self):
+        cache.clear()
+        self.user = User.objects.create_user(phone_number="09120000003")
+        self.client.force_authenticate(self.user)
+
+    def test_list_empty(self):
+        url = reverse("apps.notifications:inbox-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 0)
+
+    def test_notify_and_list(self):
+        notify_user(
+            user=self.user,
+            title="Hello",
+            body="World",
+            type=NotificationType.ORDER,
+            link="/account/orders/1",
+            order_id=None,
+        )
+        url = reverse("apps.notifications:inbox-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        item = response.data["results"][0]
+        self.assertEqual(item["title"], "Hello")
+        self.assertFalse(item["is_read"])
+
+    def test_unread_count_and_cache_invalidation(self):
+        notify_user(user=self.user, title="A", body="B", type="system")
+        notify_user(user=self.user, title="C", body="D", type="offer")
+
+        url = reverse("apps.notifications:inbox-unread-count")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 2)
+
+        # second hit should still be 2 (from cache or DB)
+        response2 = self.client.get(url)
+        self.assertEqual(response2.data["count"], 2)
+
+        notif = InAppNotification.objects.filter(user=self.user).first()
+        read_url = reverse(
+            "apps.notifications:inbox-mark-read",
+            kwargs={"pk": notif.id},
+        )
+        self.client.post(read_url)
+        response3 = self.client.get(url)
+        self.assertEqual(response3.data["count"], 1)
+
+    def test_read_all(self):
+        notify_user(user=self.user, title="A", body="B")
+        notify_user(user=self.user, title="C", body="D")
+        url = reverse("apps.notifications:inbox-read-all")
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["updated"], 2)
+        self.assertEqual(
+            InAppNotification.objects.filter(user=self.user, is_read=False).count(),
+            0,
+        )
+
+    def test_filter_unread_only(self):
+        notify_user(user=self.user, title="Unread", body="A")
+        read = notify_user(user=self.user, title="Read", body="B")
+        InAppNotification.objects.filter(pk=read.id).update(is_read=True)
+
+        url = reverse("apps.notifications:inbox-list")
+        response = self.client.get(url, {"is_read": "false"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 1)
+        self.assertEqual(response.data["results"][0]["title"], "Unread")
+
+    def test_purge_old_read_notifications(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.notifications.tasks import purge_old_read_in_app_notifications
+
+        old_read = notify_user(user=self.user, title="Old read", body="A")
+        recent_read = notify_user(user=self.user, title="Recent read", body="B")
+        old_unread = notify_user(user=self.user, title="Old unread", body="C")
+
+        InAppNotification.objects.filter(pk__in=[old_read.id, recent_read.id]).update(
+            is_read=True,
+        )
+        cutoff = timezone.now() - timedelta(days=15)
+        InAppNotification.objects.filter(pk__in=[old_read.id, old_unread.id]).update(
+            created_at=cutoff,
+        )
+
+        deleted = purge_old_read_in_app_notifications()
+        self.assertEqual(deleted, 1)
+        self.assertFalse(
+            InAppNotification.objects.filter(pk=old_read.id).exists(),
+        )
+        self.assertTrue(
+            InAppNotification.objects.filter(pk=recent_read.id).exists(),
+        )
+        self.assertTrue(
+            InAppNotification.objects.filter(pk=old_unread.id).exists(),
+        )
+
+    def test_purge_old_read_admin_alerts(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.notifications.models import AdminAlert
+        from apps.notifications.tasks import purge_old_read_admin_alerts
+
+        old_read = AdminAlert.objects.create(
+            title="Old read",
+            body="A",
+            is_read=True,
+        )
+        recent_read = AdminAlert.objects.create(
+            title="Recent read",
+            body="B",
+            is_read=True,
+        )
+        old_unread = AdminAlert.objects.create(
+            title="Old unread",
+            body="C",
+            is_read=False,
+        )
+
+        cutoff = timezone.now() - timedelta(days=15)
+        AdminAlert.objects.filter(pk__in=[old_read.id, old_unread.id]).update(
+            created_at=cutoff,
+        )
+
+        deleted = purge_old_read_admin_alerts()
+        self.assertEqual(deleted, 1)
+        self.assertFalse(AdminAlert.objects.filter(pk=old_read.id).exists())
+        self.assertTrue(AdminAlert.objects.filter(pk=recent_read.id).exists())
+        self.assertTrue(AdminAlert.objects.filter(pk=old_unread.id).exists())
+
+    def test_otp_endpoints_unchanged(self):
+        # ensure OTP routes still resolve
+        self.assertTrue(reverse("apps.notifications:send-otp"))
+        self.assertTrue(reverse("apps.notifications:verify-otp"))

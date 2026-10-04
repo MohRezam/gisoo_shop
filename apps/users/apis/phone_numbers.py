@@ -4,11 +4,24 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.users.models import UserPhoneNumber
-from apps.users.serializers import UserPhoneNumberSerializer, RequestOTPSerializer, VerifyOTPSerializer
+from apps.users.serializers import (
+    UserPhoneNumberSerializer,
+    RequestOTPSerializer,
+)
+from apps.users.serializers.login import PhoneVerifyOTPSerializer
+from apps.users.services.otp_sms import send_otp_sms
+from core_gisoo_backend.settings.components.constants import OTP_TTL
 from rest_framework import status
 from django.utils.translation import gettext_lazy as _
 from django.core.cache import cache
 from django.db import transaction
+from utils.general.throttles import OTPThrottle
+
+
+PHONE_ALREADY_REGISTERED = _(
+    "This phone number is already registered."
+)
+
 
 class PhoneNumberListAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -106,6 +119,11 @@ class SetPrimaryPhoneNumberAPIView(APIView):
             ]
         )
 
+        user = request.user
+        if user.phone_number != phone.phone_number:
+            user.phone_number = phone.phone_number
+            user.save(update_fields=["phone_number"])
+
         serializer = UserPhoneNumberSerializer(
             phone,
             context={"request": request},
@@ -116,8 +134,10 @@ class SetPrimaryPhoneNumberAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
+
 class AddPhoneNumberRequestOTPAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [OTPThrottle]
     serializer_class = RequestOTPSerializer
 
     def post(self, request):
@@ -142,38 +162,39 @@ class AddPhoneNumberRequestOTPAPIView(APIView):
                 ).exists()
         ):
             return Response(
-                {
-                    "detail": _(
-                        "This phone number is already "
-                        "added to your account."
-                    )
-                },
+                {"detail": PHONE_ALREADY_REGISTERED},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if (
                 UserPhoneNumber.objects.filter(
                     phone_number=phone_number,
+                    is_verified=True,
                 ).exists()
         ):
             return Response(
-                {
-                    "detail": _(
-                        "This phone number is already "
-                        "registered."
-                    )
-                },
+                {"detail": PHONE_ALREADY_REGISTERED},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # TODO:
-        # اینجا بعداً SMS Service واقعی قرار می‌گیرد.
-        otp = "123456"
+        otp, ok = send_otp_sms(
+            phone_number=phone_number,
+            user=user,
+        )
+        if not ok:
+            return Response(
+                {
+                    "detail": _(
+                        "Failed to send OTP. Please try again later."
+                    )
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         cache.set(
-            f"otp_{phone_number}",
+            f"phone:otp_{user.id}_{phone_number}",
             otp,
-            timeout=123,
+            timeout=OTP_TTL,
         )
 
         return Response(
@@ -188,11 +209,13 @@ class AddPhoneNumberRequestOTPAPIView(APIView):
 
 class AddPhoneNumberVerifyOTPAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = VerifyOTPSerializer
+    throttle_classes = [OTPThrottle]
+    serializer_class = PhoneVerifyOTPSerializer
 
     def post(self, request):
         serializer = self.serializer_class(
-            data=request.data
+            data=request.data,
+            context={"request": request},
         )
 
         serializer.is_valid(
@@ -207,14 +230,10 @@ class AddPhoneNumberVerifyOTPAPIView(APIView):
 
         if UserPhoneNumber.objects.filter(
             phone_number=phone_number,
+            is_verified=True,
         ).exists():
             return Response(
-                {
-                    "detail": _(
-                        "This phone number is already "
-                        "registered."
-                    )
-                },
+                {"detail": PHONE_ALREADY_REGISTERED},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -230,9 +249,12 @@ class AddPhoneNumberVerifyOTPAPIView(APIView):
             is_primary=not has_primary,
         )
 
-        cache.delete(
-            f"otp_{phone_number}"
-        )
+        if phone.is_primary and user.phone_number != phone_number:
+            user.phone_number = phone_number
+            user.save(update_fields=["phone_number"])
+
+        cache.delete(f"phone:otp_{user.id}_{phone_number}")
+        cache.delete(f"phone:otp_attempts_{user.id}_{phone_number}")
 
         return Response(
             UserPhoneNumberSerializer(

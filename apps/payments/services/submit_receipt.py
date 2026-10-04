@@ -4,8 +4,6 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
 
-from apps.orders.models import OrderStatus
-from apps.orders.services.change_order_status import change_order_status
 from apps.payments.models import (
     PaymentIntent,
     PaymentIntentStatus,
@@ -31,9 +29,6 @@ ALLOWED_EXTENSIONS = {
 ALLOWED_STATUSES = {
     PaymentIntentStatus.PENDING_PAYMENT,
     PaymentIntentStatus.RECEIPT_SUBMITTED,
-    PaymentIntentStatus.UNDER_REVIEW,
-    PaymentIntentStatus.MANUAL_REVIEW,
-    PaymentIntentStatus.REJECTED,
 }
 
 
@@ -180,6 +175,14 @@ def submit_receipt(
             "idempotent_replay": True,
         }
 
+    # Rejected intents must not accept receipts.
+    # Customer creates a new payment intent after rejection.
+    if payment_intent.status == PaymentIntentStatus.REJECTED:
+        raise ValidationError(
+            "This payment was rejected. "
+            "Create a new payment intent to try again."
+        )
+
     if payment_intent.status not in ALLOWED_STATUSES:
         raise ValidationError(
             "Receipt cannot be submitted in the current payment status."
@@ -187,22 +190,7 @@ def submit_receipt(
 
     now = timezone.now()
 
-    # This is the important distinction:
-    #
-    # REJECTED means the customer has received a new
-    # retry window and is allowed to submit another receipt.
-    #
-    # Therefore we don't reject the upload just because
-    # the old expiration timestamp has passed.
-    is_resubmission = (
-        payment_intent.status
-        == PaymentIntentStatus.REJECTED
-    )
-
-    if (
-        not is_resubmission
-        and payment_intent.expires_at <= now
-    ):
+    if payment_intent.expires_at <= now:
         payment_intent.status = PaymentIntentStatus.EXPIRED
 
         payment_intent.save(
@@ -295,19 +283,18 @@ def submit_receipt(
         ]
     )
 
-    order = payment_intent.order
+    try:
+        from apps.notifications.models import AdminAlertType
+        from apps.notifications.services.admin_alerts import notify_admin
 
-    # Rejected order becomes active again after
-    # customer submits a new receipt.
-    if (
-        is_resubmission
-        and order.status == OrderStatus.PAYMENT_REJECTED
-    ):
-        change_order_status(
-            order=order,
-            new_status=OrderStatus.CREATED,
-            reason="Customer resubmitted payment receipt.",
+        notify_admin(
+            title="رسید پرداخت جدید",
+            body=f"سفارش #{payment_intent.order_id} — رسید برای بررسی ارسال شد.",
+            type=AdminAlertType.RECEIPT,
+            link=f"/admin/payments/paymentintent/{payment_intent.pk}/change/",
         )
+    except Exception:
+        pass
 
     return {
         "receipt": receipt,

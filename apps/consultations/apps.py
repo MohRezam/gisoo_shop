@@ -1,8 +1,13 @@
 from django.apps import AppConfig
-from django.utils.translation import gettext_lazy as _
 
 
 class ConsultationsConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = 'apps.consultations'
-    verbose_name = _("Consultation App")
+    name = "apps.consultations"
+    verbose_name = "مشاوره‌ها"
+
+    def ready(self):
+        from apps.consultations import signals as consultation_signals  # noqa: F401
+        from apps.consultations.signals import register_consultation_cache_signals
+
+        register_consultation_cache_signals()

@@ -48,7 +48,7 @@ class CacheAwareModelAdmin:
 
 
 class BaseModelAdmin(
-    # ModelAdminJalaliMixin,
+    ModelAdminJalaliMixin,
     DjangoObjectActions,
     AvatarAdmin,
     CacheAwareModelAdmin,
@@ -59,6 +59,9 @@ class BaseModelAdmin(
     Base admin for all models
     """
 
+    list_per_page = 15
+    list_max_show_all = 100
+    show_full_result_count = False
     changelist_actions = ("invalidate_all_items_cache",)
 
     def get_obj(self, obj):
@@ -80,7 +83,7 @@ class BaseModelAdmin(
 
 
 class BaseTabularInlineAdmin(
-    # TabularInlineJalaliMixin,
+    TabularInlineJalaliMixin,
     AvatarAdmin,
     EditLinkAdmin,
     BaseAdmin,
@@ -90,7 +93,8 @@ class BaseTabularInlineAdmin(
     Base admin for all inlines
     """
 
-    pass
+    per_page = 20
+    extra = 0
 
 
 class BaseStackedInlineAdmin(StackedInlineJalaliMixin, BaseTabularInlineAdmin):
@@ -184,7 +188,7 @@ def linkify(field_name):
             return "-"
         app_label = linked_obj._meta.app_label
         model_name = linked_obj._meta.model_name
-        view_name = f"admin: {app_label}_{model_name}_change"
+        view_name = f"admin:{app_label}_{model_name}_change"
         link_url = reverse(view_name, args=[linked_obj.pk])
         return format_html('<a href="{}">{}</a>', link_url, linked_obj)
 

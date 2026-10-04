@@ -1,0 +1,258 @@
+/* Gisoo admin — mobile: compact header (like front) + no horizontal scroll */
+
+@media (max-width: 900px) {
+  /* Sticky breaks if an ancestor has overflow-x other than visible.
+     Keep page clip on html/body only — not on #container/#header. */
+  html,
+  body {
+    overflow-x: clip !important;
+    max-width: 100% !important;
+  }
+
+  #container {
+    max-width: 100% !important;
+    overflow-x: visible !important;
+    width: 100% !important;
+  }
+
+  /* One compact bar: menu · logo · actions (no tall stacked chip) */
+  #header {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding: 8px 12px !important;
+    min-height: 56px !important;
+    height: auto !important;
+    max-height: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 130 !important;
+  }
+
+  #header #branding {
+    float: none !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  #gisoo-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .gisoo-brand-link {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    max-width: 100% !important;
+  }
+
+  .gisoo-logo-wrap {
+    flex-shrink: 0 !important;
+    padding: 2px 6px !important;
+  }
+
+  .gisoo-logo {
+    height: 28px !important;
+    max-width: 96px !important;
+  }
+
+  .gisoo-brand-text {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .gisoo-name {
+    font-size: 1rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .gisoo-tagline,
+  .gisoo-header-badge {
+    display: none !important;
+  }
+
+  /* User tools: icon row only — no wide “خوش آمدید” block */
+  #user-tools {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 4px !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 4px !important;
+    border-radius: 14px !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+
+  .gisoo-user-chip {
+    display: none !important;
+  }
+
+  .gisoo-user-actions {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+    width: auto !important;
+    max-width: 100% !important;
+  }
+
+  .gisoo-header-link,
+  .gisoo-logout-btn,
+  #logout-form button.gisoo-logout-btn,
+  #logout-form button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    max-width: 40px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 11px !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+  }
+
+  .gisoo-header-link .gisoo-ico,
+  .gisoo-logout-btn .gisoo-ico,
+  #logout-form button .gisoo-ico {
+    display: block !important;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    min-height: 18px !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+    overflow: visible !important;
+  }
+
+  .gisoo-header-link--key {
+    background: rgba(251, 191, 36, 0.22) !important;
+    border-color: rgba(252, 211, 77, 0.4) !important;
+    color: #fff !important;
+  }
+
+  #logout-form {
+    display: flex !important;
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+  }
+
+  /* Soften header so it doesn't sit on top of breadcrumbs */
+  #header {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.1) inset,
+      0 2px 8px rgba(18, 36, 71, 0.18) !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Breadcrumbs: fully below header, text not clipped */
+  #header + nav,
+  [aria-label="Breadcrumbs"] {
+    display: block !important;
+    position: relative !important;
+    z-index: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    background: #0c1f3f !important;
+  }
+
+  div.breadcrumbs {
+    display: block !important;
+    position: relative !important;
+    z-index: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 12px 14px !important;
+    font-size: 0.78rem !important;
+    line-height: 1.55 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    overflow: visible !important;
+    color: rgba(255, 255, 255, 0.88) !important;
+  }
+
+  div.breadcrumbs a {
+    display: inline !important;
+    white-space: normal !important;
+    color: #fff !important;
+  }
+
+  .gisoo-bc-sep {
+    margin: 0 3px !important;
+  }
+
+  .gisoo-footer,
+  #footer.gisoo-footer {
+    padding: 12px 14px 18px;
+    font-size: 0.75rem;
+    overflow-x: hidden;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 480px) {
+  #header {
+    padding: 6px 10px !important;
+    min-height: 52px !important;
+  }
+
+  .gisoo-logo {
+    height: 26px !important;
+    max-width: 84px !important;
+  }
+
+  .gisoo-name {
+    font-size: 0.92rem !important;
+  }
+
+  .gisoo-header-link,
+  .gisoo-logout-btn,
+  #logout-form button.gisoo-logout-btn,
+  #logout-form button {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    max-width: 36px !important;
+  }
+}

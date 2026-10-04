@@ -17,22 +17,25 @@ def apply_discount_to_cart(
 
     if not code:
         raise ValidationError(
-            "Discount code is required."
+            "کد تخفیف نامعتبر میباشد"
         )
 
     discount = Discount.objects.filter(
-        code=code,
+        code__iexact=code,
     ).first()
 
     if discount is None:
         raise ValidationError(
-            "Discount code not found."
+            "کد تخفیف نامعتبر میباشد"
         )
 
+    # Validate the new code first. Do not assign yet — if validation
+    # fails, the cart keeps any previously applied coupon.
     result = calculate_cart_totals(
         cart=cart,
         user=user,
         discount=discount,
+        raise_on_invalid=True,
     )
 
     cart.discount = discount
@@ -44,6 +47,7 @@ def apply_discount_to_cart(
     )
 
     return result
+
 
 @transaction.atomic
 def remove_discount_from_cart(

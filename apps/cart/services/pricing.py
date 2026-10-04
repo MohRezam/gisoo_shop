@@ -9,6 +9,17 @@ def get_variant_prices(variant):
     Return original and current prices for a product variant.
     """
 
+    from apps.products.services.discount_campaign import (
+        ensure_expired_campaigns_cleared,
+    )
+
+    # Drop campaign sale prices if the campaign clock already passed.
+    ensure_expired_campaigns_cleared()
+    if getattr(variant, "pk", None):
+        variant.refresh_from_db(
+            fields=["price", "discounted_price"],
+        )
+
     original_price = variant.price
 
     current_price = (
@@ -89,6 +100,8 @@ def calculate_cart_totals(
     cart: Cart,
     user=None,
     discount: Discount | None = None,
+    *,
+    raise_on_invalid: bool = False,
 ):
     """
     Calculate cart totals.
@@ -98,7 +111,9 @@ def calculate_cart_totals(
 
     If the coupon was previously applied to the cart but has
     subsequently become invalid, it is automatically removed
-    from the cart and totals are recalculated without it.
+    from the cart and totals are recalculated without it —
+    unless raise_on_invalid is True, in which case the error
+    is re-raised and the cart discount is left untouched.
     """
 
     original_subtotal = 0
@@ -201,6 +216,9 @@ def calculate_cart_totals(
             coupon_discount = result["discount_amount"]
 
         except ValidationError:
+            if raise_on_invalid:
+                raise
+
             # The discount was valid when it was added to the cart,
             # but it is no longer valid now.
             remove_invalid_cart_discount(

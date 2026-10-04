@@ -1,7 +1,6 @@
 from django.shortcuts import get_object_or_404
 
 from rest_framework import generics, permissions
-from rest_framework.exceptions import ValidationError
 
 from apps.products.models import Product
 from apps.reviews.models import ProductReview, ReviewStatus
@@ -36,23 +35,23 @@ class ProductReviewListCreateAPIView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         product = self.get_product()
 
-        if ProductReview.objects.filter(
-                user=self.request.user,
-                product=product,
-        ).exists():
-            raise ValidationError(
-                {
-                    "detail": (
-                        "You have already reviewed this product."
-                    )
-                }
-            )
-
-        serializer.save(
+        review = serializer.save(
             user=self.request.user,
             product=product,
             status=ReviewStatus.PENDING,
         )
+        try:
+            from apps.notifications.models import AdminAlertType
+            from apps.notifications.services.admin_alerts import notify_admin
+
+            notify_admin(
+                title="نظر جدید محصول",
+                body=f"نظر برای «{product.title}» ثبت شد و در انتظار تأیید است.",
+                type=AdminAlertType.REVIEW,
+                link=f"/admin/reviews/productreview/{review.pk}/change/",
+            )
+        except Exception:
+            pass
 
 
 class HomepageReviewListAPIView(generics.ListAPIView):

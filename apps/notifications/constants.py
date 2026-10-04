@@ -24,11 +24,6 @@ class NotificationType(models.TextChoices):
         "New Comment",
     )
 
-    NEW_IMAGE = (
-        "NEW_IMAGE",
-        "New Image",
-    )
-
     ORDER_SHIPPED = (
         "ORDER_SHIPPED",
         "Order Shipped",
@@ -37,6 +32,41 @@ class NotificationType(models.TextChoices):
     ORDER_CANCELLED = (
         "ORDER_CANCELLED",
         "Order Cancelled",
+    )
+
+    PAYMENT_REMINDER = (
+        "PAYMENT_REMINDER",
+        "Payment Reminder",
+    )
+
+    DELIVERY_CONFIRM = (
+        "DELIVERY_CONFIRM",
+        "Delivery Confirm",
+    )
+
+    CONSULTATION_ANSWERED = (
+        "CONSULTATION_ANSWERED",
+        "Consultation Answered",
+    )
+
+    ORDER_PREPARING = (
+        "ORDER_PREPARING",
+        "Order Preparing",
+    )
+
+    ORDER_EXPIRED = (
+        "ORDER_EXPIRED",
+        "Order Expired",
+    )
+
+    PAYMENT_REJECTED = (
+        "PAYMENT_REJECTED",
+        "Payment Rejected",
+    )
+
+    CONSULTATION_RECEIVED = (
+        "CONSULTATION_RECEIVED",
+        "Consultation Received",
     )
 
 

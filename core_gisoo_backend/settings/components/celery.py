@@ -11,8 +11,12 @@ CELERY_TASK_TIME_LIMIT = 800
 CELERY_TASK_SOFT_TIME_LIMIT = 740
 CELERY_RESULT_EXPIRES = 60 * 20
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+# Align with Django TIME_ZONE so countdown/ETA schedules match admin times.
+CELERY_TIMEZONE = config("CELERY_TIMEZONE", default="Asia/Tehran")
+CELERY_ENABLE_UTC = config("CELERY_ENABLE_UTC", default=True, cast=bool)
 
-if config("REDIS_MODE", "default") != "default":
+# Sentinel broker only when explicitly configured; not for gitlab_ci/default.
+if config("REDIS_MODE", "default") == "sentinel":
     CELERY_BROKER_URL = (
         config("REDIS_URL", "")
         + f"?service_name={config('REDIS_SERVICE_NAME', 'master')}"
@@ -46,5 +50,11 @@ if config("REDIS_MODE", "default") != "default":
         "parser_class": "redis.connection.HiredisParser",
         # Add more sentinel hosts if you have more.
     }
+
+# Persist beat schedule in DB (django_celery_beat). Override via env if needed.
+CELERY_BEAT_SCHEDULER = config(
+    "CELERY_BEAT_SCHEDULER",
+    default="django_celery_beat.schedulers:DatabaseScheduler",
+)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"{PROJECT_NAME}.settings")

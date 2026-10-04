@@ -101,6 +101,16 @@ class CartItemSerializer(serializers.ModelSerializer):
 
             return None
 
+        # Parent CartSerializer.get_totals clears expired campaigns first;
+        # refresh in case this field is read without totals.
+        from apps.products.services.discount_campaign import (
+            ensure_expired_campaigns_cleared,
+        )
+
+        ensure_expired_campaigns_cleared()
+        obj.variant.refresh_from_db(
+            fields=["price", "discounted_price"],
+        )
         return obj.variant.discounted_price
 
     def get_discount_percent(self, obj):
@@ -175,6 +185,13 @@ class CartSerializer(serializers.ModelSerializer):
     def get_totals(self, obj):
         if hasattr(self, "_cart_totals"):
             return self._cart_totals
+
+        from apps.products.services.discount_campaign import (
+            ensure_expired_campaigns_cleared,
+        )
+
+        # Clear expired campaign sales before pricing / item rows.
+        ensure_expired_campaigns_cleared()
 
         request = self.context.get("request")
 

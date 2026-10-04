@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from django.db.models import Prefetch
 from rest_framework import status
 from rest_framework.generics import (
@@ -15,6 +16,8 @@ from rest_framework.views import APIView
 
 from apps.consultations.models.consultation import (
     ConsultationRecommendation,
+    ConsultationRecommendationPack,
+    ConsultationRecommendationPackItem,
     ConsultationRequest,
 )
 from apps.consultations.serializers import (
@@ -187,6 +190,32 @@ class ConsultationCreateAPIView(
                 ),
             )
 
+            try:
+                from apps.notifications.models import AdminAlertType
+                from apps.notifications.services.admin_alerts import notify_admin
+                from apps.notifications.tasks import (
+                    send_consultation_received_sms,
+                )
+
+                notify_admin(
+                    title="درخواست مشاوره جدید",
+                    body=f"درخواست مشاوره #{consultation.id} ثبت شد.",
+                    type=AdminAlertType.CONSULTATION,
+                    link=(
+                        f"/admin/consultations/consultationrequest/"
+                        f"{consultation.pk}/change/"
+                    ),
+                )
+                phone = (consultation.phone_number or "").strip()
+                if phone:
+                    send_consultation_received_sms.delay(
+                        user_id=request.user.id,
+                        recipient=phone,
+                        consultation_id=str(consultation.id),
+                    )
+            except Exception:
+                pass
+
             return Response(
                 ConsultationCreateResponseSerializer(
                     consultation,
@@ -214,6 +243,32 @@ class ConsultationCreateAPIView(
             request_phone_consultation=True,
         )
 
+        try:
+            from apps.notifications.models import AdminAlertType
+            from apps.notifications.services.admin_alerts import notify_admin
+            from apps.notifications.tasks import (
+                send_consultation_received_sms,
+            )
+
+            notify_admin(
+                title="درخواست مشاوره جدید",
+                body=f"درخواست مشاوره مهمان #{consultation.id} ثبت شد.",
+                type=AdminAlertType.CONSULTATION,
+                link=(
+                    f"/admin/consultations/consultationrequest/"
+                    f"{consultation.pk}/change/"
+                ),
+            )
+            phone = (consultation.phone_number or "").strip()
+            if phone:
+                send_consultation_received_sms.delay(
+                    user_id=None,
+                    recipient=phone,
+                    consultation_id=str(consultation.id),
+                )
+        except Exception:
+            pass
+
         guest_access = (
             create_guest_device_access(
                 guest,
@@ -235,7 +290,10 @@ class ConsultationCreateAPIView(
             value=guest_access.token,
             max_age=30 * 24 * 60 * 60,
             httponly=True,
-            secure=True,
+            secure=(
+                request.is_secure()
+                or getattr(settings, "SESSION_COOKIE_SECURE", False)
+            ),
             samesite="Lax",
         )
 
@@ -279,6 +337,35 @@ class ConsultationListAPIView(
                 ),
             )
         )
+        pack_items_qs = (
+            ConsultationRecommendationPackItem.objects
+            .select_related(
+                "recommendation",
+                "recommendation__variant",
+                "recommendation__variant__product",
+                "recommendation__variant__product__brand",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "recommendation__variant__product__images",
+                    queryset=ProductImage.objects.filter(
+                        is_primary=True
+                    ),
+                    to_attr="primary_images",
+                ),
+            )
+            .order_by("display_order", "created_at")
+        )
+        packs_qs = (
+            ConsultationRecommendationPack.objects
+            .prefetch_related(
+                Prefetch(
+                    "items",
+                    queryset=pack_items_qs,
+                ),
+            )
+            .order_by("display_order", "created_at")
+        )
 
         return (
             ConsultationRequest.objects
@@ -289,6 +376,10 @@ class ConsultationListAPIView(
                 Prefetch(
                     "recommendations",
                     queryset=recommendations_qs,
+                ),
+                Prefetch(
+                    "recommendation_packs",
+                    queryset=packs_qs,
                 ),
             )
             .filter(

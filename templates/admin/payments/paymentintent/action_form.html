@@ -1,73 +1,84 @@
 {% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_payment_receipt.css' %}">
+{% endblock %}
 
 {% block content %}
 
-<div id="content-main">
+<div id="content-main" class="gisoo-payment-action">
 
     <h1>{{ title }}</h1>
 
-    <div style="margin: 20px 0;">
-        <strong>Payment ID:</strong>
-        {{ payment_intent.id }}
-    </div>
-
-    <div style="margin: 20px 0;">
-        <strong>Order:</strong>
-        {{ payment_intent.order_id }}
-    </div>
-
-    <div style="margin: 20px 0;">
-        <strong>Payable amount:</strong>
-        {{ payment_intent.payable_amount_rial }}
-        Rial
-    </div>
-
-    <div style="margin: 20px 0;">
-        <strong>Current status:</strong>
-        {{ payment_intent.status }}
-    </div>
-
-    <form method="post">
-        {% csrf_token %}
-
-        {{ form.non_field_errors }}
-
-        {% for field in form %}
-            <div style="margin-bottom: 20px;">
-                {{ field.errors }}
-
-                <div>
-                    {{ field.label_tag }}
-                </div>
-
-                <div style="margin-top: 5px;">
-                    {{ field }}
-                </div>
-
-                {% if field.help_text %}
-                    <div style="color: #666; margin-top: 5px;">
-                        {{ field.help_text }}
-                    </div>
+    <div class="gisoo-payment-layout">
+        <div class="gisoo-payment-side">
+            <div class="gisoo-payment-meta">
+                <div><strong>شناسه پرداخت:</strong> {{ payment_intent.id }}</div>
+                <div><strong>سفارش:</strong> {{ payment_intent.order_id }}</div>
+                <div><strong>مبلغ قابل پرداخت:</strong> {{ payment_intent.payable_amount_rial }} ریال</div>
+                <div><strong>وضعیت فعلی:</strong> {{ payment_intent.get_status_display }}</div>
+                {% if payment_intent.destination_card %}
+                <div><strong>کارت مقصد:</strong> <span dir="ltr" class="gisoo-pan">{{ payment_intent.destination_card.display_pan }}</span></div>
+                <div><strong>نام دارنده:</strong> {{ payment_intent.destination_card.name }}</div>
                 {% endif %}
             </div>
-        {% endfor %}
 
-        <div style="margin-top: 30px;">
-            <input
-                type="submit"
-                value="Confirm"
-                class="default"
-            >
-
-            <a
-                href="{% url 'admin:payments_paymentintent_change' payment_intent.pk %}"
-                class="button"
-                style="margin-left: 10px;"
-            >
-                Cancel
-            </a>
+            <div class="gisoo-payment-receipt-panel">
+                <h2>رسید مشتری</h2>
+                {{ receipt_preview_html }}
+            </div>
         </div>
-    </form>
+
+        <div class="gisoo-payment-form-panel">
+            <p class="gisoo-payment-hint">
+                رفرنس بانک همان شماره پیگیری تراکنش در اپ/صورتحساب کارت مقصد است.
+                بعد از تطبیق مبلغ و زمان با رسید کاربر (سمت چپ / بالا)، آن را اینجا وارد کنید.
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+
+                {{ form.non_field_errors }}
+
+                {% for field in form %}
+                    <div class="gisoo-payment-field">
+                        {{ field.errors }}
+
+                        <div>
+                            {{ field.label_tag }}
+                        </div>
+
+                        <div class="gisoo-payment-field-input">
+                            {{ field }}
+                        </div>
+
+                        {% if field.help_text %}
+                            <div class="gisoo-payment-help">
+                                {{ field.help_text }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div class="gisoo-payment-actions">
+                    <input
+                        type="submit"
+                        value="{{ title }}"
+                        class="default"
+                    >
+
+                    <a
+                        href="{% url 'admin:payments_paymentintent_change' payment_intent.pk %}"
+                        class="button"
+                    >
+                        انصراف
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 
 </div>
 

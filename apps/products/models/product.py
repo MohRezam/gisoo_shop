@@ -11,11 +11,11 @@ from django.utils import timezone
 
 
 class Product(BaseModel):
-    category = models.ForeignKey(
+    categories = models.ManyToManyField(
         "products.Category",
-        on_delete=models.PROTECT,
+        blank=True,
         related_name="products",
-        verbose_name=_("category"),
+        verbose_name="دسته‌بندی‌ها",
     )
 
     brand = models.ForeignKey(
@@ -24,7 +24,7 @@ class Product(BaseModel):
         related_name="products",
         blank=True,
         null=True,
-        verbose_name=_("brand"),
+        verbose_name="برند",
     )
 
     related_products = models.ManyToManyField(
@@ -33,54 +33,93 @@ class Product(BaseModel):
         symmetrical=False,
         related_name="related_from_products",
         blank=True,
-        verbose_name=_("related products"),
+        verbose_name="محصولات مرتبط",
     )
 
     title = models.CharField(
         max_length=255,
-        verbose_name=_("title"),
+        verbose_name="عنوان",
     )
 
     slug = models.SlugField(
         unique=True,
-        verbose_name=_("slug"),
+        verbose_name="اسلاگ",
     )
 
     short_description = models.CharField(
         max_length=500,
         blank=True,
-        verbose_name=_("short_description"),
+        verbose_name="توضیحات کوتاه",
     )
 
     description = models.TextField(
-        verbose_name=_("description"),
+        verbose_name="توضیحات",
     )
 
     is_available = models.BooleanField(
         default=True,
-        verbose_name=_("is_available"),
+        verbose_name="موجود",
     )
+
+    show_in_special_offer = models.BooleanField(
+        default=False,
+        verbose_name="نمایش در پیشنهاد ویژه",
+        help_text=(
+            "همراه با قیمت تخفیف‌خورده روی واریانت‌ها قابل تنظیم است "
+            "(حتی هنگام ایجاد محصول). فقط محصولاتی که حداقل یک واریانت "
+            "فعال با قیمت تخفیف‌خورده دارند در پیشنهاد ویژه می‌مانند."
+        ),
+    )
+
+    is_gisoo_recommended = models.BooleanField(
+        default=False,
+        verbose_name="پیشنهادی گیسو سنتر",
+        help_text=(
+            "اگر فعال باشد، این محصول در فیلتر «پیشنهادی گیسو سنتر» "
+            "بالای لیست فروشگاه نمایش داده می‌شود."
+        ),
+    )
+
+    recommended_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="ترتیب پیشنهادی",
+        help_text=(
+            "عدد کوچک‌تر = اولویت بالاتر بین محصولات پیشنهادی. "
+            "فقط وقتی «پیشنهادی گیسو سنتر» فعال است معنا دارد."
+        ),
+    )
+
     hair_problems = models.ManyToManyField(
         "products.HairProblem",
         blank=True,
         related_name="products",
-        verbose_name=_("hair_problem"),
+        verbose_name="مشکل مو",
     )
 
     hair_types = models.ManyToManyField(
         "products.HairType",
         blank=True,
         related_name="products",
-        verbose_name=_("hair_types"),
+        verbose_name="نوع مو",
     )
 
     class Meta:
-        verbose_name = _("product")
-        verbose_name_plural = _("products")
+        verbose_name = "محصول"
+        verbose_name_plural = "محصولات"
         ordering = ["-created_at"]
 
     def __str__(self):
         return self.title
+
+    def has_active_discount(self) -> bool:
+        if not self.pk:
+            return False
+
+        return self.variants.filter(
+            is_active=True,
+            discounted_price__isnull=False,
+            discounted_price__lt=F("price"),
+        ).exists()
 
 
 class ProductRelatedProduct(BaseModel):
@@ -104,8 +143,8 @@ class ProductRelatedProduct(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("product related product")
-        verbose_name_plural = _("product related products")
+        verbose_name = "محصول مرتبط"
+        verbose_name_plural = "محصولات مرتبط"
 
         ordering = [
             "display_order",
@@ -151,7 +190,8 @@ class ProductImage(BaseModel):
     )
     is_primary = models.BooleanField(
         default=False,
-        verbose_name=_("Primary image"),
+        verbose_name="تصویر اصلی",
+        help_text="دقیقاً یک تصویر از هر محصول باید اصلی باشد.",
     )
     alt_text = models.CharField(
         max_length=255,
@@ -160,8 +200,8 @@ class ProductImage(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("product_image")
-        verbose_name_plural = _("products_images")
+        verbose_name = "تصویر محصول"
+        verbose_name_plural = "تصاویر محصول"
         ordering = ["-created_at"]
 
         constraints = [
@@ -198,7 +238,7 @@ class ProductImage(BaseModel):
 
         if exists:
             raise ValidationError(
-                _("This product already has a primary image.")
+                "بیش از یک تصویر اصلی مجاز نیست؛ دقیقاً یک تصویر را اصلی کنید."
             )
 
 
@@ -207,53 +247,57 @@ class ProductVariant(BaseModel):
         Product,
         on_delete=models.CASCADE,
         related_name="variants",
+        verbose_name="محصول",
     )
 
     sku = models.CharField(
         max_length=100,
         unique=True,
-        verbose_name=_("sku"),
+        verbose_name="کد کالا",
     )
 
     price = models.PositiveBigIntegerField(
-        verbose_name=_("price"),
+        verbose_name="قیمت",
         default=0
     )
 
     discounted_price = models.PositiveBigIntegerField(
         null=True,
         blank=True,
-        verbose_name=_("discounted_price"),
+        verbose_name="قیمت تخفیف‌خورده",
     )
 
     stock = models.PositiveIntegerField(
         default=0,
-        verbose_name=_("stock"),
+        verbose_name="موجودی",
     )
 
     volume = models.PositiveIntegerField(
-        verbose_name=_("Volume (ml)"),
+        verbose_name="حجم (میلی‌لیتر)",
+        default=0,
         help_text=_("Volume in milliliter."),
     )
 
     expiration_date = models.DateField(
         blank=True,
         null=True,
-        verbose_name=_("expiration_date"),
+        verbose_name="تاریخ انقضا",
     )
     display_order = models.PositiveIntegerField(
         default=0,
+        verbose_name="ترتیب نمایش",
+        help_text="عدد کوچک‌تر = نمایش زودتر در صفحه محصول.",
     )
 
     is_active = models.BooleanField(
         default=True,
-        verbose_name=_("is_active"),
+        verbose_name="فعال",
     )
 
     class Meta:
-        verbose_name = _("product_variant")
-        verbose_name_plural = _("product_variants")
-        ordering = ["-created_at"]
+        verbose_name = "تنوع محصول"
+        verbose_name_plural = "تنوع‌های محصول"
+        ordering = ["display_order", "created_at"]
         constraints = [
             models.CheckConstraint(
                 condition=(
@@ -290,8 +334,8 @@ class Attribute(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("attribute")
-        verbose_name_plural = _("attributes")
+        verbose_name = "ویژگی"
+        verbose_name_plural = "ویژگی‌ها"
         ordering = ["-created_at"]
 
     def __str__(self):
@@ -315,8 +359,8 @@ class AttributeValue(BaseModel):
         return f"{self.attribute.name}: {self.value}"
 
     class Meta:
-        verbose_name = _("attribute_value")
-        verbose_name_plural = _("attributes_values")
+        verbose_name = "مقدار ویژگی"
+        verbose_name_plural = "مقادیر ویژگی"
         ordering = ["-created_at"]
         constraints = [
             models.UniqueConstraint(
@@ -364,8 +408,8 @@ class VariantAttribute(BaseModel):
             )
 
     class Meta:
-        verbose_name = _("variant_attribute")
-        verbose_name_plural = _("variant_attributes")
+        verbose_name = "ویژگی تنوع"
+        verbose_name_plural = "ویژگی‌های تنوع"
         ordering = ["-created_at"]
 
 
@@ -395,8 +439,8 @@ class ProductAttribute(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("product attribute")
-        verbose_name_plural = _("product attributes")
+        verbose_name = "ویژگی محصول"
+        verbose_name_plural = "ویژگی‌های محصول"
         ordering = ["display_order", "-created_at"]
 
         constraints = [
@@ -414,20 +458,20 @@ class ProductAttribute(BaseModel):
 class DiscountCampaign(BaseModel):
     title = models.CharField(
         max_length=255,
-        verbose_name=_("title"),
+        verbose_name="عنوان",
     )
 
     starts_at = models.DateTimeField(
-        verbose_name=_("starts_at"),
+        verbose_name="زمان شروع",
     )
 
     ends_at = models.DateTimeField(
-        verbose_name=_("ends_at"),
+        verbose_name="زمان پایان",
     )
 
     is_active = models.BooleanField(
         default=True,
-        verbose_name=_("is_active"),
+        verbose_name="فعال",
     )
 
     singleton_key = models.BooleanField(
@@ -436,16 +480,9 @@ class DiscountCampaign(BaseModel):
         editable=False,
     )
 
-    products = models.ManyToManyField(
-        Product,
-        related_name="discount_campaigns",
-        blank=True,
-        verbose_name=_("products"),
-    )
-
     class Meta:
-        verbose_name = _("Discount Campaign")
-        verbose_name_plural = _("Discount Campaigns")
+        verbose_name = "کمپین تخفیف"
+        verbose_name_plural = "کمپین تخفیف"
         ordering = ["-created_at"]
 
     def __str__(self):

@@ -1,42 +1,175 @@
 from decouple import config
 
 
-SMS_PATTERN_OTP = config(
-    "SMS_PATTERN_OTP",
-    cast=int,
+def _as_int(value):
+    """Treat missing/blank env values as 0 (decouple cast=int fails on '')."""
+    if value is None:
+        return 0
+    text = str(value).strip()
+    if not text:
+        return 0
+    return int(text)
+
+
+def _first(*values, default=""):
+    for value in values:
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return default
+
+
+SMS_ENABLED = config(
+    "SMS_ENABLED",
+    default=False,
+    cast=bool,
 )
 
-SMS_PATTERN_ORDER_CREATED = config(
-    "SMS_PATTERN_ORDER_CREATED",
-    cast=int,
+SMS_SOAP_URL = config(
+    "SMS_SOAP_URL",
+    default=(
+        "http://api.payamak-panel.com/post/"
+        "Send.asmx/SendByBaseNumber"
+    ),
 )
 
-SMS_PATTERN_PAYMENT_SUCCESS = config(
-    "SMS_PATTERN_PAYMENT_SUCCESS",
-    cast=int,
+SMS_CREDIT_URL = config(
+    "SMS_CREDIT_URL",
+    default=(
+        "https://api.payamak-panel.com/post/"
+        "Actions.asmx/GetCredit"
+    ),
 )
 
-SMS_PATTERN_NEW_CONSULTATION = config(
-    "SMS_PATTERN_NEW_CONSULTATION",
-    cast=int,
+# Prefer SMS_USERNAME / SMS_PASSWORD; fall back to legacy sample names.
+SMS_USERNAME = _first(
+    config("SMS_USERNAME", default=""),
+    config("SMS_SERVER_USERNAME", default=""),
 )
 
-SMS_PATTERN_NEW_COMMENT = config(
-    "SMS_PATTERN_NEW_COMMENT",
-    cast=int,
+SMS_PASSWORD = _first(
+    config("SMS_PASSWORD", default=""),
+    config("SMS_SERVER_PASSWORD", default=""),
+    config("MELIPAYAMAK_PASSWORD", default=""),
 )
 
-SMS_PATTERN_NEW_IMAGE = config(
-    "SMS_PATTERN_NEW_IMAGE",
-    cast=int,
-)
+# --- Pattern bodyIds (Melipayamak panel) ---
+# Prefer SMS_*_BODY_ID; keep SMS_PATTERN_* aliases for older .env files.
 
-SMS_PATTERN_ORDER_SHIPPED = config(
-    "SMS_PATTERN_ORDER_SHIPPED",
-    cast=int,
+SMS_OTP_BODY_ID = _as_int(
+    _first(
+        config("SMS_OTP_BODY_ID", default=""),
+        config("SMS_PATTERN_OTP", default=""),
+        default="0",
+    )
 )
+# Backward-compatible alias used in older docs/tests.
+SMS_PATTERN_OTP = SMS_OTP_BODY_ID
 
-SMS_PATTERN_ORDER_CANCELLED = config(
-    "SMS_PATTERN_ORDER_CANCELLED",
-    cast=int,
+SMS_PATTERN_ORDER_CREATED_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_ORDER_CREATED_BODY_ID", default=""),
+        config("SMS_PATTERN_ORDER_CREATED", default=""),
+        default="0",
+    )
 )
+SMS_PATTERN_ORDER_CREATED = SMS_PATTERN_ORDER_CREATED_BODY_ID
+
+SMS_PATTERN_PAYMENT_SUCCESS_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_PAYMENT_SUCCESS_BODY_ID", default=""),
+        config("SMS_PATTERN_PAYMENT_SUCCESS", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_PAYMENT_SUCCESS = SMS_PATTERN_PAYMENT_SUCCESS_BODY_ID
+
+SMS_PATTERN_PAYMENT_REMINDER_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_PAYMENT_REMINDER_BODY_ID", default=""),
+        config("SMS_PATTERN_PAYMENT_REMINDER", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_PAYMENT_REMINDER = SMS_PATTERN_PAYMENT_REMINDER_BODY_ID
+
+SMS_PATTERN_ORDER_SHIPPED_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_ORDER_SHIPPED_BODY_ID", default=""),
+        config("SMS_PATTERN_ORDER_SHIPPED", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_ORDER_SHIPPED = SMS_PATTERN_ORDER_SHIPPED_BODY_ID
+
+SMS_PATTERN_ORDER_CANCELLED_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_ORDER_CANCELLED_BODY_ID", default=""),
+        config("SMS_PATTERN_ORDER_CANCELLED", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_ORDER_CANCELLED = SMS_PATTERN_ORDER_CANCELLED_BODY_ID
+
+SMS_PATTERN_DELIVERY_CONFIRM_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_DELIVERY_CONFIRM_BODY_ID", default=""),
+        config("SMS_PATTERN_DELIVERY_CONFIRM", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_DELIVERY_CONFIRM = SMS_PATTERN_DELIVERY_CONFIRM_BODY_ID
+
+SMS_PATTERN_CONSULTATION_ANSWERED_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_CONSULTATION_ANSWERED_BODY_ID", default=""),
+        config("SMS_PATTERN_CONSULTATION_ANSWERED", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_CONSULTATION_ANSWERED = SMS_PATTERN_CONSULTATION_ANSWERED_BODY_ID
+
+SMS_PATTERN_ORDER_PREPARING_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_ORDER_PREPARING_BODY_ID", default=""),
+        config("SMS_PATTERN_ORDER_PREPARING", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_ORDER_PREPARING = SMS_PATTERN_ORDER_PREPARING_BODY_ID
+
+SMS_PATTERN_ORDER_EXPIRED_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_ORDER_EXPIRED_BODY_ID", default=""),
+        config("SMS_PATTERN_ORDER_EXPIRED", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_ORDER_EXPIRED = SMS_PATTERN_ORDER_EXPIRED_BODY_ID
+
+SMS_PATTERN_PAYMENT_REJECTED_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_PAYMENT_REJECTED_BODY_ID", default=""),
+        config("SMS_PATTERN_PAYMENT_REJECTED", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_PAYMENT_REJECTED = SMS_PATTERN_PAYMENT_REJECTED_BODY_ID
+
+SMS_PATTERN_CONSULTATION_RECEIVED_BODY_ID = _as_int(
+    _first(
+        config("SMS_PATTERN_CONSULTATION_RECEIVED_BODY_ID", default=""),
+        config("SMS_PATTERN_CONSULTATION_RECEIVED", default=""),
+        default="0",
+    )
+)
+SMS_PATTERN_CONSULTATION_RECEIVED = SMS_PATTERN_CONSULTATION_RECEIVED_BODY_ID
+
+# When Melipayamak is live, OTP pattern text in the panel should be:
+#   سلام
+#   کد ورود تو: {0}
+#   این کد را به کسی ندهید.
+#   لغو11
+# Set SMS_OTP_BODY_ID to the approved pattern id from the panel.

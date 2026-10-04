@@ -3,7 +3,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.payments.models import PaymentIntentStatus, PaymentIntent
+from apps.payments.models import PaymentIntent
 from apps.payments.serializers import (
     PaymentIntentSerializer,
     PaymentReceiptSerializer,
@@ -14,7 +14,6 @@ from apps.payments.services.create_payment_intent import (
 from apps.payments.services.submit_receipt import (
     submit_receipt,
 )
-from django.utils import timezone
 
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -100,18 +99,8 @@ class PaymentIntentDetailAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        if (
-                payment_intent.status
-                in {
-            PaymentIntentStatus.PENDING_PAYMENT,
-            PaymentIntentStatus.REJECTED,
-        }
-                and payment_intent.expires_at <= timezone.now()
-        ):
-            payment_intent.status = PaymentIntentStatus.EXPIRED
-            payment_intent.save(
-                update_fields=["status"]
-            )
+        # GET is read-only: do not mutate intent/order status here.
+        # Expiration is handled by expire_order / shared status path.
 
         return Response(
             PaymentIntentSerializer(
