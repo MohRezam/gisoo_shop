@@ -1,6 +1,7 @@
 from django.urls import path
 
-from apps.cart.apis import CartDetailAPIView, UpdateCartItemAPIView, DeleteCartItemAPIView, AddToCartAPIView
+from apps.cart.apis import CartDetailAPIView, UpdateCartItemAPIView, DeleteCartItemAPIView, AddToCartAPIView, \
+    CartDiscountAPIView
 
 app_name = "apps.cart"
 
@@ -25,5 +26,10 @@ urlpatterns = [
         "add/v1/",
         AddToCartAPIView.as_view(),
         name="add-to-cart",
+    ),
+    path(
+        "discount/",
+        CartDiscountAPIView.as_view(),
+        name="cart-discount",
     ),
 ]

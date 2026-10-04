@@ -424,6 +424,38 @@ class ProductListAPIViewTests(APITestCase):
             "cheap",
         )
 
+    def test_price_filter_uses_product_effective_price_not_any_variant(self):
+        """A product with cheap + expensive variants must not match a mid range
+        just because one variant sits inside the range while the displayed
+        (cheapest) price is outside it."""
+        product = create_product(
+            category=self.category,
+            brand=self.brand,
+            title="Mixed",
+            slug="mixed",
+        )
+        create_product_variant(
+            product=product,
+            sku="mixed-low",
+            price=100,
+        )
+        create_product_variant(
+            product=product,
+            sku="mixed-high",
+            price=900,
+        )
+
+        response = self.client.get(
+            reverse("apps.products:product-list"),
+            {
+                "min_price": 300,
+                "max_price": 800,
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 0)
+
     def test_filter_by_category_and_price(self):
         category2 = create_category(
             title="Category 2",
@@ -640,3 +672,46 @@ class ProductListAPIViewTests(APITestCase):
             response.data["results"][0]["slug"],
             "product-1",
         )
+
+    def test_list_hair_types(self):
+        HairType.objects.create(title='خشک', slug='dry', is_active=True)
+        HairType.objects.create(title='چرب', slug='oily', is_active=True)
+        HairType.objects.create(title='غیرفعال', slug='off', is_active=False)
+
+        response = self.client.get('/api/products/v1/hair/types/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data.get('results', response.data)
+        if isinstance(results, dict):
+            results = results.get('results', [])
+        slugs = {row['slug'] for row in results}
+        self.assertIn('dry', slugs)
+        self.assertIn('oily', slugs)
+        self.assertNotIn('off', slugs)
+
+    def test_product_filters_meta(self):
+        product = create_product(
+            category=self.category,
+            brand=self.brand,
+            title='Meta Product',
+            slug='meta-product',
+        )
+        create_product_variant(
+            product=product,
+            sku='meta-sku',
+            stock=5,
+            price=250_000,
+        )
+        HairType.objects.create(title='معمولی', slug='normal', is_active=True)
+
+        response = self.client.get('/api/products/v1/filters/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('price', response.data)
+        self.assertIn('price_presets', response.data)
+        self.assertIn('sort_options', response.data)
+        self.assertTrue(len(response.data['sort_options']) >= 4)
+        self.assertTrue(
+            any(opt['id'] == 'price-asc' for opt in response.data['sort_options'])
+        )
+        self.assertTrue(any(ht['slug'] == 'normal' for ht in response.data['hair_types']))
+        self.assertEqual(response.data['price']['min'], 250_000)
+

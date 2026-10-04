@@ -1,0 +1,57 @@
+from django.urls import path
+
+from apps.consultations.apis import (
+    AddAllRecommendationsToCartAPIView,
+    AddSelectedRecommendationsToCartAPIView,
+    ConsultationCreateAPIView,
+    ConsultationFAQListAPIView,
+    ConsultationListAPIView,
+    ConsultationOptionsAPIView,
+    ConsultationPageContentAPIView,
+    ConsultationUpdateAPIView,
+)
+
+app_name = "apps.consultations"
+
+urlpatterns = [
+    path(
+        "options/",
+        ConsultationOptionsAPIView.as_view(),
+        name="options",
+    ),
+    path(
+        "faqs/",
+        ConsultationFAQListAPIView.as_view(),
+        name="faqs",
+    ),
+    path(
+        "page-content/",
+        ConsultationPageContentAPIView.as_view(),
+        name="page-content",
+    ),
+    path(
+        "",
+        ConsultationCreateAPIView.as_view(),
+        name="create",
+    ),
+    path(
+        "my/",
+        ConsultationListAPIView.as_view(),
+        name="my",
+    ),
+    path(
+        "<uuid:pk>/",
+        ConsultationUpdateAPIView.as_view(),
+        name="detail",
+    ),
+    path(
+        "<uuid:pk>/recommendations/add-all-to-cart/",
+        AddAllRecommendationsToCartAPIView.as_view(),
+        name="consultation-add-all-recommendations-to-cart",
+    ),
+    path(
+        "<uuid:pk>/recommendations/add-selected-to-cart/",
+        AddSelectedRecommendationsToCartAPIView.as_view(),
+        name="consultation-add-selected-recommendations-to-cart",
+    ),
+]

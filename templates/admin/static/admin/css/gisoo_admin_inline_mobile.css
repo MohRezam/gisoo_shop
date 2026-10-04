@@ -1,0 +1,231 @@
+/* Gisoo admin — mobile stacked cards for tabular / nested inlines */
+
+@media (max-width: 900px) {
+  /* Keep page from growing sideways; cards stack instead of wide tables */
+  .inline-group,
+  .djn-group {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  .inline-group .tabular,
+  .inline-group .module,
+  .djn-group .djn-fieldset,
+  .djn-group fieldset.module {
+    overflow: visible !important;
+    max-width: 100% !important;
+  }
+
+  table.djn-items,
+  .inline-group .tabular > table,
+  .inline-group table.djn-table,
+  .djn-group table.djn-items {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+  }
+
+  /* Hide header row visually; JS still reads labels from it */
+  table.djn-items > thead.djn-thead,
+  .inline-group .tabular > table > thead {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  /* One card per inline form (nested_admin uses tbody-per-row) */
+  table.djn-items > tbody.djn-tbody,
+  .inline-group .tabular > table > tbody {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 0 14px !important;
+    padding: 12px 14px !important;
+    border: 1px solid #e6ebf2 !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    box-sizing: border-box !important;
+  }
+
+  table.djn-items > tbody.djn-empty-form,
+  .inline-group .tabular > table > tbody.empty-form {
+    display: none !important;
+  }
+
+  table.djn-items > tbody.djn-tbody > tr.djn-tr,
+  .inline-group .tabular > table > tbody > tr {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  table.djn-items > tbody.djn-tbody > tr.djn-tr > td,
+  .inline-group .tabular > table > tbody > tr > td {
+    display: grid !important;
+    grid-template-columns: minmax(108px, 36%) minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 8px 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10px 0 !important;
+    border: 0 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    box-sizing: border-box !important;
+    vertical-align: middle !important;
+    white-space: normal !important;
+  }
+
+  table.djn-items > tbody.djn-tbody > tr.djn-tr > td:last-child,
+  .inline-group .tabular > table > tbody > tr > td:last-child {
+    border-bottom: 0 !important;
+  }
+
+  table.djn-items > tbody.djn-tbody > tr.djn-tr > td::before,
+  .inline-group .tabular > table > tbody > tr > td::before {
+    content: attr(data-label);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #0f2fb8 !important;
+    line-height: 1.35;
+  }
+
+  /* Original object title row */
+  table.djn-items td.original,
+  .inline-group .tabular td.original {
+    grid-template-columns: 1fr !important;
+    padding-top: 0 !important;
+    padding-bottom: 12px !important;
+    margin-bottom: 4px !important;
+    border-bottom: 1px solid #e8eef8 !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+  }
+
+  table.djn-items td.original::before,
+  .inline-group .tabular td.original::before {
+    content: "مورد" !important;
+    margin-bottom: 4px;
+  }
+
+  table.djn-items td.original p,
+  .inline-group .tabular td.original p {
+    margin: 0 !important;
+    word-break: break-word;
+  }
+
+  /* Nested inline host cell (bundles under a variant) */
+  table.djn-items > tbody.djn-tbody > tr.djn-tr > td[colspan],
+  .inline-group .tabular td[colspan] {
+    display: block !important;
+    padding: 12px 0 0 !important;
+    border-bottom: 0 !important;
+    background: #f8fafc !important;
+    border-radius: 12px !important;
+    margin-top: 8px !important;
+    padding: 10px !important;
+  }
+
+  table.djn-items > tbody.djn-tbody > tr.djn-tr > td[colspan]::before,
+  .inline-group .tabular td[colspan]::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  table.djn-items td.delete,
+  .inline-group .tabular td.delete {
+    grid-template-columns: minmax(108px, 36%) auto !important;
+  }
+
+  table.djn-items td.delete::before,
+  .inline-group .tabular td.delete::before {
+    content: attr(data-label) !important;
+  }
+
+  /* Inputs fill the value column */
+  table.djn-items td input[type="text"],
+  table.djn-items td input[type="number"],
+  table.djn-items td input[type="url"],
+  table.djn-items td input[type="email"],
+  table.djn-items td input[type="date"],
+  table.djn-items td select,
+  table.djn-items td textarea,
+  .inline-group .tabular td input[type="text"],
+  .inline-group .tabular td input[type="number"],
+  .inline-group .tabular td select,
+  .inline-group .tabular td textarea {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  table.djn-items td input[type="checkbox"],
+  .inline-group .tabular td input[type="checkbox"] {
+    width: 20px !important;
+    height: 20px !important;
+    justify-self: start;
+  }
+
+  /* Add-row / nested add links */
+  .djn-add-item,
+  .inline-group .add-row,
+  .inline-group tr.add-row {
+    display: block !important;
+    margin: 4px 0 16px !important;
+  }
+
+  .djn-add-item a,
+  .inline-group .add-row a {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 42px !important;
+    padding: 8px 14px !important;
+    border-radius: 12px !important;
+    background: #eef3ff !important;
+    color: #0f2fb8 !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+  }
+
+  /* Nested group inside a variant card */
+  .djn-group-nested {
+    margin: 0 !important;
+    border: 1px dashed #dbe4ff !important;
+    border-radius: 12px !important;
+    background: #fff !important;
+    padding: 8px !important;
+  }
+
+  .djn-group-nested > h2,
+  .djn-group-nested .djn-fieldset > h2,
+  .djn-group-nested fieldset > h2 {
+    font-size: 0.9rem !important;
+    padding: 8px 10px !important;
+    margin: 0 0 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  table.djn-items > tbody.djn-tbody > tr.djn-tr > td,
+  .inline-group .tabular > table > tbody > tr > td {
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+  }
+
+  table.djn-items td.original::before,
+  table.djn-items > tbody.djn-tbody > tr.djn-tr > td::before,
+  .inline-group .tabular td::before {
+    margin-bottom: 2px;
+  }
+}

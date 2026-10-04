@@ -1,9 +1,11 @@
+from collections import defaultdict
+
 from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
 from apps.orders.models import (
-    OrderBundle,
     OrderItem,
+    OrderBundle,
 )
 from apps.products.models import ProductVariant
 
@@ -16,6 +18,14 @@ def calculate_cart(
     """
     Calculates cart totals and prepares order items.
 
+    Stock is calculated per ProductVariant across the entire cart.
+
+    This is important because:
+    - A normal variant consumes ProductVariant.stock directly.
+    - A bundle also consumes the same ProductVariant.stock.
+    - Therefore, normal items and bundles must be aggregated
+      before checking stock.
+
     Returns:
         {
             "order_items": list[OrderItem],
@@ -26,6 +36,12 @@ def calculate_cart(
         }
     """
 
+    from apps.products.services.discount_campaign import (
+        ensure_expired_campaigns_cleared,
+    )
+
+    ensure_expired_campaigns_cleared()
+
     products_total = 0
     total_volume = 0
 
@@ -33,16 +49,185 @@ def calculate_cart(
     order_bundles = []
     variants = []
 
-    cart_items = (
-        cart.items
-        .select_related(
+    cart_items = list(
+        cart.items.select_related(
             "variant__product",
+            "bundle__variant__product",
             "bundle",
         )
-        .prefetch_related(
-            "bundle__items__variant__product",
-        )
     )
+
+    # ---------------------------------------------------------
+    # Collect all required stock per ProductVariant
+    # ---------------------------------------------------------
+
+    required_stock = defaultdict(int)
+
+    for cart_item in cart_items:
+
+        # -------------------------
+        # Normal Variant
+        # -------------------------
+        if cart_item.variant:
+
+            if not cart_item.variant.is_active:
+                raise ValidationError(
+                    {
+                        "detail": _(
+                            "Product variant '%(product)s' is not active."
+                        ) % {
+                            "product": cart_item.variant.product.title,
+                        },
+                    }
+                )
+
+            if not cart_item.variant.product.is_available:
+                raise ValidationError(
+                    {
+                        "detail": _(
+                            "Product '%(product)s' is not available."
+                        ) % {
+                            "product": cart_item.variant.product.title,
+                        },
+                    }
+                )
+
+            required_stock[
+                cart_item.variant_id
+            ] += cart_item.quantity
+
+        # -------------------------
+        # Bundle
+        # -------------------------
+        else:
+
+            bundle = cart_item.bundle
+
+            if bundle is None or not bundle.is_active:
+                raise ValidationError(
+                    {
+                        "detail": _(
+                            "One or more bundles are not active."
+                        ),
+                    }
+                )
+
+            if not bundle.variant.is_active:
+                raise ValidationError(
+                    {
+                        "detail": _(
+                            "Product variant '%(product)s' is not active."
+                        ) % {
+                            "product": bundle.variant.product.title,
+                        },
+                    }
+                )
+
+            if not bundle.variant.product.is_available:
+                raise ValidationError(
+                    {
+                        "detail": _(
+                            "Product '%(product)s' is not available."
+                        ) % {
+                            "product": bundle.variant.product.title,
+                        },
+                    }
+                )
+
+            bundle_quantity = (
+                bundle.quantity *
+                cart_item.quantity
+            )
+
+            required_stock[
+                bundle.variant_id
+            ] += bundle_quantity
+
+    # ---------------------------------------------------------
+    # Lock all affected variants
+    # ---------------------------------------------------------
+
+    variant_ids = list(
+        required_stock.keys()
+    )
+
+    locked_variants = {
+        variant.id: variant
+        for variant in (
+            ProductVariant.objects
+            .select_for_update()
+            .select_related("product")
+            .filter(id__in=variant_ids)
+        )
+    }
+
+    # ---------------------------------------------------------
+    # Make sure all variants still exist
+    # ---------------------------------------------------------
+
+    missing_variant_ids = (
+        set(variant_ids)
+        - set(locked_variants.keys())
+    )
+
+    if missing_variant_ids:
+        raise ValidationError(
+            {
+                "detail": _(
+                    "One or more product variants do not exist."
+                ),
+            }
+        )
+
+    # ---------------------------------------------------------
+    # Re-check active flags after lock
+    # ---------------------------------------------------------
+
+    for variant in locked_variants.values():
+        if not variant.is_active:
+            raise ValidationError(
+                {
+                    "detail": _(
+                        "Product variant '%(product)s' is not active."
+                    ) % {
+                        "product": variant.product.title,
+                    },
+                }
+            )
+        if not variant.product.is_available:
+            raise ValidationError(
+                {
+                    "detail": _(
+                        "Product '%(product)s' is not available."
+                    ) % {
+                        "product": variant.product.title,
+                    },
+                }
+            )
+
+    # ---------------------------------------------------------
+    # Validate total stock
+    # ---------------------------------------------------------
+
+    for variant_id, quantity in required_stock.items():
+
+        variant = locked_variants[variant_id]
+
+        if quantity > variant.stock:
+            raise ValidationError(
+                {
+                    "detail": _(
+                        "Not enough stock for '%(product)s'."
+                    ) % {
+                        "product": variant.product.title,
+                    },
+                    "available_quantity": variant.stock,
+                }
+            )
+
+    # ---------------------------------------------------------
+    # Prepare order items / bundles
+    # ---------------------------------------------------------
 
     for cart_item in cart_items:
 
@@ -51,21 +236,22 @@ def calculate_cart(
         # -------------------------
         if cart_item.variant:
 
-            variant = ProductVariant.objects.select_for_update().get(
-                pk=cart_item.variant_id,
+            variant = locked_variants[
+                cart_item.variant_id
+            ]
+
+            # قیمت اصلی محصول
+            original_unit_price = variant.price
+
+            # قیمت نهایی محصول بعد از تخفیف
+            unit_price = (
+                variant.discounted_price
+                if variant.discounted_price is not None
+                else variant.price
             )
 
-            if cart_item.quantity > variant.stock:
-                raise ValidationError(
-                    _(
-                        "Not enough stock for '%(product)s'."
-                    ) % {
-                        "product": variant.product.title,
-                    }
-                )
-
             item_total = (
-                variant.price *
+                unit_price *
                 cart_item.quantity
             )
 
@@ -76,7 +262,8 @@ def calculate_cart(
                     product_title=variant.product.title,
                     variant_sku=variant.sku,
                     quantity=cart_item.quantity,
-                    unit_price=variant.price,
+                    original_unit_price=original_unit_price,
+                    unit_price=unit_price,
                     total_price=item_total,
                     province=order.province,
                     city=order.city,
@@ -107,80 +294,42 @@ def calculate_cart(
 
         bundle = cart_item.bundle
 
+        variant = locked_variants[
+            bundle.variant_id
+        ]
+
+        bundle_quantity = (
+            bundle.quantity *
+            cart_item.quantity
+        )
+
+        bundle_total = (
+            bundle.price *
+            cart_item.quantity
+        )
+
         order_bundle = OrderBundle(
             order=order,
-            bundle=bundle,
+            variant=variant,
             title=bundle.title,
+            bundle_quantity=bundle.quantity,
             unit_price=bundle.price,
             quantity=cart_item.quantity,
-            total_price=(
-                bundle.price *
-                cart_item.quantity
-            ),
+            total_price=bundle_total,
         )
 
         order_bundles.append(
             order_bundle
         )
 
-        products_total += (
-            bundle.price *
-            cart_item.quantity
+        variants.append(
+            (
+                variant,
+                bundle_quantity,
+            )
         )
 
-        for bundle_item in bundle.items.select_related(
-            "variant__product",
-        ):
-
-            variant = ProductVariant.objects.select_for_update().get(
-                pk=bundle_item.variant_id,
-            )
-
-            quantity = (
-                bundle_item.quantity *
-                cart_item.quantity
-            )
-
-            if quantity > variant.stock:
-                raise ValidationError(
-                    _(
-                        "Not enough stock for '%(product)s'."
-                    ) % {
-                        "product": variant.product.title,
-                    }
-                )
-
-            total_volume += (
-                variant.volume *
-                quantity
-            )
-
-            variants.append(
-                (
-                    variant,
-                    quantity,
-                )
-            )
-
-            order_items.append(
-                OrderItem(
-                    order=order,
-                    order_bundle=order_bundle,
-                    variant=variant,
-                    product_title=variant.product.title,
-                    variant_sku=variant.sku,
-                    quantity=quantity,
-                    unit_price=variant.price,
-                    total_price=(
-                        variant.price *
-                        quantity
-                    ),
-                    province=order.province,
-                    city=order.city,
-                    postal_code=order.postal_code,
-                    full_address=order.address,
-                )
-            )
+        products_total += bundle_total
 
     return {
         "order_items": order_items,

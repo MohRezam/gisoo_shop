@@ -6,6 +6,7 @@ from apps.marketing.models import MarketingSubscriber
 @admin.register(MarketingSubscriber)
 class MarketingSubscriberAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "phone_number",
         "is_subscribed",
         "subscribed_at",
@@ -23,3 +24,6 @@ class MarketingSubscriberAdmin(admin.ModelAdmin):
     ordering = (
         "-subscribed_at",
     )
+    exclude = ("creator", "archived")
+    list_per_page = 15
+    list_display_links = ("phone_number",)

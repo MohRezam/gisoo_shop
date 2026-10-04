@@ -8,28 +8,28 @@ class MarketingSubscriber(BaseModel):
     phone_number = models.CharField(
         max_length=11,
         unique=True,
-        verbose_name=_("phone number"),
+        verbose_name="شماره موبایل",
     )
 
     is_subscribed = models.BooleanField(
         default=True,
-        verbose_name=_("is subscribed"),
+        verbose_name="عضویت فعال",
     )
 
     subscribed_at = models.DateTimeField(
         auto_now_add=True,
-        verbose_name=_("subscribed at"),
+        verbose_name="تاریخ عضویت",
     )
 
     unsubscribed_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name=_("unsubscribed at"),
+        verbose_name="تاریخ لغو عضویت",
     )
 
     class Meta:
-        verbose_name = _("marketing subscriber")
-        verbose_name_plural = _("marketing subscribers")
+        verbose_name = "مشترک بازاریابی"
+        verbose_name_plural = "مشترکان بازاریابی"
         ordering = ["-subscribed_at"]
 
     def __str__(self):

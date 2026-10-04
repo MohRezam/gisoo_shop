@@ -16,6 +16,7 @@ from apps.orders.services.change_order_status import (
 )
 from apps.orders.services.create_order import create_order
 from apps.orders.tests.factories import create_shipping_method
+from apps.payments.models import PaymentIntentStatus
 from apps.products.tests.factories import (
     create_brand,
     create_category,
@@ -74,7 +75,15 @@ class ChangeOrderStatusTests(TestCase):
             shipping_method_id=self.shipping.id,
         )
 
+    def _mark_order_paid(self):
+        intent = self.order.payment_intents.first()
+        intent.status = PaymentIntentStatus.PAID
+        intent.save(update_fields=["status", "updated_at"])
+        return intent
+
     def test_change_status_success(self):
+        self._mark_order_paid()
+
         order = change_order_status(
             order=self.order,
             new_status=OrderStatus.PREPARING,
@@ -101,14 +110,14 @@ class ChangeOrderStatusTests(TestCase):
 
         order = change_order_status(
             order=self.order,
-            new_status=OrderStatus.CREATED,
+            new_status=OrderStatus.WAITING_PAYMENT,
         )
 
         order.refresh_from_db()
 
         self.assertEqual(
             order.status,
-            OrderStatus.CREATED,
+            OrderStatus.WAITING_PAYMENT,
         )
 
         self.assertEqual(
@@ -123,11 +132,24 @@ class ChangeOrderStatusTests(TestCase):
                 new_status=OrderStatus.DELIVERED,
             )
 
-    def test_set_shipped_at(self):
+    def test_preparing_requires_paid_payment(self):
+        with self.assertRaises(ValidationError):
+            change_order_status(
+                order=self.order,
+                new_status=OrderStatus.PREPARING,
+            )
+
+    def _prepare_for_ship(self):
+        self._mark_order_paid()
         change_order_status(
             order=self.order,
             new_status=OrderStatus.PREPARING,
         )
+        self.order.tracking_code = "1234567890"
+        self.order.save(update_fields=["tracking_code", "updated_at"])
+
+    def test_set_shipped_at(self):
+        self._prepare_for_ship()
 
         order = change_order_status(
             order=self.order,
@@ -139,12 +161,41 @@ class ChangeOrderStatusTests(TestCase):
         self.assertIsNotNone(
             order.shipped_at,
         )
+        self.assertEqual(order.carrier, "post")
 
-    def test_set_delivered_at(self):
+    def test_ship_requires_tracking_code(self):
+        self._mark_order_paid()
         change_order_status(
             order=self.order,
             new_status=OrderStatus.PREPARING,
         )
+        with self.assertRaises(ValidationError):
+            change_order_status(
+                order=self.order,
+                new_status=OrderStatus.SHIPPED,
+            )
+
+    def test_courier_ship_without_tracking_code(self):
+        self.shipping.carrier = "courier"
+        self.shipping.save(update_fields=["carrier"])
+        self.order.carrier = "courier"
+        self.order.save(update_fields=["carrier", "updated_at"])
+
+        self._mark_order_paid()
+        change_order_status(
+            order=self.order,
+            new_status=OrderStatus.PREPARING,
+        )
+        order = change_order_status(
+            order=self.order,
+            new_status=OrderStatus.SHIPPED,
+        )
+        order.refresh_from_db()
+        self.assertEqual(order.carrier, "courier")
+        self.assertEqual(order.tracking_code, "")
+
+    def test_set_delivered_at(self):
+        self._prepare_for_ship()
 
         change_order_status(
             order=self.order,
@@ -163,6 +214,7 @@ class ChangeOrderStatusTests(TestCase):
         )
 
     def test_save_reason(self):
+        self._mark_order_paid()
         reason = "Prepared by admin"
 
         change_order_status(
@@ -179,6 +231,7 @@ class ChangeOrderStatusTests(TestCase):
         )
 
     def test_save_changed_by(self):
+        self._mark_order_paid()
         admin = User.objects.create_user(
             phone_number="09121111111",
         )

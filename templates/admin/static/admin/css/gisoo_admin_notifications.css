@@ -1,0 +1,127 @@
+/* Gisoo admin — In-app notifications */
+
+.app-notifications.model-inappnotification .gisoo-notif-head {
+  margin-bottom: 18px;
+}
+
+.app-notifications.model-inappnotification .gisoo-notif-head .gisoo-dash-sub {
+  margin: 6px 0 0;
+  color: #64748b !important;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  max-width: 42rem;
+}
+
+.app-notifications.model-inappnotification .gisoo-eyebrow {
+  margin: 0 0 4px;
+  color: #0f2fb8 !important;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.app-notifications.model-inappnotification #changelist {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e6ebf2;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.app-notifications.model-inappnotification #result_list td,
+.app-notifications.model-inappnotification #result_list th {
+  vertical-align: middle !important;
+}
+
+.app-notifications.model-inappnotification .gisoo-notif-title {
+  display: block;
+  font-weight: 700;
+  color: #0f172a !important;
+  margin-bottom: 2px;
+}
+
+.app-notifications.model-inappnotification .gisoo-notif-snippet {
+  display: block;
+  color: #64748b !important;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.45;
+  max-width: 28rem;
+}
+
+.app-notifications.model-inappnotification .gisoo-notif-user {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 7rem;
+}
+
+.app-notifications.model-inappnotification .gisoo-notif-user strong {
+  color: #111827 !important;
+  font-size: 0.88rem;
+}
+
+.app-notifications.model-inappnotification .gisoo-notif-user small {
+  color: #64748b !important;
+  font-size: 0.78rem;
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+
+.app-notifications.model-inappnotification .gisoo-notif-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.app-notifications.model-inappnotification .gisoo-notif-badge--read {
+  color: #065f46 !important;
+  background: #ecfdf5 !important;
+}
+
+.app-notifications.model-inappnotification .gisoo-notif-badge--unread {
+  color: #9f1239 !important;
+  background: #fff1f2 !important;
+}
+
+.app-notifications.model-inappnotification .gisoo-notif-order {
+  color: #0f2fb8 !important;
+  font-weight: 700;
+  text-decoration: none !important;
+}
+
+.app-notifications.model-inappnotification .gisoo-notif-order:hover {
+  text-decoration: underline !important;
+}
+
+.app-notifications.model-inappnotification.gisoo-change-form .gisoo-form-head h1 {
+  font-size: 1.5rem;
+}
+
+.app-notifications.model-inappnotification.gisoo-change-form fieldset.module h2 {
+  font-size: 1rem !important;
+}
+
+.app-notifications.model-inappnotification.gisoo-change-form .form-row textarea {
+  min-height: 120px;
+  border-radius: 12px !important;
+}
+
+.app-notifications.model-inappnotification.gisoo-change-form .form-row input[type="text"],
+.app-notifications.model-inappnotification.gisoo-change-form .form-row input[type="url"],
+.app-notifications.model-inappnotification.gisoo-change-form .form-row select {
+  border-radius: 10px !important;
+}
+
+@media (max-width: 900px) {
+  .app-notifications.model-inappnotification .gisoo-notif-snippet {
+    max-width: 16rem;
+  }
+}

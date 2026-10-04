@@ -21,8 +21,8 @@ class FAQCategory(models.Model):
     )
 
     class Meta:
-        verbose_name = _("FAQCategory")
-        verbose_name_plural = _("FAQCategories")
+        verbose_name = "دسته‌بندی پرسش"
+        verbose_name_plural = "دسته‌بندی‌های پرسش"
         ordering = ["ordering", "id"]
 
     def __str__(self):
@@ -61,8 +61,8 @@ class FAQ(models.Model):
     )
 
     class Meta:
-        verbose_name = _("FAQ")
-        verbose_name_plural = _("FAQs")
+        verbose_name = "پرسش متداول"
+        verbose_name_plural = "پرسش‌های متداول"
         ordering = ["ordering", "id"]
 
     def __str__(self):

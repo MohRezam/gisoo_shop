@@ -50,3 +50,9 @@ class OTPThrottle(UserRateThrottle):
     """
 
     scope = ThrottleScopeNames.OTP
+
+
+class ConsultationCreateThrottle(
+    UserRateThrottle
+):
+    scope = "consultation_create"

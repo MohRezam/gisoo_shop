@@ -5,11 +5,9 @@ from sentry_sdk.integrations.django import DjangoIntegration
 sentry_sdk.init(
     dsn=config("SENTRY_URL", ""),
     integrations=[DjangoIntegration()],
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    # We recommend adjusting this value in production.
-    traces_sample_rate=1.0,
-    # If you wish to associate users to errors (assuming you are using
-    # django.contrib.auth) you may enable sending PII data.
-    send_default_pii=True,
+    # Keep sampling low by default; override via SENTRY_TRACES_SAMPLE_RATE.
+    traces_sample_rate=float(config("SENTRY_TRACES_SAMPLE_RATE", default=0.1)),
+    # Do not send PII by default; set SENTRY_SEND_DEFAULT_PII=true to opt in.
+    send_default_pii=str(config("SENTRY_SEND_DEFAULT_PII", default="false")).lower()
+    in ("true", "1", "yes"),
 )

@@ -1,6 +1,5 @@
 from django.contrib import admin
 
-from apps.shared.admin import BaseModelAdmin
 from apps.shipping.models import (
     Shipment,
     ShippingMethod,
@@ -9,18 +8,22 @@ from apps.shipping.models import (
 
 @admin.register(ShippingMethod)
 class ShippingMethodAdmin(
-    BaseModelAdmin
+    admin.ModelAdmin
 ):
     list_display = [
+        "id",
         "title",
+        "carrier",
         "price",
         "free_shipping_minimum",
+        "estimated_days_min",
         "estimated_days",
         "is_active",
     ]
 
     list_filter = [
         "is_active",
+        "carrier",
     ]
 
     search_fields = [
@@ -29,6 +32,7 @@ class ShippingMethodAdmin(
 
     list_editable = [
         "price",
+        "estimated_days_min",
         "estimated_days",
         "is_active",
     ]
@@ -36,6 +40,29 @@ class ShippingMethodAdmin(
     ordering = [
         "price",
     ]
+    exclude = ("creator", "archived")
+    list_per_page = 15
+    list_display_links = ("title",)
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "title",
+                    "carrier",
+                    "price",
+                    "free_shipping_minimum",
+                    "estimated_days_min",
+                    "estimated_days",
+                    "is_active",
+                ),
+                "description": (
+                    "حامل مشخص می‌کند سفارش با پست، تیپاکس یا پیک ارسال می‌شود. "
+                    "برای روش «پیک» گزینهٔ پیک را انتخاب کنید."
+                ),
+            },
+        ),
+    )
 
 
 @admin.register(Shipment)
@@ -59,11 +86,6 @@ class ShipmentAdmin(
         "order__id",
     ]
 
-    autocomplete_fields = [
-        "order",
-        "created_by",
-    ]
-
     readonly_fields = [
         "created_at",
         "updated_at",
@@ -72,3 +94,9 @@ class ShipmentAdmin(
     ordering = [
         "-created_at",
     ]
+    exclude = ("creator", "archived")
+    raw_id_fields = ("order", "created_by")
+    list_select_related = ("order", "created_by")
+    list_per_page = 15
+    show_full_result_count = False
+    list_display_links = ("order",)

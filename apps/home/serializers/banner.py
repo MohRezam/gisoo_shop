@@ -10,16 +10,19 @@ class BannerSerializer(serializers.ModelSerializer):
         model = Banner
         fields = (
             "id",
-            "title",
             "image",
             "link",
         )
 
     def get_link(self, obj):
         if obj.link_type == obj.LinkType.PRODUCT:
+            if obj.product_id is None or obj.product is None:
+                return None
             return f"/products/{obj.product.slug}/"
 
         if obj.link_type == obj.LinkType.CATEGORY:
+            if obj.category_id is None or obj.category is None:
+                return None
             return f"/categories/{obj.category.slug}/"
 
         if obj.link_type == obj.LinkType.CUSTOM:
@@ -41,12 +44,16 @@ class SliderSerializer(serializers.ModelSerializer):
 
     def get_link(self, obj):
         if obj.link_type == obj.LinkType.PRODUCT:
+            if obj.product_id is None or obj.product is None:
+                return None
             return f"/products/{obj.product.slug}/"
 
         if obj.link_type == obj.LinkType.CATEGORY:
+            if obj.category_id is None or obj.category is None:
+                return None
             return f"/categories/{obj.category.slug}/"
 
         if obj.link_type == obj.LinkType.CUSTOM:
-            return obj.custom_url
+            return obj.custom_url or None
 
         return None

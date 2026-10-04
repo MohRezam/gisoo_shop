@@ -1,0 +1,25 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block bodyclass %}{{ block.super }} gisoo-notif-admin{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">خانه</a>
+  <span class="gisoo-bc-sep" aria-hidden="true">/</span>
+  <a href="{% url 'admin:app_list' app_label=cl.opts.app_label %}">{{ cl.opts.app_config.verbose_name }}</a>
+  <span class="gisoo-bc-sep" aria-hidden="true">/</span>
+  {{ cl.opts.verbose_name_plural }}
+</div>
+{% endblock %}
+
+{% block content %}
+<header class="gisoo-form-head gisoo-notif-head">
+  <div>
+    <p class="gisoo-eyebrow">صندوق پیام کاربران</p>
+    <h1>{{ cl.opts.verbose_name_plural }}</h1>
+    <p class="gisoo-dash-sub">اعلان‌هایی که داخل اپ برای کاربران نمایش داده می‌شوند را از اینجا مدیریت کنید.</p>
+  </div>
+</header>
+{{ block.super }}
+{% endblock %}

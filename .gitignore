@@ -246,3 +246,6 @@ media/*
 
 backend.py
 requirements.txt
+# Frontend lives in its own repository (gisoo_shop_frontend)
+/front/
+

@@ -1,12 +1,12 @@
 from django.contrib import admin
 
 from apps.products.models import Category
-from apps.shared.admin import BaseModelAdmin
 
 
 @admin.register(Category)
-class CategoryAdmin(BaseModelAdmin):
+class CategoryAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "title",
         "parent",
         "created_at",
@@ -24,5 +24,7 @@ class CategoryAdmin(BaseModelAdmin):
     prepopulated_fields = {
         "slug": ("title",)
     }
-
-
+    exclude = ("creator", "archived")
+    raw_id_fields = ("parent",)
+    list_per_page = 15
+    list_display_links = ("title",)

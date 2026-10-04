@@ -2,63 +2,372 @@ from celery import shared_task
 from django.db import transaction
 from django.utils import timezone
 
-from apps.orders.models import (
-    Order,
-    OrderStatus,
-)
+from apps.orders.models import Order, OrderStatus
 from apps.orders.services.change_order_status import (
     change_order_status,
 )
 from apps.payments.models import (
-    PaymentStatus,
+    PaymentIntent,
+    PaymentIntentStatus,
 )
+
+
+ACTIVE_PAYMENT_STATUSES = [
+    PaymentIntentStatus.PENDING_PAYMENT,
+    PaymentIntentStatus.RECEIPT_SUBMITTED,
+]
+
+REVIEW_PENDING_STATUSES = {
+    PaymentIntentStatus.RECEIPT_SUBMITTED,
+}
+
+EXPIRABLE_ORDER_STATUSES = {
+    OrderStatus.WAITING_PAYMENT,
+    OrderStatus.PAYMENT_REJECTED,
+}
+
+
+def has_valid_payment_receipt(
+    *,
+    order,
+    expires_at,
+):
+    """
+    If the customer submitted a receipt before the
+    original payment deadline, the order must not
+    expire while the payment is waiting for review.
+    """
+
+    return PaymentIntent.objects.filter(
+        order=order,
+        status=PaymentIntentStatus.RECEIPT_SUBMITTED,
+        submitted_at__isnull=False,
+        submitted_at__lte=expires_at,
+    ).exists()
 
 
 @shared_task
 @transaction.atomic
-def expire_order(
-    order_id: int,
-):
+def expire_order(order_id: int):
     order = (
         Order.objects
         .select_for_update()
-        .select_related(
-            "payment",
-        )
         .prefetch_related(
             "items__variant",
+            "bundles",
         )
-        .filter(
-            id=order_id,
-        )
+        .filter(id=order_id)
         .first()
     )
 
     if order is None:
         return
 
-    if order.status != OrderStatus.CREATED:
+    if order.status not in EXPIRABLE_ORDER_STATUSES:
         return
 
-    if order.expires_at > timezone.now():
+    now = timezone.now()
+
+    if order.expires_at is None or order.expires_at > now:
         return
 
-    if order.payment.status != PaymentStatus.PENDING:
-        return
+    # ---------------------------------------------------------
+    # WAITING_PAYMENT
+    # ---------------------------------------------------------
+    #
+    # If a receipt was submitted before the deadline,
+    # the customer has completed their part.
+    #
+    # Therefore the order must remain active while
+    # admin reviews the payment.
+    #
 
-    for item in order.items.all():
-        variant = item.variant
+    if order.status == OrderStatus.WAITING_PAYMENT:
+        if has_valid_payment_receipt(
+            order=order,
+            expires_at=order.expires_at,
+        ):
+            return
 
-        variant.stock += item.quantity
+    # ---------------------------------------------------------
+    # PAYMENT INTENT (lock after Order to avoid deadlocks)
+    # ---------------------------------------------------------
+    #
+    # Lock the latest relevant intent and re-check under
+    # select_for_update so a concurrent receipt submit
+    # cannot race with expiration.
+    #
 
-        variant.save(
+    payment_intent = (
+        PaymentIntent.objects
+        .select_for_update()
+        .filter(
+            order=order,
+            status__in=(
+                ACTIVE_PAYMENT_STATUSES
+                + [
+                    PaymentIntentStatus.REJECTED,
+                ]
+            ),
+        )
+        .order_by("-created_at")
+        .first()
+    )
+
+    if payment_intent is not None:
+        # Race guard: receipt submitted / awaiting review
+        # after the initial check must skip expire.
+        if payment_intent.status in REVIEW_PENDING_STATUSES:
+            return
+
+        if has_valid_payment_receipt(
+            order=order,
+            expires_at=order.expires_at,
+        ):
+            return
+
+        payment_intent.status = (
+            PaymentIntentStatus.EXPIRED
+        )
+
+        payment_intent.save(
             update_fields=[
-                "stock",
+                "status",
+                "updated_at",
             ]
         )
+
+    # ---------------------------------------------------------
+    # EXPIRE ORDER (releases stock via change_order_status)
+    # ---------------------------------------------------------
 
     change_order_status(
         order=order,
         new_status=OrderStatus.EXPIRED,
         reason="Order expired automatically.",
     )
+
+
+@shared_task
+def expire_overdue_orders():
+    now = timezone.now()
+
+    overdue_order_ids = list(
+        Order.objects
+        .filter(
+            status__in=list(EXPIRABLE_ORDER_STATUSES),
+            expires_at__lte=now,
+        )
+        .values_list(
+            "id",
+            flat=True,
+        )
+    )
+
+    for order_id in overdue_order_ids:
+        expire_order.delay(order_id)
+
+    return len(overdue_order_ids)
+
+
+FIRST_REMINDER_AFTER_MINUTES = 5
+
+
+@shared_task
+def send_pending_payment_reminders():
+    """
+    Remind users who reached card-to-card / receipt upload
+    but left without completing payment.
+    """
+    from datetime import timedelta
+
+    from apps.notifications.models import InAppNotificationType
+    from apps.notifications.services.inbox import notify_user
+    from apps.notifications.services.notification import NotificationService
+    from apps.payments.models import PaymentIntent, PaymentIntentStatus
+
+    now = timezone.now()
+    qs = (
+        Order.objects
+        .filter(
+            status=OrderStatus.WAITING_PAYMENT,
+            expires_at__gt=now,
+        )
+        .select_related("user")
+    )
+
+    sent = 0
+    for order in qs.iterator():
+        intent = (
+            PaymentIntent.objects
+            .filter(
+                order_id=order.id,
+                status=PaymentIntentStatus.PENDING_PAYMENT,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+        if intent is None:
+            continue
+
+        # Prefer intent creation time; fall back to order.
+        started = intent.created_at or order.created_at
+        if started is None or started > now - timedelta(minutes=FIRST_REMINDER_AFTER_MINUTES):
+            continue
+
+        remaining = order.expires_at - now
+        if remaining.total_seconds() <= 0:
+            continue
+
+        minutes_left = max(1, int(remaining.total_seconds() // 60))
+        link = f"/payment?order={order.id}"
+        title = "سفارش نیمه‌کاره"
+        body = (
+            f"پرداخت سفارش {order.public_number or order.id} "
+            f"هنوز کامل نشده. حدود {minutes_left} دقیقه مهلت دارید."
+        )
+        phone = (order.phone_number or "").strip()
+
+        # Mid-window reminder (second)
+        total_window = None
+        if order.expires_at and started:
+            total_window = order.expires_at - started
+        is_mid = (
+            total_window is not None
+            and remaining <= total_window / 2
+            and order.payment_reminder_mid_sent_at is None
+            and order.payment_reminder_sent_at is not None
+        )
+        is_first = order.payment_reminder_sent_at is None
+
+        if not is_first and not is_mid:
+            continue
+
+        notify_user(
+            user=order.user,
+            title=title,
+            body=body,
+            type=InAppNotificationType.ORDER,
+            link=link,
+            order_id=order.id,
+            expires_at=order.expires_at,
+        )
+
+        if phone:
+            key = (
+                f"payment_reminder_mid:{order.id}"
+                if is_mid
+                else f"payment_reminder:{order.id}"
+            )
+            NotificationService.send_payment_reminder(
+                user=order.user,
+                recipient=phone,
+                order_id=order.public_number or order.id,
+                minutes_left=minutes_left,
+                idempotency_key=key,
+            )
+
+        if is_mid:
+            order.payment_reminder_mid_sent_at = now
+            order.save(
+                update_fields=[
+                    "payment_reminder_mid_sent_at",
+                    "updated_at",
+                ]
+            )
+        else:
+            order.payment_reminder_sent_at = now
+            order.save(
+                update_fields=[
+                    "payment_reminder_sent_at",
+                    "updated_at",
+                ]
+            )
+        sent += 1
+
+    return sent
+
+
+@shared_task
+def process_shipped_delivery_followups():
+    """
+    For shipped orders:
+    - At shipping max estimate (e.g. day 5): SMS asking to confirm delivery
+    - At max + 5 days (e.g. day 10): auto-mark as delivered
+    """
+    from apps.notifications.models import InAppNotificationType
+    from apps.notifications.services.inbox import notify_user
+    from apps.notifications.services.notification import NotificationService
+    from apps.orders.services.delivery_confirm import (
+        should_auto_deliver,
+        should_send_delivery_confirm_sms,
+    )
+
+    now = timezone.now()
+    qs = (
+        Order.objects
+        .filter(
+            status=OrderStatus.SHIPPED,
+            shipped_at__isnull=False,
+        )
+        .select_related("user", "shipping_method")
+    )
+
+    sms_sent = 0
+    auto_delivered = 0
+
+    for order in qs.iterator():
+        if should_auto_deliver(order, now=now):
+            try:
+                change_order_status(
+                    order=order,
+                    new_status=OrderStatus.DELIVERED,
+                    reason="auto_delivered_after_estimate",
+                )
+                auto_delivered += 1
+            except Exception:
+                continue
+            continue
+
+        if not should_send_delivery_confirm_sms(order, now=now):
+            continue
+
+        label = order.public_number or order.id
+        link = f"/account/orders/{order.id}"
+        title = "تأیید تحویل سفارش"
+        body = (
+            f"اگر سفارش {label} را تحویل گرفته‌اید، "
+            "وارد سایت شوید و دکمه «تحویل گرفتم» را بزنید."
+        )
+
+        notify_user(
+            user=order.user,
+            title=title,
+            body=body,
+            type=InAppNotificationType.ORDER,
+            link=link,
+            order_id=order.id,
+        )
+
+        phone = (order.phone_number or "").strip()
+        if phone:
+            NotificationService.send_delivery_confirm(
+                user=order.user,
+                recipient=phone,
+                order_id=label,
+                idempotency_key=f"delivery_confirm:{order.id}",
+            )
+
+        order.delivery_confirm_sms_sent_at = now
+        order.save(
+            update_fields=[
+                "delivery_confirm_sms_sent_at",
+                "updated_at",
+            ]
+        )
+        sms_sent += 1
+
+    return {
+        "sms_sent": sms_sent,
+        "auto_delivered": auto_delivered,
+    }

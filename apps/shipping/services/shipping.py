@@ -6,10 +6,9 @@ def calculate_shipping_price(
     shipping_method: ShippingMethod,
     products_total,
 ):
-    if (
-        products_total >=
-        shipping_method.free_shipping_minimum
-    ):
+    # free_shipping_minimum=0 means no free-shipping threshold.
+    minimum = shipping_method.free_shipping_minimum
+    if minimum > 0 and products_total >= minimum:
         return 0
 
     return shipping_method.price

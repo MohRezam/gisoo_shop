@@ -1,0 +1,213 @@
+/* Payment guide video admin — Persian, calm, RTL */
+
+.gisoo-guide-video-page #content {
+  max-width: 920px;
+}
+
+.gisoo-guide-intro {
+  margin: 0 0 8px;
+}
+
+.gisoo-guide-video-page .gisoo-form-head {
+  display: none;
+}
+
+.gisoo-guide-head {
+  margin: 0 0 18px;
+}
+
+.gisoo-guide-head h1 {
+  margin: 0 !important;
+  font-family: "Kook", "IranSans", Tahoma, sans-serif;
+  font-size: 1.45rem;
+  color: #0f172a !important;
+}
+
+.gisoo-guide-sub {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.8;
+  max-width: 42rem;
+}
+
+.gisoo-guide-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 20px;
+}
+
+.gisoo-guide-info-card {
+  background: linear-gradient(180deg, #eef3ff 0%, #ffffff 100%);
+  border: 1px solid #e6ebf2;
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.gisoo-guide-info-card strong {
+  display: block;
+  color: #0f2fb8;
+  font-family: "Kook", "IranSans", Tahoma, sans-serif;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.gisoo-guide-info-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.75;
+}
+
+.gisoo-guide-lead {
+  margin: 0;
+  color: #475569;
+  line-height: 1.8;
+}
+
+.gisoo-guide-tips {
+  margin: 0;
+  padding: 0 1.1rem 0 0;
+  color: #475569;
+  line-height: 1.85;
+  font-size: 0.86rem;
+}
+
+.gisoo-guide-tips code {
+  direction: ltr;
+  display: inline-block;
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.78rem;
+  color: #0f172a;
+}
+
+.gisoo-guide-preview {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 14px;
+  padding: 12px;
+  max-width: 640px;
+}
+
+.gisoo-guide-preview--empty {
+  display: block;
+  text-align: center;
+  padding: 22px 16px;
+}
+
+.gisoo-guide-preview--empty p {
+  margin: 0 0 4px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.gisoo-guide-preview--empty span {
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.gisoo-guide-poster,
+.gisoo-guide-poster-fallback {
+  width: 160px;
+  height: 96px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #0b2c78;
+  display: block;
+}
+
+.gisoo-guide-poster-fallback {
+  display: grid;
+  place-items: center;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8rem;
+}
+
+.gisoo-guide-preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.gisoo-guide-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.gisoo-guide-pill--on {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.gisoo-guide-pill--off {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.gisoo-guide-link {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: #173ded;
+  color: #fff !important;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none !important;
+}
+
+.gisoo-guide-link:hover {
+  background: #0f2fb8;
+}
+
+.gisoo-guide-url {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 0.72rem;
+  color: #334155;
+}
+
+.gisoo-guide-video-page .submit-row {
+  border-radius: 14px;
+  margin-top: 8px;
+}
+
+@media (max-width: 820px) {
+  .gisoo-guide-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gisoo-guide-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .gisoo-guide-poster,
+  .gisoo-guide-poster-fallback {
+    width: 100%;
+    height: 160px;
+  }
+}

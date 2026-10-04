@@ -1,5 +1,6 @@
 from decouple import config
 
+PAYMENT_DESTINATION_CARD_ID = config("PAYMENT_DESTINATION_CARD_ID", default=1)
 CLIENT_URL = config("CLIENT_URL", default="")
 IN_APP_LOG_LEVEL = int(config("LOG_LEVEL", default=3))
 PROJECT_NAME = config("APP_BASE_NAME", "core_gisoo_backend")
@@ -10,6 +11,9 @@ SIGN_UP_TOKEN_PREFIX = "signup_token_"
 PHONE_REGEX_PATTERN = "[0-9]+"
 # PHONE_REGEX_PATTERN = "^((\([0-9]{3}\))|[0-9]{3})[\s\-]?[\0-9]{3}[\s\-]?[0-9]{4}$" # US numbers
 NATIONAL_CODE_REGEX_PATTERN = "^([0-9]{11})$"
+
+GUEST_CONSULTATION_COOKIE_NAME = "guest_consultation_token"
+GUEST_CART_COOKIE_NAME = "guest_cart_uuid"
 
 LOGGING_STATS_PREFIX = "STATS-"
 REQUEST_COUNT_PREFIX = "REQ-COUNT"
@@ -42,7 +46,6 @@ SINCH_BODY_MESSAGE = config("SINCH_BODY_MESSAGE", default="")
 
 MANUAL_OTP_METHOD = "manual"
 SERVICE_OTP_METHOD = "service"
-
 
 WISHLIST_COOKIE_NAME = "wishlist_token"
 WISHLIST_COOKIE_MAX_AGE = 60 * 60 * 24 * 365

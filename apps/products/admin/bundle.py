@@ -1,35 +1,35 @@
 from django.contrib import admin
 
-from apps.products.models import Bundle, BundleItem
-from apps.shared.admin import BaseModelAdmin
+from apps.products.models import Bundle
+
+import nested_admin
 
 
-class BundleInline(admin.TabularInline):
+class BundleInline(nested_admin.NestedTabularInline):
     model = Bundle
-    extra = 1
+    extra = 0
+    verbose_name = "بسته"
+    verbose_name_plural = "بسته‌ها"
 
     fields = (
         "title",
+        "quantity",
         "price",
         "is_active",
         "display_order",
     )
-
-
-class BundleItemInline(admin.TabularInline):
-    model = BundleItem
-    extra = 1
-
-    autocomplete_fields = (
-        "variant",
-    )
+    exclude = ("creator", "archived")
 
 
 @admin.register(Bundle)
 class BundleAdmin(admin.ModelAdmin):
+    """Managed via Product → Variant inlines; hidden from sidebar."""
+
     list_display = (
+        "id",
         "title",
-        "product",
+        "variant",
+        "quantity",
         "price",
         "is_active",
         "display_order",
@@ -41,43 +41,25 @@ class BundleAdmin(admin.ModelAdmin):
 
     search_fields = (
         "title",
-        "product__title",
-    )
-
-    list_select_related = (
-        "product",
-    )
-
-    autocomplete_fields = (
-        "product",
-    )
-
-    inlines = [
-        BundleItemInline,
-    ]
-
-
-@admin.register(BundleItem)
-class BundleItemAdmin(admin.ModelAdmin):
-    list_display = (
-        "bundle",
-        "variant",
-        "quantity",
-    )
-
-    search_fields = (
-        "bundle__title",
         "variant__sku",
         "variant__product__title",
     )
 
-    list_select_related = (
-        "bundle",
-        "variant",
-        "variant__product",
+    list_editable = (
+        "display_order",
+        "is_active",
     )
 
-    autocomplete_fields = (
-        "bundle",
-        "variant",
+    ordering = (
+        "display_order",
+        "-created_at",
     )
+    exclude = ("creator", "archived")
+    raw_id_fields = ("variant",)
+    list_per_page = 15
+    show_full_result_count = False
+    list_display_links = ("title",)
+    list_select_related = ("variant", "variant__product")
+
+    def has_module_permission(self, request):
+        return False

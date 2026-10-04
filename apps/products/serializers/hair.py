@@ -1,4 +1,4 @@
-from apps.products.models import HairProblem
+from apps.products.models import HairProblem, HairType
 from rest_framework import serializers
 
 
@@ -10,5 +10,17 @@ class HairProblemSerializer(serializers.ModelSerializer):
             "title",
             "slug",
             "image",
-            "is_active"
+            "is_active",
+        )
+
+
+class HairTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HairType
+        fields = (
+            "id",
+            "title",
+            "slug",
+            "image",
+            "is_active",
         )

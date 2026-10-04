@@ -31,34 +31,42 @@ def create_brand(
 
 def create_product(
         *,
-        category,
+        category=None,
+        categories=None,
         brand,
         title="Product",
         slug="product",
 ):
-    return Product.objects.create(
-        category=category,
+    product = Product.objects.create(
         brand=brand,
         title=title,
         slug=slug,
         description="Description",
         is_available=True,
     )
+    cats = list(categories or [])
+    if category is not None:
+        cats.append(category)
+    if cats:
+        product.categories.set(cats)
+    return product
 
 
 def create_product_variant(
-        *,
-        product,
-        sku="sku-1",
-        stock=10,
-        price=100000,
+    product,
+    sku,
+    stock,
+    price,
+    discounted_price=None,
+    volume=100,
 ):
     return ProductVariant.objects.create(
         product=product,
         sku=sku,
-        price=price,
         stock=stock,
-        is_active=True,
+        price=price,
+        discounted_price=discounted_price,
+        volume=volume,
     )
 
 

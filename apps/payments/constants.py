@@ -1,0 +1,1 @@
+TOMAN_TO_RIAL = 10

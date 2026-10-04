@@ -1,26 +1,21 @@
 from apps.products.models import (
-    Attribute,
-    AttributeValue,
-    Product,
-    ProductAttribute,
-    ProductImage,
-    ProductVariant,
-    VariantAttribute,
     Wishlist,
     WishlistItem,
 )
 from django.contrib import admin
 
-from apps.shared.admin import BaseModelAdmin
-
 
 class WishlistItemInline(admin.TabularInline):
     model = WishlistItem
     extra = 0
+    exclude = ("creator",)
+    raw_id_fields = ("product",)
 
 
 @admin.register(Wishlist)
-class WishlistAdmin(BaseModelAdmin):
+class WishlistAdmin(admin.ModelAdmin):
+    """Support lookup; keep URL, hide from sidebar clutter."""
+
     list_display = (
         "id",
         "user",
@@ -41,3 +36,11 @@ class WishlistAdmin(BaseModelAdmin):
     inlines = [
         WishlistItemInline,
     ]
+    exclude = ("creator", "archived")
+    raw_id_fields = ("user",)
+    list_per_page = 15
+    show_full_result_count = False
+    list_display_links = ("user",)
+
+    def has_module_permission(self, request):
+        return False

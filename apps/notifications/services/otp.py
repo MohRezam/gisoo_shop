@@ -1,9 +1,9 @@
-import random
+import secrets
 from django.core.cache import cache
 
 
 def generate_otp() -> str:
-    return str(random.randint(1000, 9999))
+    return str(secrets.randbelow(900000) + 100000)
 
 
 OTP_TIMEOUT = 2 * 60

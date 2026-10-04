@@ -6,14 +6,13 @@ from apps.cart.tests.factories import (
     create_cart,
     create_cart_item,
 )
+from apps.orders.models import OrderStatus
 from apps.orders.services.create_order import create_order
 from apps.orders.tests.factories import create_shipping_method
-from apps.payments.models import (
-    Payment,
-    PaymentStatus,
-)
-from apps.payments.services.create_payment import (
-    create_payment,
+from apps.payments.models import PaymentIntent, PaymentIntentStatus
+from apps.payments.services.create_payment import create_payment
+from apps.payments.services.create_payment_intent import (
+    create_payment_intent,
 )
 from apps.products.tests.factories import (
     create_brand,
@@ -74,49 +73,32 @@ class CreatePaymentTests(TestCase):
             shipping_method_id=self.shipping.id,
         )
 
-        self.order.payment.delete()
+    def test_legacy_create_payment_disabled(self):
+        with self.assertRaises(NotImplementedError):
+            create_payment(order=self.order)
 
-    def test_create_payment(self):
-        payment = create_payment(
-            order=self.order,
-        )
+    def test_create_order_creates_payment_intent(self):
+        intent = self.order.payment_intents.first()
 
-        self.assertIsInstance(
-            payment,
-            Payment,
-        )
-
+        self.assertIsInstance(intent, PaymentIntent)
         self.assertEqual(
-            Payment.objects.count(),
+            intent.status,
+            PaymentIntentStatus.PENDING_PAYMENT,
+        )
+        self.assertEqual(
+            self.order.status,
+            OrderStatus.WAITING_PAYMENT,
+        )
+
+    def test_create_payment_intent_idempotent(self):
+        first = self.order.payment_intents.first()
+        second = create_payment_intent(
+            order_id=self.order.id,
+            user=self.user,
+        )
+
+        self.assertEqual(first.id, second.id)
+        self.assertEqual(
+            PaymentIntent.objects.filter(order=self.order).count(),
             1,
-        )
-
-    def test_payment_amount(self):
-        payment = create_payment(
-            order=self.order,
-        )
-
-        self.assertEqual(
-            payment.amount,
-            self.order.total_price,
-        )
-
-    def test_payment_status(self):
-        payment = create_payment(
-            order=self.order,
-        )
-
-        self.assertEqual(
-            payment.status,
-            PaymentStatus.PENDING,
-        )
-
-    def test_payment_order(self):
-        payment = create_payment(
-            order=self.order,
-        )
-
-        self.assertEqual(
-            payment.order,
-            self.order,
         )

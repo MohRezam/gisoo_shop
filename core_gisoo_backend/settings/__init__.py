@@ -24,5 +24,7 @@ from .components.server_address import get_server_add
 from .components.silk import *
 from .components.storages import *
 from .components.templates import *
+from .components.sms import *
+
 
 

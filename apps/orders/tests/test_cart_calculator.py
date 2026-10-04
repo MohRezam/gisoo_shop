@@ -65,7 +65,7 @@ class CalculateCartTests(TestCase):
             postal_code=self.address.postal_code,
             address=self.address.address,
             shipping_method=self.shipping,
-            status=OrderStatus.CREATED,
+            status=OrderStatus.WAITING_PAYMENT,
         )
 
     def test_calculate_cart_success(self):

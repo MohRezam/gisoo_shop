@@ -1,0 +1,724 @@
+from django.core.exceptions import ValidationError
+from django.conf import settings
+from django.db.models import Prefetch
+from rest_framework import status
+from rest_framework.generics import (
+    CreateAPIView,
+    GenericAPIView,
+    ListAPIView,
+    RetrieveUpdateAPIView,
+)
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+
+from drf_spectacular.utils import extend_schema
+from rest_framework.views import APIView
+
+from apps.consultations.models.consultation import (
+    ConsultationRecommendation,
+    ConsultationRecommendationPack,
+    ConsultationRecommendationPackItem,
+    ConsultationRequest,
+)
+from apps.consultations.serializers import (
+    ConsultationCreateResponseSerializer,
+    ConsultationCreateSerializer,
+    ConsultationListSerializer,
+    ConsultationOptionsSerializer,
+    ConsultationRecommendationSerializer,
+    ConsultationUpdateSerializer, AddSelectedRecommendationsSerializer,
+)
+from apps.consultations.services import (
+    get_guest_by_token,
+    get_or_create_guest,
+    merge_guest_consultations_after_login, create_guest_device_access, get_accessible_consultation,
+    add_consultation_recommendations_to_cart,
+)
+from apps.products.models import ProductImage, ProductVariant
+from core_gisoo_backend.settings.components.constants import GUEST_CONSULTATION_COOKIE_NAME
+from utils.general.throttles import ConsultationCreateThrottle
+
+
+class ConsultationOptionsAPIView(
+    GenericAPIView,
+):
+    permission_classes = [
+        AllowAny,
+    ]
+
+    serializer_class = (
+        ConsultationOptionsSerializer
+    )
+
+    @extend_schema(
+        tags=["Consultations"],
+        summary="Retrieve consultation options",
+        responses={
+            200: ConsultationOptionsSerializer,
+        },
+    )
+    def get(
+            self,
+            request,
+            *args,
+            **kwargs,
+    ):
+        serializer = self.get_serializer({})
+
+        return Response(
+            serializer.data,
+        )
+
+
+class ConsultationCreateAPIView(
+    CreateAPIView,
+):
+    permission_classes = [
+        AllowAny,
+    ]
+
+    serializer_class = (
+        ConsultationCreateSerializer
+    )
+
+    throttle_classes = [
+        ConsultationCreateThrottle,
+    ]
+
+    @extend_schema(
+        tags=["Consultations"],
+        summary="Create consultation request",
+        request=ConsultationCreateSerializer,
+        responses={
+            201: ConsultationCreateResponseSerializer,
+        },
+    )
+    def create(
+            self,
+            request,
+            *args,
+            **kwargs,
+    ):
+        data = request.data.copy()
+
+        if request.user.is_authenticated:
+            merge_guest_consultations_after_login(
+                request.user,
+            )
+
+            data["phone_number"] = (
+                request.user.phone_number
+            )
+
+            profile_name = " ".join(
+                part
+                for part in [
+                    (
+                            request.user.first_name
+                            or ""
+                    ).strip(),
+                    (
+                            request.user.last_name
+                            or ""
+                    ).strip(),
+                ]
+                if part
+            )
+
+            if profile_name:
+                data["full_name"] = profile_name
+
+        serializer = self.get_serializer(
+            data=data,
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        phone_number = (
+            serializer.validated_data[
+                "phone_number"
+            ]
+        )
+
+        if request.user.is_authenticated:
+            active_consultation = (
+                ConsultationRequest.objects
+                .filter(
+                    user=request.user,
+                    status=(
+                        ConsultationRequest.Status.PENDING
+                    ),
+                )
+                .first()
+            )
+
+        else:
+            active_consultation = (
+                ConsultationRequest.objects
+                .filter(
+                    phone_number=phone_number,
+                    status=(
+                        ConsultationRequest.Status.PENDING
+                    ),
+                )
+                .first()
+            )
+
+        if active_consultation:
+            return Response(
+                {
+                    "detail": (
+                        "شما یک درخواست مشاوره "
+                        "در انتظار دارید."
+                    ),
+                    "status": (
+                        active_consultation.status
+                    ),
+                    "id": active_consultation.id,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        if request.user.is_authenticated:
+            consultation = serializer.save(
+                user=request.user,
+                guest=None,
+                phone_number=(
+                    request.user.phone_number
+                ),
+            )
+
+            try:
+                from apps.notifications.models import AdminAlertType
+                from apps.notifications.services.admin_alerts import notify_admin
+                from apps.notifications.tasks import (
+                    send_consultation_received_sms,
+                )
+
+                notify_admin(
+                    title="درخواست مشاوره جدید",
+                    body=f"درخواست مشاوره #{consultation.id} ثبت شد.",
+                    type=AdminAlertType.CONSULTATION,
+                    link=(
+                        f"/admin/consultations/consultationrequest/"
+                        f"{consultation.pk}/change/"
+                    ),
+                )
+                phone = (consultation.phone_number or "").strip()
+                if phone:
+                    send_consultation_received_sms.delay(
+                        user_id=request.user.id,
+                        recipient=phone,
+                        consultation_id=str(consultation.id),
+                    )
+            except Exception:
+                pass
+
+            return Response(
+                ConsultationCreateResponseSerializer(
+                    consultation,
+                    context={
+                        "request": request,
+                    },
+                ).data,
+                status=status.HTTP_201_CREATED,
+            )
+
+        # -----------------------------------------
+        # GUEST
+        # -----------------------------------------
+
+        guest = get_or_create_guest(
+            phone_number,
+        )
+
+        consultation = serializer.save(
+            guest=guest,
+            user=None,
+
+            # Guests MUST always have
+            # phone consultation.
+            request_phone_consultation=True,
+        )
+
+        try:
+            from apps.notifications.models import AdminAlertType
+            from apps.notifications.services.admin_alerts import notify_admin
+            from apps.notifications.tasks import (
+                send_consultation_received_sms,
+            )
+
+            notify_admin(
+                title="درخواست مشاوره جدید",
+                body=f"درخواست مشاوره مهمان #{consultation.id} ثبت شد.",
+                type=AdminAlertType.CONSULTATION,
+                link=(
+                    f"/admin/consultations/consultationrequest/"
+                    f"{consultation.pk}/change/"
+                ),
+            )
+            phone = (consultation.phone_number or "").strip()
+            if phone:
+                send_consultation_received_sms.delay(
+                    user_id=None,
+                    recipient=phone,
+                    consultation_id=str(consultation.id),
+                )
+        except Exception:
+            pass
+
+        guest_access = (
+            create_guest_device_access(
+                guest,
+            )
+        )
+
+        response = Response(
+            ConsultationCreateResponseSerializer(
+                consultation,
+                context={
+                    "request": request,
+                },
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+        response.set_cookie(
+            key=GUEST_CONSULTATION_COOKIE_NAME,
+            value=guest_access.token,
+            max_age=30 * 24 * 60 * 60,
+            httponly=True,
+            secure=(
+                request.is_secure()
+                or getattr(settings, "SESSION_COOKIE_SECURE", False)
+            ),
+            samesite="Lax",
+        )
+
+        return response
+
+
+class ConsultationListAPIView(
+    ListAPIView,
+):
+    permission_classes = [
+        # We manually use authentication here
+        # because guests do not have a /my/ page.
+        AllowAny,
+    ]
+
+    serializer_class = (
+        ConsultationListSerializer
+    )
+
+    def get_queryset(self):
+        if not self.request.user.is_authenticated:
+            return ConsultationRequest.objects.none()
+
+        merge_guest_consultations_after_login(
+            self.request.user,
+        )
+        recommendations_qs = (
+            ConsultationRecommendation.objects
+            .select_related(
+                "variant",
+                "variant__product",
+                "variant__product__brand",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "variant__product__images",
+                    queryset=ProductImage.objects.filter(
+                        is_primary=True
+                    ),
+                    to_attr="primary_images",
+                ),
+            )
+        )
+        pack_items_qs = (
+            ConsultationRecommendationPackItem.objects
+            .select_related(
+                "recommendation",
+                "recommendation__variant",
+                "recommendation__variant__product",
+                "recommendation__variant__product__brand",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "recommendation__variant__product__images",
+                    queryset=ProductImage.objects.filter(
+                        is_primary=True
+                    ),
+                    to_attr="primary_images",
+                ),
+            )
+            .order_by("display_order", "created_at")
+        )
+        packs_qs = (
+            ConsultationRecommendationPack.objects
+            .prefetch_related(
+                Prefetch(
+                    "items",
+                    queryset=pack_items_qs,
+                ),
+            )
+            .order_by("display_order", "created_at")
+        )
+
+        return (
+            ConsultationRequest.objects
+            .select_related(
+                "hair_problem",
+            )
+            .prefetch_related(
+                Prefetch(
+                    "recommendations",
+                    queryset=recommendations_qs,
+                ),
+                Prefetch(
+                    "recommendation_packs",
+                    queryset=packs_qs,
+                ),
+            )
+            .filter(
+                user=self.request.user,
+            )
+        )
+
+    @extend_schema(
+        tags=["Consultations"],
+        summary=(
+                "List my consultations "
+                "with product suggestions"
+        ),
+        responses={
+            200: ConsultationListSerializer(
+                many=True,
+            ),
+        },
+    )
+    def get(
+            self,
+            request,
+            *args,
+            **kwargs,
+    ):
+        if not request.user.is_authenticated:
+            return Response(
+                {
+                    "detail": (
+                        "احراز هویت الزامی است."
+                    )
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        return super().get(
+            request,
+            *args,
+            **kwargs,
+        )
+
+
+class ConsultationUpdateAPIView(
+    RetrieveUpdateAPIView,
+):
+    permission_classes = [
+        AllowAny,
+    ]
+
+    serializer_class = (
+        ConsultationUpdateSerializer
+    )
+
+    def get_object(self):
+        consultation_id = self.kwargs["pk"]
+
+        queryset = (
+            ConsultationRequest.objects
+            .select_related(
+                "user",
+                "guest",
+                "hair_problem",
+            )
+        )
+
+        consultation = (
+            queryset
+            .filter(
+                id=consultation_id,
+            )
+            .first()
+        )
+
+        if consultation is None:
+            from rest_framework.exceptions import NotFound
+
+            raise NotFound(
+                "درخواست مشاوره پیدا نشد."
+            )
+
+        # -----------------------------------------
+        # AUTHENTICATED USER
+        # -----------------------------------------
+
+        if self.request.user.is_authenticated:
+            if consultation.user_id != (
+                    self.request.user.id
+            ):
+                from rest_framework.exceptions import (
+                    PermissionDenied,
+                )
+
+                raise PermissionDenied(
+                    "شما به این درخواست مشاوره "
+                    "دسترسی ندارید."
+                )
+
+            return consultation
+
+        # -----------------------------------------
+        # GUEST
+        # -----------------------------------------
+
+        guest_token = self.request.COOKIES.get(
+            GUEST_CONSULTATION_COOKIE_NAME,
+        )
+
+        if not guest_token:
+            from rest_framework.exceptions import (
+                NotAuthenticated,
+            )
+
+            raise NotAuthenticated(
+                "Guest access token الزامی است."
+            )
+
+        guest = get_guest_by_token(
+            guest_token,
+        )
+
+        if guest is None:
+            from rest_framework.exceptions import (
+                NotAuthenticated,
+            )
+
+            raise NotAuthenticated(
+                "Guest access token معتبر نیست."
+            )
+
+        if consultation.guest_id != guest.id:
+            from rest_framework.exceptions import (
+                PermissionDenied,
+            )
+
+            raise PermissionDenied(
+                "شما به این درخواست مشاوره "
+                "دسترسی ندارید."
+            )
+
+        return consultation
+
+    def retrieve(
+            self,
+            request,
+            *args,
+            **kwargs,
+    ):
+        consultation = self.get_object()
+
+        return Response(
+            {
+                "id": consultation.id,
+                "full_name": consultation.full_name,
+                "phone_number": (
+                    consultation.phone_number
+                ),
+                "gender": consultation.gender,
+                "hair_problem": (
+                    consultation.hair_problem_id
+                ),
+                "duration": consultation.duration,
+                "status": consultation.status,
+                "request_phone_consultation": (
+                    consultation.request_phone_consultation
+                ),
+                "created_at": consultation.created_at,
+                "updated_at": consultation.updated_at,
+            }
+        )
+
+    def update(
+            self,
+            request,
+            *args,
+            **kwargs,
+    ):
+        consultation = self.get_object()
+
+        # Only PENDING consultations are editable.
+        if consultation.status != (
+                ConsultationRequest.Status.PENDING
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "این درخواست دیگر "
+                        "قابل ویرایش نیست."
+                    )
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        data = request.data.copy()
+
+        # -----------------------------------------
+        # GUEST
+        # -----------------------------------------
+
+        if not request.user.is_authenticated:
+            # Guest can never disable
+            # phone consultation.
+            data[
+                "request_phone_consultation"
+            ] = True
+
+        serializer = self.get_serializer(
+            consultation,
+            data=data,
+            partial=kwargs.get("partial", False),
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        serializer.save()
+
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class AddAllRecommendationsToCartAPIView(
+    APIView,
+):
+    permission_classes = [
+        AllowAny,
+    ]
+
+    @extend_schema(
+        tags=["Consultations"],
+        summary="Add all consultation recommendations to cart",
+        responses={
+            200: {
+                "description": "Recommendations added to cart successfully."
+            }
+        },
+    )
+    def post(
+            self,
+            request,
+            pk,
+    ):
+        consultation = get_accessible_consultation(
+            consultation_id=pk,
+            request=request,
+        )
+
+        cart_uuid = request.headers.get(
+            "X-Cart-UUID",
+        )
+
+        try:
+            cart = add_consultation_recommendations_to_cart(
+                consultation=consultation,
+                user=request.user,
+                cart_uuid=cart_uuid,
+                recommendation_ids=None,
+            )
+        except ValidationError as exc:
+            return Response(
+                {
+                    "detail": str(exc),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "cart_uuid": str(cart.uuid),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class AddSelectedRecommendationsToCartAPIView(
+    APIView,
+):
+    permission_classes = [
+        AllowAny,
+    ]
+
+    @extend_schema(
+        tags=["Consultations"],
+        summary="Add selected consultation recommendations to cart",
+        request=AddSelectedRecommendationsSerializer,
+        responses={
+            200: {
+                "description": "Selected recommendations added to cart successfully."
+            }
+        },
+    )
+    def post(
+            self,
+            request,
+            pk,
+    ):
+        consultation = get_accessible_consultation(
+            consultation_id=pk,
+            request=request,
+        )
+
+        serializer = (
+            AddSelectedRecommendationsSerializer(
+                data=request.data,
+            )
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        cart_uuid = request.headers.get(
+            "X-Cart-UUID",
+        )
+
+        try:
+            cart = add_consultation_recommendations_to_cart(
+                consultation=consultation,
+                user=request.user,
+                cart_uuid=cart_uuid,
+                recommendation_ids=(
+                    serializer.validated_data[
+                        "recommendation_ids"
+                    ]
+                ),
+            )
+        except ValidationError as exc:
+            return Response(
+                {
+                    "detail": str(exc),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "cart_uuid": str(cart.uuid),
+            },
+            status=status.HTTP_200_OK,
+        )

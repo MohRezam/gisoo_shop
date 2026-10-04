@@ -1,12 +1,12 @@
 from django.contrib import admin
 
 from apps.products.models import Brand
-from apps.shared.admin import BaseModelAdmin
 
 
 @admin.register(Brand)
-class BrandAdmin(BaseModelAdmin):
+class BrandAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "title",
         "created_at",
     )
@@ -19,3 +19,6 @@ class BrandAdmin(BaseModelAdmin):
     prepopulated_fields = {
         "slug": ("title",)
     }
+    exclude = ("creator", "archived")
+    list_per_page = 15
+    list_display_links = ("title",)

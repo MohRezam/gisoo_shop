@@ -1,0 +1,141 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | گیسو سنتر | مدیریت{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="icon" href="{% static 'admin/img/favicon.ico' %}" sizes="any">
+<link rel="icon" type="image/png" href="{% static 'admin/img/favicon.png' %}">
+<link rel="stylesheet" href="{% static 'admin/css/fonts.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_header.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_sidebar.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_lists.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_integrate.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_errors.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_inline_mobile.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_mobile_text.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/gisoo_admin_jalali_datepicker.css' %}">
+<script>
+  (function () {
+    try {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    } catch (e) {}
+  })();
+</script>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="{% static 'admin/js/gisoo_nav_mobile.js' %}" defer></script>
+<script src="{% static 'admin/js/gisoo_admin_inline_mobile.js' %}" defer></script>
+{% endblock %}
+
+{% block dark-mode-vars %}
+{# تم تاریک غیرفعال — فقط تم روشن گیسو #}
+<script>
+  (function () {
+    try {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('theme', 'light');
+    } catch (e) {}
+  })();
+</script>
+{% endblock %}
+
+{% block branding %}
+<div id="gisoo-brand">
+  <button type="button"
+          class="gisoo-nav-toggle toggle-nav-sidebar"
+          id="toggle-nav-sidebar"
+          aria-label="باز کردن منو"
+          aria-controls="nav-sidebar"
+          aria-expanded="false">
+    <svg class="gisoo-nav-toggle-icon gisoo-nav-toggle-icon--menu" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+      <path d="M4 7h16M4 12h16M4 17h16"/>
+    </svg>
+    <svg class="gisoo-nav-toggle-icon gisoo-nav-toggle-icon--close" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+      <path d="M6 6l12 12M18 6L6 18"/>
+    </svg>
+  </button>
+  <a href="{% url 'admin:index' %}" class="gisoo-brand-link">
+    <span class="gisoo-logo-wrap">
+      <img class="gisoo-logo" src="{% static 'admin/img/gisoo-logo.png' %}" alt="گیسو سنتر" width="140" height="54">
+    </span>
+    <span class="gisoo-brand-text">
+      <strong class="gisoo-name">گیسو سنتر</strong>
+      <span class="gisoo-tagline">فروشگاه تخصصی مراقبت مو</span>
+    </span>
+  </a>
+  <span class="gisoo-header-badge">
+    <svg class="gisoo-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.2 6.6H21l-5.4 3.9 2.1 6.5L12 15.6 6.3 19l2.1-6.5L3 8.6h6.8L12 2z"/></svg>
+    پنل مدیریت
+  </span>
+</div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block breadcrumbs %}
+  <div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">خانه</a>
+    {% if title %} <span class="gisoo-bc-sep" aria-hidden="true">/</span> {{ title }}{% endif %}
+  </div>
+{% endblock %}
+
+{% block welcome-msg %}
+  <span class="gisoo-user-chip">
+    {% if user.avatar %}
+      <img class="gisoo-user-avatar gisoo-user-avatar--photo" src="{{ user.avatar.url }}" alt="" width="36" height="36">
+    {% else %}
+      <span class="gisoo-user-avatar gisoo-user-avatar--empty" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true">
+          <circle cx="12" cy="8" r="3.5"/>
+          <path d="M5.5 19.5c1.8-3.2 4-4.8 6.5-4.8s4.7 1.6 6.5 4.8"/>
+        </svg>
+      </span>
+    {% endif %}
+    <span class="gisoo-user-meta">
+      <span class="gisoo-user-hello">خوش آمدید</span>
+      {% if user.first_name or user.last_name %}
+        <strong class="gisoo-user-name">{{ user.first_name }} {{ user.last_name }}</strong>
+      {% endif %}
+      <span class="gisoo-user-phone">
+        <svg class="gisoo-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v2a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h2a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L7.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.6a2 2 0 0 1 1.7 2z"/></svg>
+        {{ user.get_username }}
+      </span>
+    </span>
+  </span>
+{% endblock %}
+
+{% block userlinks %}
+  <nav class="gisoo-user-actions" aria-label="ابزارهای کاربر">
+    {% if site_url %}
+      <a class="gisoo-header-link gisoo-header-link--site" href="{{ site_url }}" target="_blank" rel="noopener">
+        <svg class="gisoo-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg>
+        مشاهده سایت
+      </a>
+    {% endif %}
+    {% if user.has_usable_password %}
+      <a class="gisoo-header-link gisoo-header-link--key" href="{% url 'admin:password_change' %}" title="تغییر رمز">
+        <svg class="gisoo-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="11" width="14" height="10" rx="2"/>
+          <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+        </svg>
+        تغییر رمز
+      </a>
+    {% endif %}
+    <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="gisoo-logout-btn">
+        <svg class="gisoo-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        خروج
+      </button>
+    </form>
+  </nav>
+{% endblock %}
+
+{% block footer %}{% endblock %}

@@ -6,6 +6,7 @@ from apps.home.models import FAQCategory, FAQ
 @admin.register(FAQCategory)
 class FAQCategoryAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "title",
         "slug",
         "is_active",
@@ -25,11 +26,15 @@ class FAQCategoryAdmin(admin.ModelAdmin):
         "ordering",
         "id",
     )
+    exclude = ("creator",)
+    list_per_page = 15
+    list_display_links = ("title",)
 
 
 @admin.register(FAQ)
 class FAQAdmin(admin.ModelAdmin):
     list_display = (
+        "id",
         "question",
         "category",
         "is_active",
@@ -48,10 +53,12 @@ class FAQAdmin(admin.ModelAdmin):
         "is_active",
         "ordering",
     )
-    autocomplete_fields = (
-        "category",
-    )
+
     ordering = (
         "ordering",
         "id",
     )
+    exclude = ("creator",)
+    raw_id_fields = ("category",)
+    list_per_page = 15
+    list_display_links = ("question",)

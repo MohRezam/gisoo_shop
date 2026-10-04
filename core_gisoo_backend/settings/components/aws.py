@@ -8,4 +8,5 @@ AWS_S3_ENDPOINT_URL = config("AWS_URL", "")
 AWS_S3_OBJECT_PARAMETERS = {"CacheControl": "max-age=86400"}
 AWS_S3_FILE_OVERWRITE = True
 AWS_QUERYSTRING_AUTH = False
-AWS_DEFAULT_ACL = "public-read"
+# None: buckets with ACLs disabled (Bucket owner enforced) reject PutObject with public-read.
+AWS_DEFAULT_ACL = None

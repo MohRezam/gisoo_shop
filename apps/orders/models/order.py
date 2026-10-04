@@ -2,40 +2,45 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from apps.shared.models.base import BaseModel
-from apps.shipping.models import ShippingMethod
+from apps.shipping.models import ShippingCarrier, ShippingMethod
 from apps.users.models import User
 from apps.products.models import ProductVariant
 
 
 class OrderStatus(models.TextChoices):
-    CREATED = (
-        "created",
-        _("Created"),
+    WAITING_PAYMENT = (
+        "waiting_payment",
+        "در انتظار پرداخت",
+    )
+
+    PAYMENT_REJECTED = (
+        "payment_rejected",
+        "پرداخت رد شده",
     )
 
     PREPARING = (
         "preparing",
-        _("Preparing"),
+        "در حال آماده‌سازی",
     )
 
     SHIPPED = (
         "shipped",
-        _("Shipped"),
+        "ارسال شده",
     )
 
     DELIVERED = (
         "delivered",
-        _("Delivered"),
+        "تحویل شده",
     )
 
     CANCELED = (
         "canceled",
-        _("Canceled"),
+        "لغو شده",
     )
 
     EXPIRED = (
         "expired",
-        _("Expired"),
+        "منقضی شده",
     )
 
 
@@ -44,76 +49,127 @@ class Order(BaseModel):
         User,
         on_delete=models.PROTECT,
         related_name="orders",
-        verbose_name=_("user"),
+        verbose_name="کاربر",
+    )
+
+    public_number = models.CharField(
+        max_length=32,
+        unique=True,
+        null=True,
+        blank=True,
+        db_index=True,
+        verbose_name="شماره عمومی",
     )
 
     phone_number = models.CharField(
         max_length=11,
-        verbose_name=_("phone number"),
+        verbose_name="شماره تلفن",
     )
 
     status = models.CharField(
         max_length=30,
         choices=OrderStatus.choices,
-        default=OrderStatus.CREATED,
-        verbose_name=_("status"),
+        default=OrderStatus.WAITING_PAYMENT,
+        verbose_name="وضعیت",
+    )
+
+    tracking_code = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="کد پیگیری",
+    )
+
+    carrier = models.CharField(
+        max_length=16,
+        choices=ShippingCarrier.choices,
+        blank=True,
+        default="",
+        verbose_name="حامل",
     )
 
     description = models.TextField(
         blank=True,
-        verbose_name=_("description"),
+        verbose_name="توضیحات",
     )
+
     expires_at = models.DateTimeField(
         null=True,
         blank=True,
+        verbose_name="تاریخ انقضا",
+        help_text="مهلت پرداخت سفارش؛ بعد از این زمان سفارش منقضی می‌شود.",
     )
+
+    payment_reminder_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="زمان ارسال یادآوری پرداخت",
+        help_text="اولین یادآوری SMS/اعلان برای سفارش نیمه‌کاره.",
+    )
+
+    payment_reminder_mid_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="زمان یادآوری میانی پرداخت",
+        help_text="یادآوری دوم نزدیک به نیمهٔ مهلت پرداخت.",
+    )
+
+    delivery_confirm_sms_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="زمان پیامک تأیید تحویل",
+        help_text="پیامک درخواست تأیید تحویل پس از پایان بازه تخمینی ارسال.",
+    )
+
     prepared_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name=_("prepared at"),
+        verbose_name="زمان آماده‌سازی",
     )
 
     shipped_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name=_("shipped at"),
+        verbose_name="زمان ارسال",
     )
 
     delivered_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name=_("delivered at"),
+        verbose_name="زمان تحویل",
     )
 
     province = models.CharField(
-        max_length=255
+        max_length=255,
+        verbose_name="استان",
     )
 
     city = models.CharField(
-        max_length=255
+        max_length=255,
+        verbose_name="شهر",
     )
     postal_code = models.CharField(
         max_length=20,
-        verbose_name=_("postal code"),
+        verbose_name="کد پستی",
     )
 
     address = models.TextField(
-        verbose_name=_("address"),
+        verbose_name="آدرس",
     )
     shipping_method = models.ForeignKey(
         ShippingMethod,
         on_delete=models.PROTECT,
         related_name="orders",
-        verbose_name=_("Shipping method"),
+        verbose_name="روش ارسال",
     )
 
     products_price = models.PositiveBigIntegerField(
-        verbose_name=_("Products price"),
+        verbose_name="قیمت محصولات",
         default=0,
     )
 
     shipping_price = models.PositiveBigIntegerField(
-        verbose_name=_("Shipping price"),
+        verbose_name="هزینه ارسال",
         default=0,
     )
 
@@ -123,21 +179,21 @@ class Order(BaseModel):
         null=True,
         blank=True,
         related_name="orders",
-        verbose_name=_("Discount"),
+        verbose_name="تخفیف",
     )
     discount_amount = models.PositiveBigIntegerField(
-        verbose_name=_("Discount amount"),
+        verbose_name="مبلغ تخفیف",
         default=0,
     )
 
     total_price = models.PositiveBigIntegerField(
         default=0,
-        verbose_name=_("total price"),
+        verbose_name="مبلغ کل",
     )
 
     class Meta:
-        verbose_name = _("order")
-        verbose_name_plural = _("orders")
+        verbose_name = "سفارش"
+        verbose_name_plural = "سفارش‌ها"
 
 
 class OrderBundle(BaseModel):
@@ -145,30 +201,41 @@ class OrderBundle(BaseModel):
         Order,
         on_delete=models.CASCADE,
         related_name="bundles",
-        verbose_name=_("order"),
+        verbose_name="سفارش",
+    )
+
+    variant = models.ForeignKey(
+        ProductVariant,
+        on_delete=models.PROTECT,
+        related_name="order_bundles",
+        verbose_name=_("variant"),
     )
 
     title = models.CharField(
         max_length=255,
-        verbose_name=_("title"),
+        verbose_name="عنوان",
+    )
+
+    bundle_quantity = models.PositiveIntegerField(
+        verbose_name=_("bundle quantity"),
     )
 
     unit_price = models.PositiveBigIntegerField(
-        verbose_name=_("unit_price"),
+        verbose_name="قیمت واحد",
     )
 
     quantity = models.PositiveIntegerField(
         default=1,
-        verbose_name=_("quantity"),
+        verbose_name="تعداد",
     )
 
     total_price = models.PositiveBigIntegerField(
-        verbose_name=_("total_price"),
+        verbose_name="مبلغ کل",
     )
 
     class Meta:
-        verbose_name = _("order bundle")
-        verbose_name_plural = _("order bundles")
+        verbose_name = "بسته سفارش"
+        verbose_name_plural = "بسته‌های سفارش"
 
     def __str__(self):
         return self.title
@@ -179,11 +246,13 @@ class OrderItem(BaseModel):
         Order,
         on_delete=models.CASCADE,
         related_name="items",
+        verbose_name="سفارش",
     )
 
     variant = models.ForeignKey(
         ProductVariant,
         on_delete=models.PROTECT,
+        verbose_name="تنوع محصول",
     )
 
     order_bundle = models.ForeignKey(
@@ -192,29 +261,57 @@ class OrderItem(BaseModel):
         related_name="items",
         null=True,
         blank=True,
+        verbose_name="بسته سفارش",
     )
 
     product_title = models.CharField(
         max_length=255,
+        verbose_name="عنوان محصول",
     )
 
     variant_sku = models.CharField(
         max_length=100,
+        verbose_name="کد کالا",
     )
 
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField(
+        verbose_name="تعداد",
+    )
 
-    unit_price = models.PositiveIntegerField()
+    original_unit_price = models.PositiveIntegerField(
+        verbose_name="قیمت واحد اصلی",
+    )
 
-    total_price = models.PositiveIntegerField()
+    unit_price = models.PositiveIntegerField(
+        verbose_name="قیمت واحد",
+    )
 
-    province = models.CharField(max_length=100)
+    total_price = models.PositiveIntegerField(
+        verbose_name="مبلغ کل",
+    )
 
-    city = models.CharField(max_length=100)
+    province = models.CharField(
+        max_length=100,
+        verbose_name="استان",
+    )
 
-    postal_code = models.CharField(max_length=20)
+    city = models.CharField(
+        max_length=100,
+        verbose_name="شهر",
+    )
 
-    full_address = models.TextField()
+    postal_code = models.CharField(
+        max_length=20,
+        verbose_name="کد پستی",
+    )
+
+    full_address = models.TextField(
+        verbose_name="آدرس کامل",
+    )
+
+    class Meta:
+        verbose_name = "آیتم سفارش"
+        verbose_name_plural = "آیتم‌های سفارش"
 
 
 class OrderStatusHistory(BaseModel):
@@ -222,16 +319,19 @@ class OrderStatusHistory(BaseModel):
         Order,
         on_delete=models.CASCADE,
         related_name="status_history",
+        verbose_name="سفارش",
     )
 
     old_status = models.CharField(
         max_length=30,
         choices=OrderStatus.choices,
+        verbose_name="وضعیت قبلی",
     )
 
     new_status = models.CharField(
         max_length=30,
         choices=OrderStatus.choices,
+        verbose_name="وضعیت جدید",
     )
 
     changed_by = models.ForeignKey(
@@ -240,24 +340,27 @@ class OrderStatusHistory(BaseModel):
         null=True,
         blank=True,
         related_name="changed_order_statuses",
+        verbose_name="تغییردهنده",
     )
 
     reason = models.TextField(
         blank=True,
+        verbose_name="دلیل",
     )
     source = models.CharField(
         max_length=30,
         choices=[
-            ("admin", "Admin"),
-            ("system", "System"),
-            ("customer", "Customer"),
+            ("admin", "ادمین"),
+            ("system", "سیستم"),
+            ("customer", "مشتری"),
         ],
         default="system",
+        verbose_name="منبع",
     )
 
     class Meta:
-        verbose_name = _("order status history")
-        verbose_name_plural = _("order status histories")
+        verbose_name = "تاریخچه وضعیت سفارش"
+        verbose_name_plural = "تاریخچه‌های وضعیت سفارش"
         ordering = ["-created_at"]
 
     def __str__(self):

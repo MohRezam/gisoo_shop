@@ -163,6 +163,7 @@ class MagazineDetailSerializer(serializers.ModelSerializer):
             "content",
             "thumbnail",
             "published_at",
+            "reading_time",
             "category",
             "related_products",
             "related_articles",
@@ -172,8 +173,10 @@ class MagazineDetailSerializer(serializers.ModelSerializer):
         products = getattr(
             obj,
             "prefetched_related_products",
-            [],
+            None,
         )
+        if products is None:
+            products = obj.related_products.all()[:8]
 
         return RelatedProductSerializer(
             products[:8],
@@ -185,8 +188,10 @@ class MagazineDetailSerializer(serializers.ModelSerializer):
         articles = getattr(
             obj,
             "prefetched_related_articles",
-            [],
+            None,
         )
+        if articles is None:
+            articles = obj.related_articles.filter(is_published=True).exclude(pk=obj.pk)[:6]
 
         articles = [
             article

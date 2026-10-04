@@ -24,13 +24,31 @@ class Cart(BaseModel):
         blank=True,
     )
 
+    discount = models.ForeignKey(
+        "discounts.Discount",
+        on_delete=models.SET_NULL,
+        related_name="carts",
+        null=True,
+        blank=True,
+        verbose_name=_("discount"),
+    )
     is_active = models.BooleanField(
         default=True,
     )
 
     class Meta:
-        verbose_name = _("cart")
-        verbose_name_plural = _("carts")
+        verbose_name = "سبد خرید"
+        verbose_name_plural = "سبدهای خرید"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(
+                    is_active=True,
+                    user__isnull=False,
+                ),
+                name="unique_active_cart_per_user",
+            ),
+        ]
 
 
 class CartItem(BaseModel):
@@ -64,8 +82,8 @@ class CartItem(BaseModel):
     )
 
     class Meta:
-        verbose_name = _("cart item")
-        verbose_name_plural = _("cart items")
+        verbose_name = "آیتم سبد خرید"
+        verbose_name_plural = "آیتم‌های سبد خرید"
 
         constraints = [
             models.UniqueConstraint(

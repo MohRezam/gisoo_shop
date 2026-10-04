@@ -3,7 +3,7 @@ name = "gisoo-center"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Mohammad Reza",email = "mkalhor81126@gmail.com"}
+    { name = "Mohammad Reza", email = "mkalhor81126@gmail.com" }
 ]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
@@ -40,10 +40,23 @@ dependencies = [
     "boto3 (>=1.43.62,<2.0.0)",
     "packaging (>=26.2,<27.0)",
     "django-filter (>=26.1,<27.0)",
-    "gunicorn (>=26.0.0,<27.0.0)"
+    "gunicorn (>=26.0.0,<27.0.0)",
+    "django-nested-admin (>=4.1.6,<5.0.0)",
+    "openpyxl (>=3.1.0,<4.0.0)"
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+
+[[tool.poetry.source]]
+name = "tuna"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+priority = "primary"
+
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "core_gisoo_backend.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]

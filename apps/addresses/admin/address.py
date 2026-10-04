@@ -1,11 +1,10 @@
 from django.contrib import admin
 
 from apps.addresses.models import Address
-from apps.shared.admin import BaseModelAdmin
 
 
 @admin.register(Address)
-class AddressAdmin(BaseModelAdmin):
+class AddressAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user",
@@ -26,3 +25,7 @@ class AddressAdmin(BaseModelAdmin):
         "receiver_name",
         "postal_code",
     )
+    exclude = ("creator", "archived")
+    raw_id_fields = ("user",)
+    list_per_page = 15
+    list_display_links = ("user", )
