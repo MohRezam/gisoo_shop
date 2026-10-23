@@ -35,10 +35,16 @@ class Category(BaseModel):
         verbose_name="والد",
     )
 
+    display_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="ترتیب نمایش",
+        help_text="عدد کوچک‌تر زودتر در صفحه اصلی نمایش داده می‌شود.",
+    )
+
     class Meta:
         verbose_name = "دسته‌بندی"
         verbose_name_plural = "دسته‌بندی‌ها"
-        ordering = ["title"]
+        ordering = ["display_order", "title"]
 
     def __str__(self):
         return self.title

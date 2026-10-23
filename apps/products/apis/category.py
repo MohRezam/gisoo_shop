@@ -22,7 +22,7 @@ from utils.paginators import StandardResultPagination
     summary="List Categories",
 )
 class CategoryListAPIView(CachedListMixin, ListAPIView):
-    queryset = Category.objects.all()
+    queryset = Category.objects.order_by("display_order", "title")
     serializer_class = CategorySerializer
     filter_backends = []
     pagination_class = StandardResultPagination

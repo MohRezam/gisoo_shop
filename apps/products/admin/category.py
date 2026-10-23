@@ -8,12 +8,22 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "title",
+        "display_order",
         "parent",
         "created_at",
     )
 
+    list_editable = (
+        "display_order",
+    )
+
     list_filter = (
         "created_at",
+    )
+
+    ordering = (
+        "display_order",
+        "title",
     )
 
     search_fields = (
