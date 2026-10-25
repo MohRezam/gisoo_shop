@@ -102,6 +102,45 @@
   border-color: #5b4bdb;
 }
 
+.gisoo-editor-surface h1,
+.gisoo-editor-surface h2,
+.gisoo-editor-surface h3,
+.gisoo-editor-surface h4,
+.gisoo-editor-surface h5,
+.gisoo-editor-surface h6,
+.gisoo-change-form fieldset.module .gisoo-editor-surface h1,
+.gisoo-change-form fieldset.module .gisoo-editor-surface h2,
+.gisoo-change-form fieldset.module .gisoo-editor-surface h3,
+.gisoo-change-form fieldset.module .gisoo-editor-surface h4,
+.gisoo-change-form fieldset.module .gisoo-editor-surface h5,
+.gisoo-change-form fieldset.module .gisoo-editor-surface h6 {
+  background: none !important;
+  background-image: none !important;
+  color: #111827 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  margin: 1.15em 0 0.35em !important;
+  padding: 0 !important;
+  font-family: inherit !important;
+  font-weight: 800 !important;
+  line-height: 1.45 !important;
+  text-align: right !important;
+  letter-spacing: normal !important;
+}
+
+.gisoo-editor-surface h1,
+.gisoo-change-form fieldset.module .gisoo-editor-surface h1 { font-size: 32px !important; }
+.gisoo-editor-surface h2,
+.gisoo-change-form fieldset.module .gisoo-editor-surface h2 { font-size: 26px !important; }
+.gisoo-editor-surface h3,
+.gisoo-change-form fieldset.module .gisoo-editor-surface h3 { font-size: 22px !important; }
+.gisoo-editor-surface h4,
+.gisoo-change-form fieldset.module .gisoo-editor-surface h4 { font-size: 20px !important; }
+.gisoo-editor-surface h5,
+.gisoo-change-form fieldset.module .gisoo-editor-surface h5 { font-size: 18px !important; }
+.gisoo-editor-surface h6,
+.gisoo-change-form fieldset.module .gisoo-editor-surface h6 { font-size: 16px !important; }
+
 .gisoo-editor-surface ul {
   list-style: disc;
   padding-inline-start: 1.6rem;
