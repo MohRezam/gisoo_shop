@@ -85,8 +85,17 @@ def create_order(
             _("Cart is empty.")
         )
 
-    customer_first_name = (first_name or "").strip()
-    customer_last_name = (last_name or "").strip()
+    provided_first_name = (first_name or "").strip()
+    provided_last_name = (last_name or "").strip()
+    if provided_first_name and provided_last_name:
+        customer_first_name = provided_first_name
+        customer_last_name = provided_last_name
+    else:
+        customer_first_name = (user.first_name or "").strip()
+        customer_last_name = (user.last_name or "").strip()
+
+    if not customer_first_name or not customer_last_name:
+        raise ValidationError("نام و نام خانوادگی را در حساب کاربری کامل کنید.")
 
     order = Order.objects.create(
         user=user,

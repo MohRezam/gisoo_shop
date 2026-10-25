@@ -133,6 +133,36 @@ class CheckoutNameTests(TestCase):
             timezone.now() + timedelta(minutes=19),
         )
 
+    def test_order_uses_profile_name_when_checkout_omits_it(self):
+        user = User.objects.create_user(
+            phone_number="09121111112",
+            first_name="نگار",
+            last_name="کریمی",
+        )
+        address = create_address(user=user)
+        shipping = make_shipping("پست پروفایل")
+        category = create_category(slug="cat-profile-name")
+        brand = create_brand(slug="brand-profile-name")
+        product = create_product(
+            category=category,
+            brand=brand,
+            slug="prod-profile-name",
+        )
+        variant = create_product_variant(product, "sku-profile-name", 5, 200_000)
+        cart = Cart.objects.create(user=user, is_active=True)
+        CartItem.objects.create(cart=cart, variant=variant, quantity=1)
+        make_card()
+
+        order = create_order(
+            user=user,
+            address_id=address.id,
+            shipping_method_id=shipping.id,
+        )
+
+        order.refresh_from_db()
+        self.assertEqual(order.customer_first_name, "نگار")
+        self.assertEqual(order.customer_last_name, "کریمی")
+
 
 class UniqueAmountTests(TestCase):
     def test_expired_pending_amount_is_reusable(self):
