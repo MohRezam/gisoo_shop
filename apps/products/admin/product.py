@@ -1,4 +1,5 @@
 from django.contrib import admin, messages
+from django.urls import reverse
 from django.core.exceptions import ValidationError
 from jalali_date.admin import ModelAdminJalaliMixin
 from nested_admin.formsets import NestedInlineFormSet
@@ -14,6 +15,7 @@ from apps.products.models import (
     ProductVariant,
     VariantAttribute, ProductRelatedProduct, DiscountCampaign,
 )
+from apps.shared.widgets import GisooRichTextWidget
 from utils.helpers.jalali_helper import get_persian_jalali_from_datetime
 import nested_admin
 
@@ -197,6 +199,17 @@ class ProductAdmin(
         "is_gisoo_recommended",
         "recommended_order",
     )
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == "description":
+            kwargs["widget"] = GisooRichTextWidget(
+                attrs={"data-upload-url": reverse("admin-richtext-image")}
+            )
+            kwargs["help_text"] = (
+                "با دکمه‌های بالای کادر بنویسید. تیتر، ضخیم، کج، لینک، فهرست، "
+                "تصویر، نکته و جدول بدون نوشتن کد ذخیره می‌شود و دوباره قابل ویرایش است."
+            )
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
     def changelist_view(self, request, extra_context=None):
         from apps.products.services.discount_campaign import (

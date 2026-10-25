@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 from django.conf import settings
 
+from apps.shared.richtext_upload import upload_richtext_image
 from apps.users.admin.forms import GisooPasswordChangeForm
 
 admin.site.site_header = "گیسو سنتر"
@@ -12,6 +13,11 @@ admin.site.enable_nav_sidebar = True
 admin.site.password_change_form = GisooPasswordChangeForm
 
 admin_urlpatterns = [
+    path(
+        "admin/richtext-image/",
+        upload_richtext_image,
+        name="admin-richtext-image",
+    ),
     path("admin/", admin.site.urls, name="admin"),
 ]
 

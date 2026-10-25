@@ -1,0 +1,139 @@
+.gisoo-editor {
+  direction: rtl;
+  max-width: 920px;
+}
+
+.gisoo-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 8px;
+  background: #f4f6fb;
+  border: 1px solid #d5dbe8;
+  border-radius: 10px;
+}
+
+.gisoo-editor-toolbar button,
+.gisoo-editor-toolbar select {
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  border: 1px solid #c9d0e0;
+  background: #fff;
+  color: #1f2937;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.gisoo-editor-toolbar button:hover,
+.gisoo-editor-toolbar select:hover {
+  border-color: #5b4bdb;
+  color: #312e81;
+}
+
+.gisoo-editor-toolbar button.is-active {
+  background: #eef0ff;
+  border-color: #5b4bdb;
+  color: #312e81;
+  font-weight: 700;
+}
+
+.gisoo-editor-surface {
+  min-height: 280px;
+  max-height: 640px;
+  overflow: auto;
+  padding: 14px 16px;
+  border: 1px solid #c9d0e0;
+  border-radius: 10px;
+  background: #fff;
+  line-height: 1.9;
+  font-size: 16px;
+}
+
+.gisoo-editor-surface:focus {
+  outline: 2px solid #c7c2f5;
+  border-color: #5b4bdb;
+}
+
+.gisoo-editor-surface img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.gisoo-editor-surface figure {
+  margin: 12px 0;
+}
+
+.gisoo-editor-surface figcaption {
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.gisoo-editor-surface .gisoo-note,
+.gisoo-editor-surface .gisoo-warn {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.gisoo-editor-surface .gisoo-note {
+  background: #eef4ff;
+  border: 1px solid #c9d7fb;
+}
+
+.gisoo-editor-surface .gisoo-warn {
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+}
+
+.gisoo-editor-surface table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.gisoo-editor-surface td,
+.gisoo-editor-surface th {
+  border: 1px solid #d1d5db;
+  padding: 6px 8px;
+  min-width: 48px;
+}
+
+.gisoo-editor-panel {
+  display: none;
+  margin-bottom: 8px;
+  padding: 10px;
+  border: 1px solid #d5dbe8;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.gisoo-editor-panel.is-open {
+  display: grid;
+  gap: 8px;
+}
+
+.gisoo-editor-panel label {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.gisoo-editor-panel input,
+.gisoo-editor-panel select {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 6px 8px;
+  border: 1px solid #c9d0e0;
+  border-radius: 8px;
+}
+
+.gisoo-editor-error {
+  color: #b91c1c;
+  font-size: 13px;
+  min-height: 1em;
+}

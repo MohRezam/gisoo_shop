@@ -1,6 +1,8 @@
 from django.contrib import admin
+from django.urls import reverse
 
 from apps.magazine.models import MagazineCategory, Magazine
+from apps.shared.widgets import GisooRichTextWidget
 from apps.shared.admin_filters import (
     PersianBooleanFilter,
     PersianRelatedFilter,
@@ -104,6 +106,17 @@ class MagazineAdmin(admin.ModelAdmin):
             },
         ),
     )
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == "content":
+            kwargs["widget"] = GisooRichTextWidget(
+                attrs={"data-upload-url": reverse("admin-richtext-image")}
+            )
+            kwargs["help_text"] = (
+                "متن مقاله را با دکمه‌های بالای کادر بنویسید. "
+                "نیازی به HTML نیست. همان متن بعداً دوباره در همین ویرایشگر باز می‌شود."
+            )
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
     def save_model(self, request, obj, form, change):
         if obj.is_featured:
