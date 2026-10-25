@@ -3,20 +3,41 @@
   max-width: 920px;
 }
 
+.gisoo-editor-toolbar,
+.gisoo-editor-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: 10px;
+}
+
 .gisoo-editor-toolbar {
+  background: #f4f6fb;
+  border: 1px solid #d5dbe8;
+}
+
+.gisoo-editor-group {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-  margin-bottom: 8px;
-  padding: 8px;
-  background: #f4f6fb;
-  border: 1px solid #d5dbe8;
-  border-radius: 10px;
+  padding-inline-end: 8px;
+  border-inline-end: 1px solid #d5dbe8;
+}
+
+.gisoo-editor-group:last-child {
+  border: 0;
+  padding: 0;
 }
 
 .gisoo-editor-toolbar button,
-.gisoo-editor-toolbar select {
+.gisoo-editor-toolbar select,
+.gisoo-editor-context button,
+.gisoo-editor-panel button,
+.gisoo-editor-panel select {
   font-family: inherit;
   font-size: 13px;
   line-height: 1.4;
@@ -28,17 +49,40 @@
   cursor: pointer;
 }
 
+.gisoo-editor-style {
+  min-width: 148px;
+  font-weight: 700;
+}
+
 .gisoo-editor-toolbar button:hover,
-.gisoo-editor-toolbar select:hover {
+.gisoo-editor-toolbar select:hover,
+.gisoo-editor-context button:hover,
+.gisoo-editor-panel button:hover {
   border-color: #5b4bdb;
   color: #312e81;
 }
 
-.gisoo-editor-toolbar button.is-active {
+.gisoo-editor-toolbar button.is-active,
+.gisoo-editor-context button.is-active {
   background: #5b4bdb;
   border-color: #5b4bdb;
   color: #fff;
   font-weight: 700;
+}
+
+.gisoo-editor-context {
+  background: #eef0ff;
+  border: 1px solid #c7c2f5;
+}
+
+.gisoo-editor-context[hidden] {
+  display: none;
+}
+
+.gisoo-editor-context-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #312e81;
 }
 
 .gisoo-editor-surface {
@@ -72,13 +116,6 @@
   display: list-item;
 }
 
-.gisoo-editor-hint {
-  min-height: 1.2em;
-  margin: -2px 0 8px;
-  color: #b45309;
-  font-size: 13px;
-}
-
 .gisoo-editor-surface img {
   max-width: 100%;
   height: auto;
@@ -93,6 +130,12 @@
   font-size: 13px;
   color: #6b7280;
   text-align: center;
+}
+
+.gisoo-editor-surface .is-current {
+  outline: 2px solid #5b4bdb;
+  outline-offset: 3px;
+  border-radius: 8px;
 }
 
 .gisoo-editor-surface .gisoo-note,
@@ -127,7 +170,7 @@
 .gisoo-editor-panel {
   display: none;
   margin-bottom: 8px;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #d5dbe8;
   border-radius: 10px;
   background: #fff;
@@ -136,6 +179,13 @@
 .gisoo-editor-panel.is-open {
   display: grid;
   gap: 8px;
+}
+
+.gisoo-editor-panel-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
 }
 
 .gisoo-editor-panel label {
@@ -151,6 +201,12 @@
   padding: 6px 8px;
   border: 1px solid #c9d0e0;
   border-radius: 8px;
+}
+
+.gisoo-editor-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .gisoo-editor-error {

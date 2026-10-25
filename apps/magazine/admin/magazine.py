@@ -129,8 +129,8 @@ class MagazineAdmin(admin.ModelAdmin):
                 attrs={"data-upload-url": reverse("admin-richtext-image")}
             )
             kwargs["help_text"] = (
-                "متن مقاله را با دکمه‌های بالای کادر بنویسید. "
-                "نیازی به HTML نیست. همان متن بعداً دوباره در همین ویرایشگر باز می‌شود."
+                "سبک متن را از منوی بالای کادر انتخاب کنید. "
+                "ابزار جدول فقط داخل جدول، و اندازهٔ عکس فقط وقتی عکس انتخاب شده باشد، دیده می‌شود."
             )
         return super().formfield_for_dbfield(db_field, request, **kwargs)
 

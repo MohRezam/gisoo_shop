@@ -206,8 +206,8 @@ class ProductAdmin(
                 attrs={"data-upload-url": reverse("admin-richtext-image")}
             )
             kwargs["help_text"] = (
-                "با دکمه‌های بالای کادر بنویسید. تیتر، ضخیم، کج، لینک، فهرست، "
-                "تصویر، نکته و جدول بدون نوشتن کد ذخیره می‌شود و دوباره قابل ویرایش است."
+                "سبک متن را از منوی بالای کادر انتخاب کنید. "
+                "ابزار جدول فقط داخل جدول، و اندازهٔ عکس فقط وقتی عکس انتخاب شده باشد، دیده می‌شود."
             )
         return super().formfield_for_dbfield(db_field, request, **kwargs)
 
