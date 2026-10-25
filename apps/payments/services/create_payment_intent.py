@@ -1,7 +1,6 @@
 import secrets
 from datetime import timedelta
 
-from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -41,14 +40,12 @@ def get_payment_expiration(order: Order):
     if order.expires_at is not None:
         return order.expires_at
 
-    expiration_minutes = getattr(
-        settings,
-        "ORDER_EXPIRATION_MINUTES",
-        60,
+    from apps.payments.services.checkout_settings import (
+        get_payment_expiration_minutes,
     )
 
     return timezone.now() + timedelta(
-        minutes=expiration_minutes
+        minutes=get_payment_expiration_minutes()
     )
 
 
@@ -93,10 +90,16 @@ def generate_unique_amount(
     # Get all currently used active payment amounts
     # ---------------------------------------------------------
 
+    now = timezone.now()
+    # Pending intents past their deadline no longer reserve a unique
+    # amount. Receipts waiting for review keep their amount.
     used_amounts = set(
         PaymentIntent.objects.filter(
             destination_card=destination_card,
             status__in=ACTIVE_PAYMENT_INTENT_STATUSES,
+        ).exclude(
+            status=PaymentIntentStatus.PENDING_PAYMENT,
+            expires_at__lte=now,
         ).values_list(
             "payable_amount_rial",
             flat=True,

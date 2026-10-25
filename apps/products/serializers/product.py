@@ -459,6 +459,7 @@ class BundleSerializer(serializers.ModelSerializer):
 class RelatedProductSerializer(serializers.ModelSerializer):
     thumbnail = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
+    is_in_stock = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -469,6 +470,7 @@ class RelatedProductSerializer(serializers.ModelSerializer):
             "brand",
             "thumbnail",
             "price",
+            "is_in_stock",
         ]
 
     def get_thumbnail(self, obj):
@@ -496,14 +498,24 @@ class RelatedProductSerializer(serializers.ModelSerializer):
 
         return image.image.url
 
+    def _active_variants(self, obj):
+        return [
+            variant
+            for variant in obj.variants.all()
+            if variant.is_active
+        ]
+
+    def get_is_in_stock(self, obj):
+        return any(
+            variant.stock > 0
+            for variant in self._active_variants(obj)
+        )
+
     def get_price(self, obj):
+        variants = self._active_variants(obj)
         variant = next(
-            (
-                variant
-                for variant in obj.variants.all()
-                if variant.is_active and variant.stock > 0
-            ),
-            None,
+            (item for item in variants if item.stock > 0),
+            variants[0] if variants else None,
         )
 
         if variant is None:

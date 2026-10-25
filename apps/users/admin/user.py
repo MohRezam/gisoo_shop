@@ -48,14 +48,18 @@ class CustomUserAdmin(ModelAdminJalaliMixin, UserAdmin):
 
     list_display = (
         "phone_number",
-        "first_name",
-        "last_name",
+        "full_name_display",
         "email",
         "is_staff",
         "is_active",
         "created_at",
     )
-    list_display_links = ("phone_number", "first_name")
+    list_display_links = ("phone_number",)
+
+    @admin.display(description="نام و نام خانوادگی")
+    def full_name_display(self, obj):
+        name = f"{obj.first_name} {obj.last_name}".strip()
+        return name or "—"
     list_filter = (
         ("is_staff", PersianBooleanFilter),
         ("is_active", PersianBooleanFilter),

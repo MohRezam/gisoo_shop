@@ -335,6 +335,23 @@ class DestinationCard(BaseModel):
         help_text="اختیاری — مثلاً ملت، سامان، ملی.",
     )
 
+    sheba_number = models.CharField(
+        max_length=26,
+        blank=True,
+        default="",
+        verbose_name="شماره شبا",
+        help_text="۲۶ کاراکتر: IR و ۲۴ رقم. مثال IR800560014868100012345678. خالی یعنی شبا نشان داده نشود.",
+    )
+
+    sheba_min_amount = models.PositiveBigIntegerField(
+        default=0,
+        verbose_name="نمایش شبا از این مبلغ (تومان)",
+        help_text=(
+            "اگر مبلغ سفارش به این عدد برسد، شماره شبا بالای کارت نشان داده می‌شود. "
+            "۰ یعنی شبا نمایش داده نشود."
+        ),
+    )
+
     display_pan = models.CharField(
         max_length=32,
         blank=True,
@@ -391,6 +408,7 @@ class DestinationCard(BaseModel):
                 {"card_number": "شماره کارت باید دقیقاً ۱۶ رقم باشد."}
             )
         self._apply_derived_pans()
+        self._apply_sheba()
 
         others = DestinationCard.objects.all()
         if self.pk:
@@ -401,6 +419,19 @@ class DestinationCard(BaseModel):
                 "همان کارت موجود را ویرایش کنید."
             )
 
+    def _apply_sheba(self):
+        import re
+
+        from django.core.exceptions import ValidationError
+
+        raw = (self.sheba_number or "").replace(" ", "").upper()
+        if raw and not re.fullmatch(r"IR\d{24}", raw):
+            raise ValidationError(
+                {"sheba_number": "شماره شبا باید با IR شروع شود و ۲۶ کاراکتر باشد."}
+            )
+        self.sheba_number = raw
+
     def save(self, *args, **kwargs):
         self._apply_derived_pans()
+        self.sheba_number = (self.sheba_number or "").replace(" ", "").upper()
         super().save(*args, **kwargs)

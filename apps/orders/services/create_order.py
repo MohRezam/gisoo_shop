@@ -14,7 +14,6 @@ from apps.cart.services.pricing import (
 from apps.discounts.services import calculate_discount
 from apps.notifications.services.inbox import notify_user
 from apps.notifications.tasks import send_order_created_sms
-from apps.orders.constants import ORDER_EXPIRATION_MINUTES
 from apps.orders.models import (
     Order,
     OrderItem,
@@ -25,6 +24,10 @@ from apps.orders.services.cart_calculator import calculate_cart
 from apps.orders.services.expiration import schedule_order_expiration
 from apps.orders.services.inventory import reserve_stock
 from apps.orders.services.public_number import generate_order_public_number
+from apps.payments.services.checkout_settings import (
+    enforce_order_amount_limits,
+    get_payment_expiration_minutes,
+)
 from apps.payments.services.create_payment_intent import create_payment_intent
 from apps.shipping.models import ShippingMethod
 from apps.shipping.services.shipping import calculate_shipping_price
@@ -37,6 +40,8 @@ def create_order(
         address_id,
         shipping_method_id,
         description="",
+        first_name="",
+        last_name="",
 ):
     address = Address.objects.filter(
         id=address_id,
@@ -80,12 +85,17 @@ def create_order(
             _("Cart is empty.")
         )
 
+    customer_first_name = (first_name or "").strip()
+    customer_last_name = (last_name or "").strip()
+
     order = Order.objects.create(
         user=user,
         status=OrderStatus.WAITING_PAYMENT,
         expires_at=timezone.now() + timedelta(
-            minutes=ORDER_EXPIRATION_MINUTES,
+            minutes=get_payment_expiration_minutes(),
         ),
+        customer_first_name=customer_first_name,
+        customer_last_name=customer_last_name,
         description=description,
         phone_number=address.phone_number,
         province=address.province,
@@ -177,6 +187,13 @@ def create_order(
             + shipping_price
             - discount_amount
     )
+
+    enforce_order_amount_limits(order.total_price)
+
+    if customer_first_name and customer_last_name:
+        user.first_name = customer_first_name
+        user.last_name = customer_last_name
+        user.save(update_fields=["first_name", "last_name"])
 
     order.save(
         update_fields=[

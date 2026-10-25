@@ -1,7 +1,7 @@
 from apps.orders.models import OrderStatus
 
 
-ORDER_EXPIRATION_MINUTES = 15
+ORDER_EXPIRATION_MINUTES = 20
 
 MAX_ORDER_DESCRIPTION_LENGTH = 500
 

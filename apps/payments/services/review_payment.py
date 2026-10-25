@@ -6,7 +6,9 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.exceptions import ValidationError
 
 from apps.discounts.services import register_discount_usage
-from apps.orders.constants import ORDER_EXPIRATION_MINUTES
+from apps.payments.services.checkout_settings import (
+    get_payment_expiration_minutes,
+)
 from apps.orders.models import Order, OrderStatus
 from apps.orders.services.change_order_status import (
     change_order_status,
@@ -224,12 +226,12 @@ def reject_payment(
 
     now = timezone.now()
 
-    # After rejection, the customer gets a new
-    # 15-minute window to submit another receipt.
+    # After rejection, the customer gets a new window
+    # (admin setting, default 20 minutes) to pay again.
     new_expiration = (
         now
         + timedelta(
-            minutes=ORDER_EXPIRATION_MINUTES
+            minutes=get_payment_expiration_minutes()
         )
     )
 

@@ -159,6 +159,8 @@ class OrderAdmin(admin.ModelAdmin):
         "tracking_code",
         "total_price",
         "phone_number",
+        "customer_full_name",
+        "unique_payable_display",
         "created_at",
     ]
 
@@ -185,6 +187,9 @@ class OrderAdmin(admin.ModelAdmin):
         "shipping_price",
         "discount_amount",
         "total_price",
+        "customer_first_name",
+        "customer_last_name",
+        "unique_payable_display",
         "created_at",
         "updated_at",
         "expires_at",
@@ -204,6 +209,9 @@ class OrderAdmin(admin.ModelAdmin):
                     "public_number",
                     "user",
                     "phone_number",
+                    "customer_first_name",
+                    "customer_last_name",
+                    "unique_payable_display",
                     "status",
                     "description",
                 ),
@@ -285,7 +293,29 @@ class OrderAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
+        queryset = queryset.prefetch_related("payment_intents")
         return apply_status_priority_ordering(queryset)
+
+    @admin.display(description="نام و نام خانوادگی")
+    def customer_full_name(self, obj):
+        name = f"{obj.customer_first_name} {obj.customer_last_name}".strip()
+        if name:
+            return name
+        user = obj.user
+        if user is None:
+            return "—"
+        fallback = f"{user.first_name} {user.last_name}".strip()
+        return fallback or "—"
+
+    @admin.display(description="مبلغ یکتای واریز")
+    def unique_payable_display(self, obj):
+        intents = list(obj.payment_intents.all())
+        if not intents:
+            return "—"
+        intent = max(intents, key=lambda item: item.id)
+        rial = intent.payable_amount_rial
+        toman = rial // 10
+        return f"{rial:,} ریال ({toman:,} تومان)".replace(",", "،")
 
     def get_urls(self):
         urls = super().get_urls()

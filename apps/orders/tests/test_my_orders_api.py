@@ -54,6 +54,8 @@ class MyOrdersListAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )

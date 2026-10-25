@@ -184,6 +184,8 @@ class DestinationCardAdmin(admin.ModelAdmin):
                     "name",
                     "card_number",
                     "bank_name",
+                    "sheba_number",
+                    "sheba_min_amount",
                     "is_active",
                 ),
             },

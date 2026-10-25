@@ -23,6 +23,20 @@ class CreateOrderSerializer(serializers.Serializer):
         required=False,
         allow_blank=True,
     )
+    first_name = serializers.CharField(max_length=100)
+    last_name = serializers.CharField(max_length=100)
+
+    def validate_first_name(self, value):
+        value = (value or "").strip()
+        if not value:
+            raise serializers.ValidationError("نام را وارد کنید.")
+        return value
+
+    def validate_last_name(self, value):
+        value = (value or "").strip()
+        if not value:
+            raise serializers.ValidationError("نام خانوادگی را وارد کنید.")
+        return value
 
 
 class OrderItemListSerializer(serializers.ModelSerializer):

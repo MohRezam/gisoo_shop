@@ -82,6 +82,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )
@@ -116,6 +118,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )
@@ -131,6 +135,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": 999999,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )
@@ -146,6 +152,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": 999999,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )
@@ -161,6 +169,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )
@@ -180,6 +190,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )
@@ -201,6 +213,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )
@@ -218,6 +232,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )
@@ -255,6 +271,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )
@@ -275,6 +293,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )
@@ -292,6 +312,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )
@@ -333,6 +355,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )
@@ -373,6 +397,8 @@ class CreateOrderAPITests(APITestCase):
             {
                 "address_id": self.address.id,
                 "shipping_method_id": self.shipping.id,
+                "first_name": "علی",
+                "last_name": "رضایی",
             },
             format="json",
         )

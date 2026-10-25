@@ -178,6 +178,8 @@ class CreateOrderAPIView(APIView):
                 "description",
                 "",
             ),
+            first_name=serializer.validated_data["first_name"],
+            last_name=serializer.validated_data["last_name"],
         )
 
         return Response(

@@ -66,6 +66,20 @@ class Order(BaseModel):
         verbose_name="شماره تلفن",
     )
 
+    customer_first_name = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        verbose_name="نام",
+    )
+
+    customer_last_name = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        verbose_name="نام خانوادگی",
+    )
+
     status = models.CharField(
         max_length=30,
         choices=OrderStatus.choices,

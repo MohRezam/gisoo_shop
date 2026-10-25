@@ -106,6 +106,15 @@ def validate_receipt_file(uploaded_file):
     }
 
 
+def receipt_hash_used_on_other_order(*, sha256, payment_intent) -> bool:
+    return (
+        PaymentReceipt.objects
+        .filter(sha256=sha256)
+        .exclude(payment_intent_id=payment_intent.id)
+        .exists()
+    )
+
+
 def calculate_sha256(uploaded_file):
     sha256 = hashlib.sha256()
 
@@ -212,11 +221,14 @@ def submit_receipt(
         uploaded_file
     )
 
-    duplicate_receipt = (
-        PaymentReceipt.objects
-        .filter(sha256=sha256)
-        .exists()
+    duplicate_receipt = receipt_hash_used_on_other_order(
+        sha256=sha256,
+        payment_intent=payment_intent,
     )
+    if duplicate_receipt:
+        raise ValidationError(
+            "این رسید قبلاً برای سفارش دیگری ثبت شده است."
+        )
 
     # Previous receipt is no longer the active receipt.
     PaymentReceipt.objects.filter(
