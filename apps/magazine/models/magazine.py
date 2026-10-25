@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 from apps.shared.models.base import BaseModel
 from core_gisoo_backend.storage_backends.locations import magazine_thumbnail_path
@@ -25,7 +26,13 @@ class MagazineCategory(BaseModel):
         return self.name
 
 
+class MagazineQuerySet(models.QuerySet):
+    def live(self):
+        return self.filter(is_published=True, published_at__lte=timezone.now())
+
+
 class Magazine(BaseModel):
+    objects = MagazineQuerySet.as_manager()
     category = models.ForeignKey(
         MagazineCategory,
         on_delete=models.PROTECT,

@@ -1,4 +1,5 @@
 from django.db.models import Prefetch, Q
+from django.utils import timezone
 
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -37,6 +38,22 @@ from apps.shared.cache import namespaces as ns
 from utils.paginators import StandardResultPagination
 
 
+def _magazine_cache_ttl(default):
+    """Expire the cached page when the next scheduled article should appear."""
+    upcoming = (
+        Magazine.objects.filter(is_published=True, published_at__gt=timezone.now())
+        .order_by("published_at")
+        .values_list("published_at", flat=True)
+        .first()
+    )
+    if upcoming is None:
+        return default
+    remaining = int((upcoming - timezone.now()).total_seconds())
+    if remaining < 1:
+        return 1
+    return min(default, remaining)
+
+
 class MagazineViewSet(CachedRetrieveMixin, viewsets.ReadOnlyModelViewSet):
     lookup_field = "slug"
     pagination_class = StandardResultPagination
@@ -46,7 +63,7 @@ class MagazineViewSet(CachedRetrieveMixin, viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         queryset = (
-            Magazine.objects.filter(is_published=True)
+            Magazine.objects.live()
             .select_related("category")
             .order_by("-published_at")
         )
@@ -81,7 +98,7 @@ class MagazineViewSet(CachedRetrieveMixin, viewsets.ReadOnlyModelViewSet):
                 Prefetch(
                     "related_articles",
                     queryset=(
-                        Magazine.objects.filter(is_published=True)
+                        Magazine.objects.live()
                         .select_related("category")
                         .order_by("-published_at")
                     ),
@@ -113,7 +130,7 @@ class MagazineViewSet(CachedRetrieveMixin, viewsets.ReadOnlyModelViewSet):
             ns.MAGAZINE_HOME,
             request,
             build,
-            ttl=DEFAULT_HOME_TTL,
+            ttl=_magazine_cache_ttl(DEFAULT_HOME_TTL),
         )
 
     @extend_schema(responses=MagazineArchiveResponseSerializer)
@@ -146,7 +163,7 @@ class MagazineViewSet(CachedRetrieveMixin, viewsets.ReadOnlyModelViewSet):
             ns.MAGAZINE_LIST,
             request,
             build,
-            ttl=DEFAULT_HOME_TTL,
+            ttl=_magazine_cache_ttl(DEFAULT_HOME_TTL),
         )
 
     @extend_schema(
@@ -219,5 +236,5 @@ class MagazineViewSet(CachedRetrieveMixin, viewsets.ReadOnlyModelViewSet):
             ns.MAGAZINE_ALL,
             request,
             build,
-            ttl=60 * 5,
+            ttl=_magazine_cache_ttl(60 * 5),
         )

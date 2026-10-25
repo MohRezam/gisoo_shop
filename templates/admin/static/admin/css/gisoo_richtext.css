@@ -35,9 +35,9 @@
 }
 
 .gisoo-editor-toolbar button.is-active {
-  background: #eef0ff;
+  background: #5b4bdb;
   border-color: #5b4bdb;
-  color: #312e81;
+  color: #fff;
   font-weight: 700;
 }
 
@@ -56,6 +56,27 @@
 .gisoo-editor-surface:focus {
   outline: 2px solid #c7c2f5;
   border-color: #5b4bdb;
+}
+
+.gisoo-editor-surface ul {
+  list-style: disc;
+  padding-inline-start: 1.6rem;
+}
+
+.gisoo-editor-surface ol {
+  list-style: decimal;
+  padding-inline-start: 1.6rem;
+}
+
+.gisoo-editor-surface li {
+  display: list-item;
+}
+
+.gisoo-editor-hint {
+  min-height: 1.2em;
+  margin: -2px 0 8px;
+  color: #b45309;
+  font-size: 13px;
 }
 
 .gisoo-editor-surface img {

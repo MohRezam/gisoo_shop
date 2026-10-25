@@ -191,7 +191,7 @@ class MagazineDetailSerializer(serializers.ModelSerializer):
             None,
         )
         if articles is None:
-            articles = obj.related_articles.filter(is_published=True).exclude(pk=obj.pk)[:6]
+            articles = obj.related_articles.live().exclude(pk=obj.pk)[:6]
 
         articles = [
             article

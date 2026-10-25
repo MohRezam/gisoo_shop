@@ -91,7 +91,11 @@ class MagazineAdmin(admin.ModelAdmin):
                     "is_featured",
                     "reading_time",
                 ),
-                "description": "زمان انتشار و وضعیت نمایش در سایت.",
+                "description": (
+                    "منتشر شده را روشن کنید تا مقاله اجازهٔ نمایش داشته باشد. "
+                    "اگر تاریخ انتشار در آینده باشد، تا همان ساعت در سایت دیده نمی‌شود. "
+                    "مقاله ویژه فقط یکی می‌تواند باشد و بالای صفحهٔ مجله نشان داده می‌شود."
+                ),
             },
         ),
         (
@@ -108,7 +112,19 @@ class MagazineAdmin(admin.ModelAdmin):
     )
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
-        if db_field.name == "content":
+        if db_field.name == "published_at":
+            kwargs["help_text"] = (
+                "ساعت نمایش در سایت. اگر این زمان نرسیده باشد، حتی با روشن بودن «منتشر شده» مقاله مخفی می‌ماند."
+            )
+        elif db_field.name == "is_published":
+            kwargs["help_text"] = (
+                "خاموش یعنی پیش‌نویس و در سایت نیست. روشن یعنی از زمان تاریخ انتشار به بعد در مجله دیده می‌شود."
+            )
+        elif db_field.name == "is_featured":
+            kwargs["help_text"] = (
+                "مقالهٔ برجستهٔ بالای صفحهٔ مجله. فقط یک مقاله ویژه می‌ماند؛ با انتخاب این، ویژهٔ قبلی برداشته می‌شود."
+            )
+        elif db_field.name == "content":
             kwargs["widget"] = GisooRichTextWidget(
                 attrs={"data-upload-url": reverse("admin-richtext-image")}
             )

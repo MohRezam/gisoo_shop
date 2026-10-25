@@ -29,6 +29,9 @@
     el.type = "button";
     el.textContent = label;
     if (title) el.title = title;
+    el.addEventListener("mousedown", function (event) {
+      event.preventDefault();
+    });
     return el;
   }
 
@@ -47,6 +50,21 @@
 
   function format(tag) {
     document.execCommand("formatBlock", false, tag);
+    var current = "";
+    try {
+      current = String(document.queryCommandValue("formatBlock") || "").toLowerCase();
+    } catch (err) {
+      current = "";
+    }
+    if (current.indexOf(tag) === -1) {
+      document.execCommand("formatBlock", false, "<" + tag + ">");
+    }
+  }
+
+  function selectionElement(root) {
+    var sel = window.getSelection();
+    if (!sel || !sel.anchorNode || !root.contains(sel.anchorNode)) return null;
+    return sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement;
   }
 
   function mount(textarea) {
@@ -79,24 +97,75 @@
     surface.innerHTML = looksLikeHtml(initial) ? initial : initial ? plainToHtml(initial) : "<p><br></p>";
     textarea.hidden = true;
 
-    function run(label, title, action) {
+    var stateButtons = [];
+    var hint = document.createElement("div");
+    hint.className = "gisoo-editor-hint";
+
+    function track(el, kind, value) {
+      el.dataset.gisooKind = kind;
+      el.dataset.gisooValue = value;
+      stateButtons.push(el);
+    }
+
+    function refreshState() {
+      var node = selectionElement(surface);
+      var block = "";
+      var list = "";
+      var bold = false;
+      var italic = false;
+      var el = node;
+      while (el && el !== surface) {
+        var tag = el.tagName;
+        if (tag === "B" || tag === "STRONG") bold = true;
+        if (tag === "I" || tag === "EM") italic = true;
+        if (tag === "OL") list = "ol";
+        if (tag === "UL" && !list) list = "ul";
+        if (!block && (tag === "P" || /^H[1-6]$/.test(tag))) block = tag.toLowerCase();
+        el = el.parentElement;
+      }
+      if (node) {
+        try {
+          if (document.queryCommandState("bold")) bold = true;
+          if (document.queryCommandState("italic")) italic = true;
+        } catch (err) {
+          /* queryCommandState is unavailable in some browsers */
+        }
+      }
+      stateButtons.forEach(function (item) {
+        var on = false;
+        if (item.dataset.gisooKind === "block") on = block === item.dataset.gisooValue;
+        if (item.dataset.gisooKind === "inline") {
+          on = item.dataset.gisooValue === "bold" ? bold : italic;
+        }
+        if (item.dataset.gisooKind === "list") on = list === item.dataset.gisooValue;
+        item.classList.toggle("is-active", on);
+        item.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+    }
+
+    function run(label, title, action, state) {
       var el = button(label, title);
+      if (state) track(el, state.kind, state.value);
       el.addEventListener("click", function () {
         surface.focus();
         action();
         sync(textarea, surface);
+        refreshState();
       });
       toolbar.appendChild(el);
       return el;
     }
 
-    run("متن", "متن معمولی", function () { format("p"); });
+    run("متن", "متن معمولی", function () { format("p"); }, { kind: "block", value: "p" });
     ["۱", "۲", "۳", "۴", "۵", "۶"].forEach(function (n, index) {
       var level = index + 1;
-      run("تیتر " + n, "تیتر سطح " + n, function () { format("h" + level); });
+      run("تیتر " + n, "تیتر سطح " + n, function () { format("h" + level); }, {
+        kind: "block",
+        value: "h" + level,
+      });
     });
-    run("ضخیم", "ضخیم", function () { document.execCommand("bold"); });
-    run("کج", "کج", function () { document.execCommand("italic"); });
+    run("ضخیم", "ضخیم", function () { document.execCommand("bold"); }, { kind: "inline", value: "bold" });
+    run("کج", "کج", function () { document.execCommand("italic"); }, { kind: "inline", value: "italic" });
     run("لینک", "لینک", function () {
       var url = window.prompt("نشانی لینک را وارد کنید", "https://");
       if (!url) return;
@@ -104,8 +173,14 @@
       if (!/^https?:\/\//i.test(url) && url.charAt(0) !== "/") return;
       document.execCommand("createLink", false, url);
     });
-    run("فهرست", "فهرست نشانه‌دار", function () { document.execCommand("insertUnorderedList"); });
-    run("شماره‌دار", "فهرست شماره‌دار", function () { document.execCommand("insertOrderedList"); });
+    run("فهرست", "فهرست نشانه‌دار", function () { document.execCommand("insertUnorderedList"); }, {
+      kind: "list",
+      value: "ul",
+    });
+    run("شماره‌دار", "فهرست شماره‌دار", function () { document.execCommand("insertOrderedList"); }, {
+      kind: "list",
+      value: "ol",
+    });
 
     var imageButton = button("تصویر", "درج تصویر");
     imageButton.addEventListener("click", function () {
@@ -122,15 +197,92 @@
     }
     run("نکته", "باکس نکته", function () { insertAside("gisoo-note", "متن نکته"); });
     run("هشدار", "باکس هشدار", function () { insertAside("gisoo-warn", "متن هشدار"); });
+    function tableContext() {
+      var node = selectionElement(surface);
+      if (!node || !node.closest) return null;
+      var cell = node.closest("td, th");
+      if (!cell || !surface.contains(cell)) return null;
+      return { cell: cell, row: cell.parentElement, table: cell.closest("table") };
+    }
+
+    function note(message) {
+      hint.textContent = message || "";
+    }
+
     run("جدول", "جدول ساده", function () {
       var html = "<div class=\"gisoo-table-wrap\"><table><tbody>";
       for (var r = 0; r < 2; r += 1) {
         html += "<tr>";
-        for (var c = 0; c < 2; c += 1) html += "<td>متن</td>";
+        for (var c = 0; c < 2; c += 1) html += "<td><br></td>";
         html += "</tr>";
       }
       html += "</tbody></table></div><p><br></p>";
       document.execCommand("insertHTML", false, html);
+      note("");
+    });
+    run("سطر جدید", "افزودن سطر زیر خانهٔ فعلی", function () {
+      var ctx = tableContext();
+      if (!ctx) {
+        note("برای افزودن سطر، نشانگر را داخل جدول بگذارید.");
+        return;
+      }
+      var tr = document.createElement("tr");
+      for (var i = 0; i < ctx.row.cells.length; i += 1) {
+        var td = document.createElement("td");
+        td.appendChild(document.createElement("br"));
+        tr.appendChild(td);
+      }
+      ctx.row.parentNode.insertBefore(tr, ctx.row.nextSibling);
+      note("");
+    });
+    run("ستون جدید", "افزودن ستون کنار خانهٔ فعلی", function () {
+      var ctx = tableContext();
+      if (!ctx) {
+        note("برای افزودن ستون، نشانگر را داخل جدول بگذارید.");
+        return;
+      }
+      var index = ctx.cell.cellIndex;
+      Array.prototype.forEach.call(ctx.table.rows, function (row) {
+        var ref = row.cells[index];
+        var cell = document.createElement(ref && ref.tagName === "TH" ? "th" : "td");
+        cell.appendChild(document.createElement("br"));
+        if (ref && ref.nextSibling) row.insertBefore(cell, ref.nextSibling);
+        else row.appendChild(cell);
+      });
+      note("");
+    });
+    run("حذف سطر", "حذف سطر فعلی", function () {
+      var ctx = tableContext();
+      if (!ctx) {
+        note("نشانگر داخل جدول نیست.");
+        return;
+      }
+      if (ctx.table.rows.length <= 1) {
+        var wrap = ctx.table.closest(".gisoo-table-wrap");
+        (wrap || ctx.table).remove();
+      } else {
+        ctx.row.remove();
+      }
+      note("");
+    });
+    run("حذف ستون", "حذف ستون فعلی", function () {
+      var ctx = tableContext();
+      if (!ctx) {
+        note("نشانگر داخل جدول نیست.");
+        return;
+      }
+      var index = ctx.cell.cellIndex;
+      var columns = ctx.row.cells.length;
+      if (columns <= 1) {
+        var wrap = ctx.table.closest(".gisoo-table-wrap");
+        (wrap || ctx.table).remove();
+        note("");
+        return;
+      }
+      Array.prototype.forEach.call(ctx.table.rows, function (row) {
+        if (row.cells[index]) row.deleteCell(index);
+      });
+      note("");
     });
     run("بالا", "انتقال بلوک به بالا", function () {
       var block = currentBlock(surface);
@@ -239,7 +391,11 @@
         });
     });
 
+    toolbar.after(hint);
     surface.addEventListener("input", function () { sync(textarea, surface); });
+    surface.addEventListener("keyup", refreshState);
+    surface.addEventListener("mouseup", refreshState);
+    document.addEventListener("selectionchange", refreshState);
     var form = textarea.closest("form");
     if (form) form.addEventListener("submit", function () { sync(textarea, surface); });
   }
