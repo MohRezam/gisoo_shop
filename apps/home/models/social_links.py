@@ -34,6 +34,17 @@ class SocialLinks(SingletonModel):
         default="",
         verbose_name=_("bale url"),
     )
+    float_button_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default="",
+        verbose_name="لینک آیکون شناور",
+        help_text=(
+            "فقط دکمهٔ سبز گوشهٔ پایین سایت. "
+            "اگر خالی باشد همان لینک واتساپ استفاده می‌شود. "
+            "هر نشانی با http یا https مجاز است."
+        ),
+    )
 
     class Meta:
         verbose_name = "لینک‌های شبکه‌های اجتماعی"

@@ -30,6 +30,17 @@ class SocialLinksAdmin(admin.ModelAdmin):
                 ),
             },
         ),
+        (
+            "آیکون شناور گوشه سایت",
+            {
+                "fields": ("float_button_url",),
+                "description": (
+                    "این لینک فقط برای دکمهٔ سبز گوشهٔ پایین سایت است "
+                    "و لینک واتساپ فوتر و صفحه تماس را عوض نمی‌کند. "
+                    "می‌تواند واتساپ نباشد."
+                ),
+            },
+        ),
     )
 
     def has_add_permission(self, request):

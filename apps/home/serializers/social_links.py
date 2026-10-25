@@ -11,4 +11,5 @@ class SocialLinksSerializer(serializers.ModelSerializer):
             "instagram_url",
             "whatsapp_url",
             "bale_url",
+            "float_button_url",
         )
