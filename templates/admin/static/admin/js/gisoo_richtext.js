@@ -142,16 +142,18 @@
     }
 
     function format(tag) {
-      document.execCommand("formatBlock", false, tag);
-      var current = "";
-      try {
-        current = String(document.queryCommandValue("formatBlock") || "").toLowerCase();
-      } catch (err) {
-        current = "";
+      var block = currentBlock();
+      var name = block ? block.tagName.toLowerCase() : "";
+      var swappable = name === "p" || name === "div" || /^h[1-6]$/.test(name);
+      if (!block || !swappable) {
+        document.execCommand("formatBlock", false, tag);
+        return;
       }
-      if (current.indexOf(tag) === -1) {
-        document.execCommand("formatBlock", false, "<" + tag + ">");
-      }
+      if (name === tag) return;
+      var next = document.createElement(tag);
+      next.innerHTML = block.innerHTML;
+      block.replaceWith(next);
+      placeCaret(next);
     }
 
     function placeCaret(node) {
