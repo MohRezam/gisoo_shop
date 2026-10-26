@@ -57,6 +57,8 @@
     textarea.parentNode.insertBefore(wrap, textarea);
     wrap.appendChild(textarea);
 
+    var dock = document.createElement("div");
+    dock.className = "gisoo-editor-dock";
     var toolbar = document.createElement("div");
     toolbar.className = "gisoo-editor-toolbar";
     var tableBar = document.createElement("div");
@@ -80,12 +82,13 @@
     surface.setAttribute("role", "textbox");
     surface.setAttribute("aria-multiline", "true");
 
-    wrap.insertBefore(toolbar, textarea);
-    wrap.insertBefore(tableBar, textarea);
-    wrap.insertBefore(imageBar, textarea);
-    wrap.insertBefore(boxBar, textarea);
-    wrap.insertBefore(linkPanel, textarea);
-    wrap.insertBefore(imagePanel, textarea);
+    dock.appendChild(toolbar);
+    dock.appendChild(tableBar);
+    dock.appendChild(imageBar);
+    dock.appendChild(boxBar);
+    dock.appendChild(linkPanel);
+    dock.appendChild(imagePanel);
+    wrap.insertBefore(dock, textarea);
     wrap.insertBefore(surface, textarea);
 
     var initial = textarea.value || "";
@@ -600,6 +603,35 @@
     surface.addEventListener("keyup", refreshState);
     surface.addEventListener("mouseup", refreshState);
     document.addEventListener("selectionchange", refreshState);
+
+    function placeDock() {
+      var header = document.getElementById("header");
+      var limit = (header ? header.getBoundingClientRect().bottom : 0) + 8;
+      var dockHeight = dock.offsetHeight;
+      var box = wrap.getBoundingClientRect();
+      var surfaceBox = surface.getBoundingClientRect();
+      var stick = box.top < limit && surfaceBox.bottom > limit + dockHeight + 16;
+      if (!stick) {
+        if (dock.classList.contains("is-fixed")) {
+          dock.classList.remove("is-fixed");
+          dock.style.top = "";
+          dock.style.left = "";
+          dock.style.width = "";
+          wrap.style.paddingTop = "";
+        }
+        return;
+      }
+      dock.classList.add("is-fixed");
+      dock.style.top = limit + "px";
+      dock.style.left = box.left + "px";
+      dock.style.width = box.width + "px";
+      var pad = dockHeight + "px";
+      if (wrap.style.paddingTop !== pad) wrap.style.paddingTop = pad;
+    }
+    document.addEventListener("scroll", placeDock, true);
+    window.addEventListener("resize", placeDock);
+    if (window.ResizeObserver) new ResizeObserver(placeDock).observe(dock);
+    placeDock();
     var form = textarea.closest("form");
     if (form) {
       form.addEventListener("submit", function () {
