@@ -101,8 +101,12 @@
   border: 1px solid #c9d0e0;
   border-radius: 10px;
   background: #fff;
-  line-height: 1.9;
+  line-height: 2.15;
   font-size: 16px;
+}
+
+.gisoo-editor-surface :is(p, div, li) {
+  line-height: 2.15 !important;
 }
 
 .gisoo-editor-surface:focus {
@@ -132,7 +136,7 @@
   font-family: inherit !important;
   font-weight: 700 !important;
   font-synthesis: none !important;
-  line-height: 2.2 !important;
+  line-height: 1.8 !important;
   text-align: right !important;
   letter-spacing: normal !important;
 }
