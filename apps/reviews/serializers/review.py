@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.reviews.models import ProductReview
+from apps.reviews.models.review import ProductReview, review_author_label
 
 
 class ProductReviewSerializer(serializers.ModelSerializer):
@@ -28,30 +28,7 @@ class ProductReviewSerializer(serializers.ModelSerializer):
         )
 
     def get_author_name(self, obj):
-        user = obj.user
-
-        full_name = " ".join(
-            part
-            for part in (
-                user.first_name,
-                user.last_name,
-            )
-            if part
-        ).strip()
-
-        if full_name:
-            return full_name
-
-        phone = user.phone_number
-
-        if len(phone) <= 7:
-            return "*" * len(phone)
-
-        return (
-            phone[:4]
-            + "*" * (len(phone) - 8)
-            + phone[-4:]
-        )
+        return review_author_label(obj)
 
 
 class ProductReviewPublicSerializer(serializers.ModelSerializer):
@@ -71,30 +48,7 @@ class ProductReviewPublicSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_author_name(self, obj):
-        user = obj.user
-
-        full_name = " ".join(
-            part
-            for part in [
-                user.first_name,
-                user.last_name,
-            ]
-            if part
-        ).strip()
-
-        if full_name:
-            return full_name
-
-        phone = user.phone_number
-
-        if len(phone) <= 7:
-            return "*" * len(phone)
-
-        return (
-                phone[:4]
-                + "*" * (len(phone) - 8)
-                + phone[-4:]
-        )
+        return review_author_label(obj)
 
 
 class HomepageReviewSerializer(serializers.ModelSerializer):
@@ -126,27 +80,4 @@ class HomepageReviewSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_author_name(self, obj):
-        user = obj.user
-
-        full_name = " ".join(
-            part
-            for part in [
-                user.first_name,
-                user.last_name,
-            ]
-            if part
-        ).strip()
-
-        if full_name:
-            return full_name
-
-        phone = user.phone_number
-
-        if len(phone) <= 7:
-            return "*" * len(phone)
-
-        return (
-                phone[:4]
-                + "*" * (len(phone) - 8)
-                + phone[-4:]
-        )
+        return review_author_label(obj)

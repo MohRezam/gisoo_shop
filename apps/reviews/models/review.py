@@ -29,7 +29,19 @@ class ProductReview(BaseModel):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="product_reviews",
+        null=True,
+        blank=True,
         verbose_name="کاربر",
+    )
+    author_name = models.CharField(
+        max_length=80,
+        blank=True,
+        default="",
+        verbose_name="نام نویسنده",
+        help_text=(
+            "برای نظر دستی این نام روی سایت دیده می‌شود و لازم نیست کاربر بسازید. "
+            "اگر خالی باشد، نام یا شماره همان کاربر نشان داده می‌شود."
+        ),
     )
 
     product = models.ForeignKey(
@@ -86,14 +98,35 @@ class ProductReview(BaseModel):
         ]
 
     def clean(self):
+        errors = {}
         if self.is_featured and self.homepage_order is None:
-            raise ValidationError(
-                {
-                    "homepage_order": (
-                        "برای نظرات ویژه باید ترتیب صفحه اصلی مشخص شود."
-                    )
-                }
-            )
+            errors["homepage_order"] = "برای نظرات ویژه باید ترتیب صفحه اصلی مشخص شود."
+        if not self.user_id and not (self.author_name or "").strip():
+            errors["author_name"] = "برای نظر دستی نام نویسنده را بنویسید، یا یک کاربر انتخاب کنید."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        self.author_name = (self.author_name or "").strip()
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.user} - {self.product} - {self.rating}"
+        return f"{review_author_label(self)} - {self.product_id} - {self.rating}"
+
+
+def review_author_label(review):
+    written = (review.author_name or "").strip()
+    if written:
+        return written
+    user = review.user
+    if user is None:
+        return "کاربر گیسو سنتر"
+    full_name = " ".join(
+        part for part in (user.first_name, user.last_name) if part
+    ).strip()
+    if full_name:
+        return full_name
+    phone = user.phone_number or ""
+    if len(phone) <= 7:
+        return "*" * len(phone)
+    return phone[:4] + "*" * (len(phone) - 8) + phone[-4:]
